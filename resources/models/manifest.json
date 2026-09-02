@@ -1,0 +1,9 @@
+{
+  "$schema": "./manifest.schema.json",
+  "schemaVersion": "1.0.0",
+  "releaseStatus": {
+    "ready": false,
+    "reason": "No C6 or C7 model has completed the full approval workflow. The models array must remain empty until at least one model entry passes FR-LIC-004 (C6 Curated Base Weight) or FR-LIC-014 (C7 Annotation Assist Model) review and is recorded in docs/model-governance/ with all required evidence and approver sign-off. Release gates G-DEP-07 (C6) and G-DEP-08 (C7) both fail with zero approved models (docs/dependency-policy.md §12). Approval requires completion of SPI-11 or SPI-12 for C6 base weights, or SPI-13 or SPI-14 for C7 assist checkpoints (docs/implementation-plan.md Phase C)."
+  },
+  "models": []
+}

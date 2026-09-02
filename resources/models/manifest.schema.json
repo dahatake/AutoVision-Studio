@@ -1,0 +1,376 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "manifest.schema.json",
+  "title": "AutoVision Studio Release Model Manifest",
+  "description": "Declares only fully approved, commercially-licensed C6 (Curated Base Weight) and C7 (Annotation Assist Model) payloads. Fail-closed: unknown license, unverified commercial use, unapproved status, or path traversal causes validation failure. Represents a release manifest, not a model registry or candidate list. An empty models array is valid and expected while G-DEP-07/G-DEP-08 approval gates are pending (docs/dependency-policy.md §12, FR-LIC-004/014).",
+  "type": "object",
+  "required": ["schemaVersion", "releaseStatus", "models"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0.0",
+      "description": "Must match this schema document version."
+    },
+    "productVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Semantic version of the product release this manifest is bundled with. Omit before first release."
+    },
+    "releaseStatus": {
+      "type": "object",
+      "description": "Explicit declaration of release readiness. ready:false blocks G-DEP-07/G-DEP-08.",
+      "required": ["ready", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "ready": {
+          "type": "boolean",
+          "description": "Set to true only when all required C6/C7 approvals exist and the models array is non-empty."
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable explanation of the current gate state."
+        }
+      }
+    },
+    "models": {
+      "type": "array",
+      "description": "Approved model entries only. Must be empty until G-DEP-07 (C6) or G-DEP-08 (C7) approval exists. Uniqueness of 'id' across entries is enforced by the release gate script, not by this schema.",
+      "items": {
+        "$ref": "#/$defs/modelEntry"
+      }
+    }
+  },
+  "$defs": {
+    "modelEntry": {
+      "type": "object",
+      "description": "A single fully approved model payload. All fields must be known and verified; no 'unknown' values are permitted (fail-closed, docs/dependency-policy.md §3).",
+      "required": [
+        "id",
+        "category",
+        "task",
+        "name",
+        "version",
+        "payloadPath",
+        "sha256",
+        "byteSize",
+        "format",
+        "licenses",
+        "evidence",
+        "approval",
+        "intendedUse",
+        "support"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "maxLength": 128,
+          "description": "Unique lowercase kebab-case identifier for this model entry."
+        },
+        "category": {
+          "type": "string",
+          "enum": ["C6", "C7"],
+          "description": "C6 = Curated Base Weight; C7 = Annotation Assist Model checkpoint (docs/dependency-policy.md §1)."
+        },
+        "task": {
+          "type": "string",
+          "enum": ["classification", "detection"],
+          "description": "ML task: image classification (top-k) or object detection (box+class+score)."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Official model name as listed in the adoption record."
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Model version, tag, or commit hash as listed in the adoption record."
+        },
+        "payloadPath": {
+          "type": "string",
+          "pattern": "^resources/models/[A-Za-z0-9_-][A-Za-z0-9._-]*(/[A-Za-z0-9_-][A-Za-z0-9._-]*)*$",
+          "description": "Relative path to the model payload file. Must start with resources/models/. Each path component must begin with an alphanumeric character, underscore, or hyphen — this prevents '..' traversal and hidden paths."
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "Exact lowercase hex SHA-256 digest of the payload file at payloadPath (FR-LIC-004/014)."
+        },
+        "byteSize": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Exact file size of the payload in bytes. Must be greater than zero."
+        },
+        "format": {
+          "type": "string",
+          "enum": ["safetensors", "onnx", "weights-only-pt"],
+          "description": "Safe serialization format. Pickle full-model is prohibited (FR-SEC-007)."
+        },
+        "licenses": {
+          "$ref": "#/$defs/licenseSet"
+        },
+        "evidence": {
+          "type": "array",
+          "description": "Local saved copies of primary sources underpinning each license and approval decision, with SHA-256 for future verification (FR-LIC-004/014).",
+          "items": {
+            "$ref": "#/$defs/evidenceEntry"
+          },
+          "minItems": 1
+        },
+        "approval": {
+          "$ref": "#/$defs/approvalRecord"
+        },
+        "intendedUse": {
+          "$ref": "#/$defs/intendedUseRecord"
+        },
+        "support": {
+          "type": "array",
+          "description": "OS and Execution Provider verification results. All applicable OS/provider combinations must be verified before release (POC-03/08).",
+          "items": {
+            "$ref": "#/$defs/supportEntry"
+          },
+          "minItems": 1
+        },
+        "inferenceConfig": {
+          "$ref": "#/$defs/inferenceConfig"
+        }
+      },
+      "if": {
+        "properties": {
+          "category": { "const": "C7" }
+        },
+        "required": ["category"]
+      },
+      "then": {
+        "required": ["inferenceConfig"]
+      }
+    },
+
+    "licenseSet": {
+      "type": "object",
+      "description": "Three independent license layers assessed separately (docs/dependency-policy.md §4, FR-LIC-005/015). Code approval does not imply checkpoint approval.",
+      "required": ["code", "checkpoint", "trainingData"],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/spdxLicense",
+          "description": "Architecture definition code license (C5 layer)."
+        },
+        "checkpoint": {
+          "$ref": "#/$defs/spdxLicense",
+          "description": "Weight file license, assessed independently from code (C6/C7 layer)."
+        },
+        "trainingData": {
+          "type": "array",
+          "description": "All public training datasets. C7 requires full enumeration (FR-LIC-014). Each dataset's terms must confirm commercial use of derivative models.",
+          "items": {
+            "$ref": "#/$defs/datasetLicense"
+          },
+          "minItems": 1
+        }
+      }
+    },
+
+    "spdxLicense": {
+      "type": "object",
+      "description": "License assertion for a single layer (code or checkpoint). All fields must be confirmed; no unknown or unconfirmed values (docs/dependency-policy.md §3).",
+      "required": ["spdx", "commercialUseConfirmed", "redistributionPermitted", "noticeText"],
+      "additionalProperties": false,
+      "properties": {
+        "spdx": {
+          "type": "string",
+          "minLength": 2,
+          "not": {
+            "enum": ["unknown", "Unknown", "NOASSERTION", "NONE", ""]
+          },
+          "description": "SPDX identifier (e.g., 'Apache-2.0') or canonical license URL for non-SPDX licenses. 'unknown' and 'NOASSERTION' are rejected (fail-closed, docs/dependency-policy.md §3)."
+        },
+        "commercialUseConfirmed": {
+          "type": "boolean",
+          "const": true,
+          "description": "Commercial use explicitly confirmed. false is not a valid value for an approved entry (fail-closed)."
+        },
+        "redistributionPermitted": {
+          "type": "boolean",
+          "const": true,
+          "description": "Redistribution explicitly permitted. false is not a valid value for an approved entry (fail-closed)."
+        },
+        "noticeText": {
+          "type": "string",
+          "description": "Full attribution or NOTICE text required by this license. Empty string if no attribution obligation."
+        }
+      }
+    },
+
+    "datasetLicense": {
+      "type": "object",
+      "description": "License and terms for a single training dataset (C8 layer). Commercial use of derivative models must be explicitly confirmed.",
+      "required": ["datasetName", "commercialDerivativesPermitted", "attributionText"],
+      "additionalProperties": false,
+      "properties": {
+        "datasetName": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Dataset name as listed in the adoption record (e.g., 'ImageNet-21k', 'COCO 2017')."
+        },
+        "commercialDerivativesPermitted": {
+          "type": "boolean",
+          "const": true,
+          "description": "Commercial use of models trained on this dataset is explicitly confirmed. false is not valid (fail-closed). ImageNet and COCO require individual legal review (FR-LIC-006/007)."
+        },
+        "attributionText": {
+          "type": "string",
+          "description": "Required attribution text for this dataset. Empty string if no attribution obligation."
+        }
+      }
+    },
+
+    "evidenceEntry": {
+      "type": "object",
+      "description": "A local saved copy of a primary source document used to establish license or approval decisions. Must be retained so decisions can be re-verified if the original URL disappears (FR-LIC-004/014).",
+      "required": ["kind", "localPath", "sha256", "retrievedDate"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "model-card",
+            "repository-readme",
+            "checkpoint-license",
+            "training-recipe",
+            "dataset-card",
+            "dataset-terms",
+            "legal-approval",
+            "other"
+          ],
+          "description": "Classification of this primary source document."
+        },
+        "localPath": {
+          "type": "string",
+          "pattern": "^docs/model-governance/[A-Za-z0-9_-][A-Za-z0-9._-]*(/[A-Za-z0-9_-][A-Za-z0-9._-]*)*$",
+          "description": "Path to the local saved copy under docs/model-governance/. Each path component must begin with alphanumeric, underscore, or hyphen — prevents '..' traversal."
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "Lowercase hex SHA-256 of the local saved copy, for future re-verification."
+        },
+        "retrievedDate": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "description": "ISO 8601 date (YYYY-MM-DD) when the source was retrieved and saved."
+        }
+      }
+    },
+
+    "approvalRecord": {
+      "type": "object",
+      "description": "Reference to the completed adoption record and the approver who signed off. status must be 'Approved'; candidates and pending entries must not appear in this manifest.",
+      "required": ["recordPath", "status", "approver", "date"],
+      "additionalProperties": false,
+      "properties": {
+        "recordPath": {
+          "type": "string",
+          "pattern": "^docs/model-governance/[A-Za-z0-9_-][A-Za-z0-9._-]*\\.md$",
+          "description": "Path to the completed adoption record file (docs/dependency-policy.md §6, template: docs/model-governance/<slug>-<version>-adoption.md)."
+        },
+        "status": {
+          "type": "string",
+          "const": "Approved",
+          "description": "Must be exactly 'Approved'. Any other value — including 'Pending', 'Rejected', or 'Candidate' — is invalid in this manifest (fail-closed)."
+        },
+        "approver": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Name of the approver who signed off on the adoption record."
+        },
+        "date": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "description": "ISO 8601 approval date (YYYY-MM-DD)."
+        }
+      }
+    },
+
+    "intendedUseRecord": {
+      "type": "object",
+      "description": "Confirmed assessment of the model card's intended and out-of-scope use fields against this product's use case (FR-LIC-014/015).",
+      "required": ["productUseInScope", "outOfScopeProductionUse"],
+      "additionalProperties": false,
+      "properties": {
+        "productUseInScope": {
+          "type": "boolean",
+          "const": true,
+          "description": "Product use must be within the model card's stated intended use. false is not valid (fail-closed, FR-LIC-014)."
+        },
+        "outOfScopeProductionUse": {
+          "type": "boolean",
+          "const": false,
+          "description": "Production or deployed use must not appear in the model card's out-of-scope list. true is not valid (fail-closed, FR-LIC-015; e.g., CLIP is excluded on this basis)."
+        }
+      }
+    },
+
+    "supportEntry": {
+      "type": "object",
+      "description": "Verification result for one OS and Execution Provider combination (POC-03/08). DirectML applies to windows-x64; CoreML applies to macos-arm64.",
+      "required": ["os", "executionProvider", "verified"],
+      "additionalProperties": false,
+      "properties": {
+        "os": {
+          "type": "string",
+          "enum": ["windows-x64", "macos-arm64"]
+        },
+        "executionProvider": {
+          "type": "string",
+          "enum": ["cpu", "directml", "coreml"]
+        },
+        "verified": {
+          "type": "boolean",
+          "description": "true = POC test passed for this OS/provider combination. All applicable combinations must be true at release."
+        }
+      }
+    },
+
+    "inferenceConfig": {
+      "type": "object",
+      "description": "Required for C7 (Annotation Assist Model). Defines confidence threshold and determinism guarantees needed for candidate reproducibility (NFR-ANN-004).",
+      "required": ["confidenceThreshold", "deterministicInference"],
+      "additionalProperties": false,
+      "properties": {
+        "confidenceThreshold": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Default confidence score threshold (0.0–1.0) for accepting a prediction."
+        },
+        "deterministicInference": {
+          "type": "boolean",
+          "description": "true if inference is reproducible given identical inputs, payload, preprocess parameters, and seed values (NFR-ANN-004)."
+        },
+        "nonDeterministicOperations": {
+          "type": "array",
+          "description": "Names of non-deterministic operations when deterministicInference is false. Must be documented in the manifest and POC report.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "seeds": {
+          "type": "object",
+          "description": "Named integer seed values for reproducible inference (e.g., {\"torch\": 42, \"numpy\": 42}).",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+  }
+}

@@ -216,3 +216,64 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# =============================================================
+# AutoVision Studio
+# =============================================================
+
+# ---- Node / Electron build outputs and caches ---------------
+node_modules/
+.vite/
+out/
+coverage/
+
+# electron-builder uses build/ as its installer resources input (tracked source, not
+# a generated artifact). Negate the broad build/ rule from the Python section above;
+# the leading / anchors the negation to the repository root only, so ml/build/ etc.
+# remain ignored by the earlier build/ rule.
+!/build/
+!/build/*.manifest
+
+# ---- Test outputs -------------------------------------------
+test-results/
+playwright-report/
+
+# ---- Local application / project / runtime data -------------
+/projects/
+/runs/
+
+# ---- Vendor / model binaries --------------------------------
+# Binary model checkpoints are placed in vendor/models/ (untracked large blobs).
+# resources/models/manifest*.json contains only JSON metadata and stays tracked.
+vendor/models/
+
+# ---- Python freeze outputs ----------------------------------
+# PyInstaller onedir output lands in ml/dist/ (also caught by the dist/ rule above).
+ml/dist/
+
+# ---- OS signing / notarization secrets ----------------------
+# Signed release installers produced after notarization are NOT listed here; only
+# credential files and ephemeral notarization session data are excluded.
+*.p12
+*.pfx
+*.pem
+*.csr
+certs/
+notarization-session/
+.apple-credentials
+
+# ---- Env files (extend .env / .envrc above) -----------------
+.env.*
+!.env.example
+
+# ---- Editor / OS junk ---------------------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/settings.json
+
+# ---- Negations: fix conflicts with broad upstream rules -----
+# ml/packaging/*.spec are PyInstaller source files, not generated artifacts.
+# The *.spec rule in the PyInstaller section above would otherwise ignore them.
+!ml/packaging/*.spec
