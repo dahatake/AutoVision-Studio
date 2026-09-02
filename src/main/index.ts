@@ -6,14 +6,14 @@ import { app, BrowserWindow } from 'electron';
 import { initializeAppLifecycle } from './app-lifecycle.js';
 import { createMainWindow as createSecureMainWindow } from './window.js';
 
-const rendererEntryPath = resolve(
-  dirname(fileURLToPath(import.meta.url)),
-  '../renderer/index.html',
-);
+const mainBundleDirectory = dirname(fileURLToPath(import.meta.url));
+const preloadPath = resolve(mainBundleDirectory, '../preload/index.cjs');
+const rendererEntryPath = resolve(mainBundleDirectory, '../renderer/index.html');
 
 function createAppWindow(): BrowserWindow {
   return createSecureMainWindow({
     BrowserWindow,
+    preloadPath,
     rendererEntryPath,
     onLoadError: (error: unknown) => {
       console.error('Failed to load the renderer entry.', error);
