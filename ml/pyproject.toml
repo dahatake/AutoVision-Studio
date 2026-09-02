@@ -18,6 +18,23 @@ dev = [
   "pytest==9.1.1",
 ]
 
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib"]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.pyright]
+include = ["src", "tests"]
+exclude = ["**/__pycache__"]
+extraPaths = ["src"]
+pythonVersion = "3.14"
+typeCheckingMode = "strict"
+
+[tool.ruff]
+include = ["src/**/*.py", "tests/**/*.py"]
+src = ["src", "tests"]
+target-version = "py314"
+
 [tool.uv]
 package = true
 required-version = "==0.12.9"
