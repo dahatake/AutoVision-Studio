@@ -3,6 +3,7 @@
   "$id": "manifest.schema.json",
   "title": "AutoVision Studio Release Model Manifest",
   "description": "Declares only fully approved, commercially-licensed C6 (Curated Base Weight) and C7 (Annotation Assist Model) payloads. Fail-closed: unknown license, unverified commercial use, unapproved status, or path traversal causes validation failure. Represents a release manifest, not a model registry or candidate list. An empty models array is valid and expected while G-DEP-07/G-DEP-08 approval gates are pending (docs/dependency-policy.md §12, FR-LIC-004/014).",
+  "$comment": "JSON Schema enforces release composition, approved-entry fields, support coverage, and structural fail-closed rules. The PKG-01 release verifier must additionally verify model ID uniqueness, referenced file existence and SHA-256/byteSize, adoption/evidence file existence and SHA-256, required evidence-kind coverage, approval-record consistency, and confidenceThreshold compatibility with the documented score range.",
   "type": "object",
   "required": ["schemaVersion", "releaseStatus", "models"],
   "additionalProperties": false,
@@ -39,12 +40,76 @@
     },
     "models": {
       "type": "array",
-      "description": "Approved model entries only. Must be empty until G-DEP-07 (C6) or G-DEP-08 (C7) approval exists. Uniqueness of 'id' across entries is enforced by the release gate script, not by this schema.",
+      "description": "Approved model entries only. The array is empty before any approval and may contain a partial approved set while releaseStatus.ready is false. A ready release requires C6 and C7 entries for both classification and detection. Uniqueness of 'id' across entries is enforced by the release verifier because JSON Schema cannot express uniqueness by one object property.",
       "items": {
         "$ref": "#/$defs/modelEntry"
       }
     }
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "releaseStatus": {
+            "properties": {
+              "ready": { "const": true }
+            },
+            "required": ["ready"]
+          }
+        },
+        "required": ["releaseStatus"]
+      },
+      "then": {
+        "properties": {
+          "models": {
+            "minItems": 4,
+            "allOf": [
+              {
+                "contains": {
+                  "properties": {
+                    "category": { "const": "C6" },
+                    "task": { "const": "classification" }
+                  },
+                  "required": ["category", "task"]
+                },
+                "minContains": 1
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "category": { "const": "C6" },
+                    "task": { "const": "detection" }
+                  },
+                  "required": ["category", "task"]
+                },
+                "minContains": 1
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "category": { "const": "C7" },
+                    "task": { "const": "classification" }
+                  },
+                  "required": ["category", "task"]
+                },
+                "minContains": 1
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "category": { "const": "C7" },
+                    "task": { "const": "detection" }
+                  },
+                  "required": ["category", "task"]
+                },
+                "minContains": 1
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
   "$defs": {
     "modelEntry": {
       "type": "object",
@@ -55,6 +120,8 @@
         "task",
         "name",
         "version",
+        "downloadUrl",
+        "retrievedDate",
         "payloadPath",
         "sha256",
         "byteSize",
@@ -62,7 +129,6 @@
         "licenses",
         "evidence",
         "approval",
-        "intendedUse",
         "support"
       ],
       "additionalProperties": false,
@@ -92,6 +158,18 @@
           "type": "string",
           "minLength": 1,
           "description": "Model version, tag, or commit hash as listed in the adoption record."
+        },
+        "downloadUrl": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://",
+          "description": "Original HTTPS acquisition URL for provenance only (FR-LIC-004/014). The application and build must never download this URL at runtime."
+        },
+        "retrievedDate": {
+          "type": "string",
+          "format": "date",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "description": "ISO 8601 date on which the exact payload was acquired."
         },
         "payloadPath": {
           "type": "string",
@@ -132,11 +210,13 @@
         },
         "support": {
           "type": "array",
-          "description": "OS and Execution Provider verification results. All applicable OS/provider combinations must be verified before release (POC-03/08).",
+          "description": "Exactly the four required verified OS/provider combinations: Windows CPU/DirectML and macOS CPU/CoreML (POC-03/08).",
           "items": {
             "$ref": "#/$defs/supportEntry"
           },
-          "minItems": 1
+          "minItems": 4,
+          "maxItems": 4,
+          "uniqueItems": true
         },
         "inferenceConfig": {
           "$ref": "#/$defs/inferenceConfig"
@@ -149,7 +229,7 @@
         "required": ["category"]
       },
       "then": {
-        "required": ["inferenceConfig"]
+        "required": ["intendedUse", "inferenceConfig"]
       }
     },
 
@@ -187,9 +267,24 @@
         "spdx": {
           "type": "string",
           "minLength": 2,
-          "not": {
-            "enum": ["unknown", "Unknown", "NOASSERTION", "NONE", ""]
-          },
+          "pattern": "^\\S(?:.*\\S)?$",
+          "allOf": [
+            {
+              "not": {
+                "pattern": "^[Uu][Nn][Kk][Nn][Oo][Ww][Nn]$"
+              }
+            },
+            {
+              "not": {
+                "pattern": "^[Nn][Oo][Aa][Ss][Ss][Ee][Rr][Tt][Ii][Oo][Nn]$"
+              }
+            },
+            {
+              "not": {
+                "pattern": "^[Nn][Oo][Nn][Ee]$"
+              }
+            }
+          ],
           "description": "SPDX identifier (e.g., 'Apache-2.0') or canonical license URL for non-SPDX licenses. 'unknown' and 'NOASSERTION' are rejected (fail-closed, docs/dependency-policy.md §3)."
         },
         "commercialUseConfirmed": {
@@ -212,7 +307,14 @@
     "datasetLicense": {
       "type": "object",
       "description": "License and terms for a single training dataset (C8 layer). Commercial use of derivative models must be explicitly confirmed.",
-      "required": ["datasetName", "commercialDerivativesPermitted", "attributionText"],
+      "required": [
+        "datasetName",
+        "termsUrl",
+        "termsRetrievedDate",
+        "commercialDerivativesPermitted",
+        "redistributionConditions",
+        "attributionText"
+      ],
       "additionalProperties": false,
       "properties": {
         "datasetName": {
@@ -220,10 +322,27 @@
           "minLength": 1,
           "description": "Dataset name as listed in the adoption record (e.g., 'ImageNet-21k', 'COCO 2017')."
         },
+        "termsUrl": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://",
+          "description": "Original HTTPS URL of the dataset terms used for the decision (FR-LIC-004/014)."
+        },
+        "termsRetrievedDate": {
+          "type": "string",
+          "format": "date",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "description": "ISO 8601 date on which the dataset terms were retrieved and saved."
+        },
         "commercialDerivativesPermitted": {
           "type": "boolean",
           "const": true,
           "description": "Commercial use of models trained on this dataset is explicitly confirmed. false is not valid (fail-closed). ImageNet and COCO require individual legal review (FR-LIC-006/007)."
+        },
+        "redistributionConditions": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Confirmed conditions that apply when redistributing the trained checkpoint, or an explicit statement that no additional conditions apply."
         },
         "attributionText": {
           "type": "string",
@@ -235,7 +354,7 @@
     "evidenceEntry": {
       "type": "object",
       "description": "A local saved copy of a primary source document used to establish license or approval decisions. Must be retained so decisions can be re-verified if the original URL disappears (FR-LIC-004/014).",
-      "required": ["kind", "localPath", "sha256", "retrievedDate"],
+      "required": ["kind", "sourceUrl", "localPath", "sha256", "retrievedDate"],
       "additionalProperties": false,
       "properties": {
         "kind": {
@@ -252,6 +371,12 @@
           ],
           "description": "Classification of this primary source document."
         },
+        "sourceUrl": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://",
+          "description": "Original HTTPS URL of the primary source. This is provenance metadata and is never fetched by the application at runtime."
+        },
         "localPath": {
           "type": "string",
           "pattern": "^docs/model-governance/[A-Za-z0-9_-][A-Za-z0-9._-]*(/[A-Za-z0-9_-][A-Za-z0-9._-]*)*$",
@@ -264,6 +389,7 @@
         },
         "retrievedDate": {
           "type": "string",
+          "format": "date",
           "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
           "description": "ISO 8601 date (YYYY-MM-DD) when the source was retrieved and saved."
         }
@@ -293,6 +419,7 @@
         },
         "date": {
           "type": "string",
+          "format": "date",
           "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
           "description": "ISO 8601 approval date (YYYY-MM-DD)."
         }
@@ -334,22 +461,67 @@
         },
         "verified": {
           "type": "boolean",
-          "description": "true = POC test passed for this OS/provider combination. All applicable combinations must be true at release."
+          "const": true,
+          "description": "Must be true because only fully approved entries may appear in this release manifest."
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "os": { "const": "windows-x64" }
+            },
+            "required": ["os"]
+          },
+          "then": {
+            "properties": {
+              "executionProvider": { "enum": ["cpu", "directml"] }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "os": { "const": "macos-arm64" }
+            },
+            "required": ["os"]
+          },
+          "then": {
+            "properties": {
+              "executionProvider": { "enum": ["cpu", "coreml"] }
+            }
+          }
+        }
+      ]
     },
 
     "inferenceConfig": {
       "type": "object",
       "description": "Required for C7 (Annotation Assist Model). Defines confidence threshold and determinism guarantees needed for candidate reproducibility (NFR-ANN-004).",
-      "required": ["confidenceThreshold", "deterministicInference"],
+      "required": [
+        "scoreMeaning",
+        "confidenceThreshold",
+        "thresholdPolicy",
+        "deterministicInference",
+        "seeds"
+      ],
       "additionalProperties": false,
       "properties": {
+        "scoreMeaning": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Model-specific meaning, unit, range, and calibration limitations of the displayed score. It must not describe the score as a probability of correctness unless that claim is separately validated (FR-AST-012)."
+        },
         "confidenceThreshold": {
           "type": "number",
           "minimum": 0.0,
           "maximum": 1.0,
-          "description": "Default confidence score threshold (0.0–1.0) for accepting a prediction."
+          "description": "Inclusive lower bound (score >= threshold) used only to generate or display a model suggestion. It never approves a suggestion or marks an image as confirmed; every candidate still requires individual human review (FR-AST-010/011/013)."
+        },
+        "thresholdPolicy": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Versioned, model-specific policy and PoC evidence reference from which the candidate-generation threshold was selected (FR-AST-013)."
         },
         "deterministicInference": {
           "type": "boolean",
@@ -361,16 +533,39 @@
           "items": {
             "type": "string",
             "minLength": 1
-          }
+          },
+          "uniqueItems": true
         },
         "seeds": {
           "type": "object",
           "description": "Named integer seed values for reproducible inference (e.g., {\"torch\": 42, \"numpy\": 42}).",
+          "minProperties": 1,
+          "propertyNames": {
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+          },
           "additionalProperties": {
             "type": "integer"
           }
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "deterministicInference": { "const": false }
+            },
+            "required": ["deterministicInference"]
+          },
+          "then": {
+            "required": ["nonDeterministicOperations"],
+            "properties": {
+              "nonDeterministicOperations": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
     }
   }
 }
