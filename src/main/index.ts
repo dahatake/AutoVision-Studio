@@ -4,21 +4,22 @@ import { fileURLToPath } from 'node:url';
 import { app, BrowserWindow } from 'electron';
 
 import { initializeAppLifecycle } from './app-lifecycle.js';
+import { createMainWindow as createSecureMainWindow } from './window.js';
 
 const rendererEntryPath = resolve(
   dirname(fileURLToPath(import.meta.url)),
   '../renderer/index.html',
 );
 
-function createMainWindow(): BrowserWindow {
-  const window = new BrowserWindow();
-
-  void window.loadFile(rendererEntryPath).catch((error: unknown) => {
-    console.error('Failed to load the renderer entry.', error);
-    app.quit();
+function createAppWindow(): BrowserWindow {
+  return createSecureMainWindow({
+    BrowserWindow,
+    rendererEntryPath,
+    onLoadError: (error: unknown) => {
+      console.error('Failed to load the renderer entry.', error);
+      app.quit();
+    },
   });
-
-  return window;
 }
 
 initializeAppLifecycle({
@@ -36,7 +37,7 @@ initializeAppLifecycle({
       app.on('window-all-closed', () => listener());
     },
   },
-  createWindow: createMainWindow,
+  createWindow: createAppWindow,
   getWindows: () => BrowserWindow.getAllWindows(),
   platform: process.platform,
 });
