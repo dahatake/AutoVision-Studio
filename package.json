@@ -8,10 +8,24 @@
   "main": "dist/main/index.js",
   "engines": {
     "node": "24.19.x",
-    "npm": "11.17.x"
+    "npm": "12.0.x"
   },
-  "packageManager": "npm@11.17.0",
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "24.19.x",
+      "onFail": "error"
+    },
+    "packageManager": {
+      "name": "npm",
+      "version": "12.0.x",
+      "onFail": "error"
+    }
+  },
+  "packageManager": "npm@12.0.0",
   "allowScripts": {
+    "better-sqlite3@13.0.3": false,
+    "electron-winstaller@5.4.0": true,
     "esbuild@0.28.2": true
   },
   "scripts": {
@@ -19,12 +33,16 @@
     "build:main": "vite build --config vite.main.config.ts",
     "build:preload": "vite build --config vite.preload.config.ts",
     "build:renderer": "vite build --config vite.renderer.config.ts",
+    "postinstall": "install-electron",
     "typecheck": "tsc -b tsconfig.main.json tsconfig.renderer.json",
     "test": "vitest run"
   },
   "dependencies": {
+    "better-sqlite3": "13.0.3",
+    "konva": "10.3.2",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "react-konva": "19.2.5",
     "zod": "4.4.3"
   },
   "devDependencies": {
@@ -36,7 +54,9 @@
     "@types/react-dom": "19.2.5",
     "@vitejs/plugin-react": "5.2.0",
     "electron": "44.0.0",
+    "electron-builder": "26.15.3",
     "jsdom": "30.0.1",
+    "pyright": "1.1.413",
     "typescript": "7.0.2",
     "vite": "7.3.6",
     "vitest": "4.1.11"
