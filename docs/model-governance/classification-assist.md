@@ -51,7 +51,7 @@
 | checkpoint ファイル名 | `model.safetensors` |
 | checkpoint ファイルサイズ | `812,672,320` bytes（HF fixed-revision API の LFS metadata） |
 | checkpoint SHA-256 | `2c63cb7d1f2e95ba501893cbb8faeb4ea9a3af295498d35097126228659c2af8`（HF fixed-revision API の `lfs.sha256`。本調査で binary から再計算していない） |
-| HF Git blob ID | `b5e2d7feb2f7cf3a5f4a2c52b0ba036e828edf3b`。**SHA-256 として使用しない** |
+| HF Git blob ID | `b5e2d7feb2f7cf3a5f4a2c52b0ba036e8283df3b`。**SHA-256 として使用しない** |
 | local artifact path | **MISSING** |
 
 ### 1.2 Big Vision 原版参照との分離
