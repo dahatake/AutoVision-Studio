@@ -47,6 +47,8 @@ C0-NODE/C0-PYTHONの採用調査で公式所有者と監査手段を一次資料
 | AR-10 | C0-PYTHONが両OSでPython 3.14 wheelを要求する一方、必須要件はmacOS 13+であり、現行候補の公式wheelでは両立しない | 再現。ONNX Runtime 1.24.4〜1.29.0のarm64 wheelは`macosx_14_0`、macOS 13 wheelを持つ1.23.2はCPython 3.13まで。PyTorch/TorchVision 2.13/0.28以降のCPython 3.14 arm64 wheelも`macosx_14_0`で、公式CPU indexに別tagはない | 製品OS要件を変更せず、Windows x64をPython 3.14、macOS arm64をPython 3.13としてuv環境markerで分離する完了条件へ補正した。共有codeの言語targetは低い3.13に合わせ、macOS実installはnative Macまで未判定とする。 |
 | AR-11 | macOS 13対応候補のPyTorch系列には既知advisoryがあり、versionだけで安全と断定できない | 再現。GitHub-reviewed `GHSA-rrmf-rvhw-rf47`はPyTorch 2.12.1以下をaffected、2.13.0をpatchedとし、2026-09-03取得時のseverityはLow、local attack・Low privilegeと記録する | C0-PYTHONで`pip-audit`結果と一次advisoryを保存し、Critical/Highだけを停止する現policyを適用する。Lowを「脆弱性なし」とは記録せず、採用版・用途への適用性・後続SEC-05のsafe model形式境界を明記する。severityまたは影響情報が更新された場合は再判定する。 |
 | AR-12 | OS別marker案は有効かつ非重複だが、現行`ml/pyproject.toml`の`requires-python = ">=3.14,<3.15"`のままではmacOS Python 3.13環境が解決不能 | 再現 | C0-PYTHONの完了条件に`requires-python`、uvの限定/必須環境、Pyright/Ruff targetを同時に更新することを明記した。C0-PLANは成果物外のPython manifestを先取り編集しないため、C0-PYTHON完了まではこの不整合を残したままC0をCLOSEDにしない。 |
+| AR-13 | C0-NODEが利用していた`allowScripts`はnpm 11.17.0ではdependency lifecycleをdefault-denyせず、未列挙scriptと`better-sqlite3`の不要な`node-gyp rebuild`が実行された | 再現。plain `npm ci`で`electron-winstaller`が未列挙でも実行され、`better-sqlite3@13.0.3`はN-API prebuildを同梱する一方、lockの`hasInstallScript`によりBuild Tools探索へ進んだ。npm公式changelogはdefault-denyをnpm 12のbreaking changeとしている | C0-NODE成果物へ`.npmrc`を追加し、Node 24.19対応のnpm 12.0.0、strict未審査script停止、`better-sqlite3@13.0.3 = false`、必要scriptだけのexact許可を固定する。旧npmは`devEngines`で依存展開前に拒否する。 |
+| AR-14 | npm 12の`allow-remote=none`既定値は、設定registryが返す別hostのintegrity付きtarballもremoteとして拒否し、現行Microsoft package proxyではclean install不能 | 再現。strict clean installはlock済み`ms-feed-*.pkgs.visualstudio.com` URLを`EALLOWREMOTE`で停止した。npm 12公式設定は`allow-remote`を`all/none/root`に限定し、host prefix allowlistを提供しない | C0-NODEでproject-local `allow-remote=all`を固定する。ただし`npm ci`のfrozen lock、全registry entryの`resolved`/`integrity`完備検査、許可host差分reviewを不可分の境界とし、任意URLやlock外取得を承認したとは扱わない。 |
 
 ## 修正後の確認
 
@@ -68,6 +70,9 @@ C0-NODE/C0-PYTHONの採用調査で公式所有者と監査手段を一次資料
 - AR-12により、OS別Python markerだけを追加して現行`requires-python`を残す部分修正は不合格とする。
 - AR-10〜12反映後の独立read-only敵対レビューは、要求維持、PEP 508 marker、脆弱性policy、DAG、Phase C停止条件について追加欠陥なし、`VERIFIED`と判定した。
 - 同反映後の機械再検証は`git diff --check`がexit 0、§7〜§8の正本taskが253件・unique 253件、C0管理項目が4件・unique 4件、変更対象がC0-PLAN成果物2文書だけであることを確認した。
+- AR-13/14はC0-NODE実installで初めて観測可能になった管理不備であり、C0-NODEの成果物と完了条件だけを補正する。正本task ID、C0管理項目数、依存DAG、Phase C停止条件は変更しない。
+- AR-13/14反映後の独立read-only敵対レビューは、npm 11/12のscript policy、N-API prebuild、remote tarball境界、成果物所有権、DAGを照合し、追加欠陥なし、`VERIFIED`と判定した。
+- ID形式をanchorした§7〜§8の機械再検証は、正本task 253件・unique 253件・重複0件、C0管理項目4件・unique 4件、対象文書の`git diff --check`がexit 0であることを確認した。
 
 ## 判定
 
