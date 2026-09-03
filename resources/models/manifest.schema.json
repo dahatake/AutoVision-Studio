@@ -3,7 +3,7 @@
   "$id": "manifest.schema.json",
   "title": "AutoVision Studio Release Model Manifest",
   "description": "Declares only fully approved, commercially-licensed C6 (Curated Base Weight) and C7 (Annotation Assist Model) payloads. Fail-closed: unknown license, unverified commercial use, unapproved status, or path traversal causes validation failure. Represents a release manifest, not a model registry or candidate list. An empty models array is valid and expected while G-DEP-07/G-DEP-08 approval gates are pending (docs/dependency-policy.md §12, FR-LIC-004/014).",
-  "$comment": "JSON Schema enforces release composition, approved-entry fields, support coverage, and structural fail-closed rules. The PKG-01 release verifier must additionally verify model ID uniqueness, referenced file existence and SHA-256/byteSize, adoption/evidence file existence and SHA-256, required evidence-kind coverage, approval-record consistency, and confidenceThreshold compatibility with the documented score range.",
+  "$comment": "JSON Schema enforces release composition, approved-entry fields, support coverage, and structural fail-closed rules. The PKG-01 release verifier must additionally verify model ID uniqueness, sourcePath file existence and SHA-256/byteSize, sourcePath-to-payloadPath package mapping, adoption/evidence file existence and SHA-256, required evidence-kind coverage, SPDX expression or canonical license URL validity, approval-record consistency, and confidenceThreshold compatibility with scoreRange.",
   "type": "object",
   "required": ["schemaVersion", "releaseStatus", "models"],
   "additionalProperties": false,
@@ -60,6 +60,7 @@
         "required": ["releaseStatus"]
       },
       "then": {
+        "required": ["productVersion"],
         "properties": {
           "models": {
             "minItems": 4,
@@ -122,6 +123,7 @@
         "version",
         "downloadUrl",
         "retrievedDate",
+        "sourcePath",
         "payloadPath",
         "sha256",
         "byteSize",
@@ -129,6 +131,7 @@
         "licenses",
         "evidence",
         "approval",
+        "intendedUse",
         "support"
       ],
       "additionalProperties": false,
@@ -171,10 +174,15 @@
           "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
           "description": "ISO 8601 date on which the exact payload was acquired."
         },
+        "sourcePath": {
+          "type": "string",
+          "pattern": "^vendor/models/[A-Za-z0-9_-][A-Za-z0-9._-]*(/[A-Za-z0-9_-][A-Za-z0-9._-]*)*$",
+          "description": "Build-machine source path for the approved untracked model binary under vendor/models/ (D-09). PKG-01 verifies this file before packaging."
+        },
         "payloadPath": {
           "type": "string",
           "pattern": "^resources/models/[A-Za-z0-9_-][A-Za-z0-9._-]*(/[A-Za-z0-9_-][A-Za-z0-9._-]*)*$",
-          "description": "Relative path to the model payload file. Must start with resources/models/. Each path component must begin with an alphanumeric character, underscore, or hyphen — this prevents '..' traversal and hidden paths."
+          "description": "Packaged destination path under resources/models/. PKG-01/PKG-04 must copy the verified sourcePath bytes to this path without changing sha256 or byteSize."
         },
         "sha256": {
           "type": "string",
@@ -229,7 +237,7 @@
         "required": ["category"]
       },
       "then": {
-        "required": ["intendedUse", "inferenceConfig"]
+        "required": ["inferenceConfig"]
       }
     },
 
@@ -282,6 +290,11 @@
             {
               "not": {
                 "pattern": "^[Nn][Oo][Nn][Ee]$"
+              }
+            },
+            {
+              "not": {
+                "pattern": "^(?:[Tt][Bb][Dd]|[Pp][Ee][Nn][Dd][Ii][Nn][Gg]|[Mm][Ii][Ss][Ss][Ii][Nn][Gg]|[Nn][Oo][Tt][ _-]?[Rr][Uu][Nn]|[Uu][Nn][Cc][Oo][Nn][Ff][Ii][Rr][Mm][Ee][Dd]|[Hh][Oo][Ll][Dd]|[Bb][Ll][Oo][Cc][Kk][Ee][Dd]|[Rr][Ee][Jj][Ee][Cc][Tt][Ee][Dd]|[Nn]/[Aa])$"
               }
             }
           ],
@@ -500,6 +513,7 @@
       "description": "Required for C7 (Annotation Assist Model). Defines confidence threshold and determinism guarantees needed for candidate reproducibility (NFR-ANN-004).",
       "required": [
         "scoreMeaning",
+        "scoreRange",
         "confidenceThreshold",
         "thresholdPolicy",
         "deterministicInference",
@@ -512,11 +526,24 @@
           "minLength": 1,
           "description": "Model-specific meaning, unit, range, and calibration limitations of the displayed score. It must not describe the score as a probability of correctness unless that claim is separately validated (FR-AST-012)."
         },
+        "scoreRange": {
+          "type": "object",
+          "required": ["minimum", "maximum"],
+          "additionalProperties": false,
+          "properties": {
+            "minimum": {
+              "type": "number",
+              "description": "Inclusive minimum score emitted by the approved model contract."
+            },
+            "maximum": {
+              "type": "number",
+              "description": "Inclusive maximum score emitted by the approved model contract. PKG-01 verifies minimum <= maximum."
+            }
+          }
+        },
         "confidenceThreshold": {
           "type": "number",
-          "minimum": 0.0,
-          "maximum": 1.0,
-          "description": "Inclusive lower bound (score >= threshold) used only to generate or display a model suggestion. It never approves a suggestion or marks an image as confirmed; every candidate still requires individual human review (FR-AST-010/011/013)."
+          "description": "Inclusive lower bound (score >= threshold) used only to generate or display a model suggestion. It must fall within scoreRange, as verified by PKG-01. It never approves a suggestion or marks an image as confirmed; every candidate still requires individual human review (FR-AST-010/011/013)."
         },
         "thresholdPolicy": {
           "type": "string",
