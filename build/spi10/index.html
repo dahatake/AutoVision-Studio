@@ -1,5 +1,20 @@
 <!doctype html>
 <html lang="en">
-  <head><meta charset="UTF-8"><title>SPI-10 benchmark</title></head>
-  <body><div id="benchmark"></div><script type="module" src="/benchmark-entry.ts"></script></body>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'none'; img-src 'self' data: blob:; object-src 'none'; base-uri 'none'"
+    >
+    <title>SPI-10 benchmark</title>
+    <style>
+      html, body { margin: 0; background: #020617; overflow: hidden; }
+      #benchmark { width: 960px; height: 540px; }
+    </style>
+  </head>
+  <body>
+    <div id="benchmark"></div>
+    <script type="module" src="/benchmark-entry.ts"></script>
+  </body>
 </html>

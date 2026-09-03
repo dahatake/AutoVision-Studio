@@ -4,8 +4,11 @@ import {
   IMAGE_HEIGHT,
   IMAGE_WIDTH,
   clampBox,
+  clampDragPosition,
+  clampTransformBox,
   createInitialCanvasState,
   reduceCanvasState,
+  summarizeOperationSamples,
 } from './CanvasSpike';
 
 describe('SPI-10 canvas state', () => {
@@ -54,10 +57,23 @@ describe('SPI-10 canvas state', () => {
       end: { x: 12, y: 13 },
     });
     const unknown = reduceCanvasState(initial, { type: 'select', id: 'missing' });
+    const outside = reduceCanvasState(initial, {
+      type: 'create',
+      id: 'outside',
+      start: { x: IMAGE_WIDTH + 10, y: 20 },
+      end: { x: IMAGE_WIDTH + 100, y: 120 },
+    });
+    const invalidResize = reduceCanvasState(initial, {
+      type: 'resize',
+      id: 'box-0',
+      box: { x: 0, y: 0, width: -10, height: 20 },
+    });
 
     expect(duplicate).toBe(initial);
     expect(tiny).toBe(initial);
     expect(unknown.selectedId).toBeNull();
+    expect(outside).toBe(initial);
+    expect(invalidResize).toBe(initial);
   });
 
   it('clamps move and resize results to finite in-image bounds', () => {
@@ -85,6 +101,21 @@ describe('SPI-10 canvas state', () => {
     expect(() => clampBox({ x: Number.NaN, y: 0, width: 10, height: 10 })).toThrow(
       'x must be finite',
     );
+    expect(() => clampBox({ x: 0, y: 0, width: 0, height: 10 })).toThrow(
+      'box dimensions must be at least 4 image pixels',
+    );
+  });
+
+  it('clips a partially outside create gesture to the image intersection', () => {
+    const initial = createInitialCanvasState();
+    const next = reduceCanvasState(initial, {
+      type: 'create',
+      id: 'clipped',
+      start: { x: -20, y: -30 },
+      end: { x: 50, y: 60 },
+    });
+
+    expect(next.boxes.at(-1)).toEqual({ id: 'clipped', x: 0, y: 0, width: 50, height: 60 });
   });
 
   it('zooms around the pointer while preserving its image coordinate', () => {
@@ -106,5 +137,64 @@ describe('SPI-10 canvas state', () => {
     expect(() =>
       reduceCanvasState(initial, { type: 'zoom', pointer, factor: Number.POSITIVE_INFINITY }),
     ).toThrow('zoom factor must be finite');
+    expect(() =>
+      reduceCanvasState(initial, {
+        type: 'zoom',
+        pointer: { x: Number.NaN, y: pointer.y },
+        factor: 1.1,
+      }),
+    ).toThrow('zoom pointer x must be finite');
+  });
+
+  it('pans in viewport coordinates and rejects non-finite deltas', () => {
+    const initial = createInitialCanvasState();
+    const panned = reduceCanvasState(initial, { type: 'pan', delta: { x: 25, y: -10 } });
+
+    expect(panned.viewport).toEqual({ x: 25, y: -10, scale: 0.25 });
+    expect(() =>
+      reduceCanvasState(initial, { type: 'pan', delta: { x: Number.NaN, y: 0 } }),
+    ).toThrow('pan delta x must be finite');
+  });
+
+  it('clamps absolute drag and transform boxes in image coordinates after zooming', () => {
+    const box = createInitialCanvasState().boxes[0];
+    if (box === undefined) throw new Error('missing initial box');
+    const viewport = { x: -48, y: -27, scale: 0.275 };
+    const absolutePosition = {
+      x: viewport.x + (box.x + 5) * viewport.scale,
+      y: viewport.y + (box.y + 7) * viewport.scale,
+    };
+
+    expect(clampDragPosition(absolutePosition, box, viewport)).toEqual(absolutePosition);
+    expect(clampDragPosition({ x: -1_000, y: -1_000 }, box, viewport)).toEqual({
+      x: viewport.x,
+      y: viewport.y,
+    });
+
+    const oldTransform = { x: -26, y: -10.5, width: 66, height: 33, rotation: 0 };
+    expect(
+      clampTransformBox(
+        oldTransform,
+        { ...oldTransform, width: 3 * viewport.scale },
+        viewport,
+      ),
+    ).toBe(oldTransform);
+    expect(
+      clampTransformBox(
+        oldTransform,
+        { ...oldTransform, width: 4 * viewport.scale },
+        viewport,
+      ).width,
+    ).toBeCloseTo(4 * viewport.scale);
+  });
+
+  it('computes p95 from finite non-negative benchmark samples', () => {
+    expect(summarizeOperationSamples([5, 1, 4, 2, 3])).toEqual({
+      meanMs: 3,
+      p95Ms: 5,
+      maxMs: 5,
+    });
+    expect(() => summarizeOperationSamples([])).toThrow('operation samples');
+    expect(() => summarizeOperationSamples([Number.NaN])).toThrow('operation samples');
   });
 });
