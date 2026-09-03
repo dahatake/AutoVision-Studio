@@ -83,6 +83,7 @@ migration とそれを使う repository、backend と UI、Windows と macOS、�
 - 一次資料（公式ドキュメント URL・取得日・hash または pull request 番号）を確認できない場合は、その判断を成功扱いにしない。該当 Gate を停止する。
 - 文書タスク（ADR、policy、guide）の証拠欄は、一次資料 URL・取得日・hash または判断記録で埋める。空欄は不合格とする。
 - モデルの hash/quality/license/intended-use が確認できない場合、manifest への登録とモデル固有実装を開始しない（`docs/dependency-policy.md` §4/§6、`docs/implementation-plan.md` D-08/D-09）。
+- text file の SHA-256 は、**Git blob bytes（通常 LF）**と**作業ツリー bytes（`core.autocrlf` により CRLF になり得る）**のどちらかを明記する。byte 基準を記載していない異なる hash を不整合判定に使わない。
 
 ---
 
@@ -118,6 +119,15 @@ migration とそれを使う repository、backend と UI、Windows と macOS、�
 - `ml/uv.lock` を Git で追跡する。
 - `uv lock --check` で整合を確認し、`uv sync --locked` を使って lock ファイルを暗黙更新しない。
 - Python 依存を追加・更新するときは `docs/dependency-policy.md` の審査手順を先に完了する。
+
+### 現行 scaffold のローカル検証
+
+- Node.js は `24.19.x`、npm は exact `12.0.0`、uv は exact `0.12.9` を使う。system npm が別版なら実行を継続しない。
+- npm 12.0.0 は組織承認済みの方法で用意し、その `bin` directory を PATH の先頭へ置く。これにより `build` 内の nested `npm run` も同じ npm を使う。環境固有の cache path はリポジトリへ固定しない。
+- `npx` / `npm exec` による lock 外 package の自動取得を検証手順に使わない。導入済み package script または `node_modules/.bin` の実体だけを使う。
+- Node 側は repository root で `npm test`、`npm run typecheck`、`npm run build` を実行する。
+- Python 側は **`ml/` を作業 directory** とし、`uv lock --check --system-certs`、`uv sync --locked --system-certs`、`uv run --locked --system-certs pytest -q`、Ruff check / format check、`..\node_modules\.bin\pyright.cmd` を実行する。repository root から設定 file を推測させない。
+- VS Code / Pylance の interpreter は `ml/.venv` を選択する。system Python の import 診断を project dependency の欠落証拠へ転用しない。
 
 ---
 
@@ -156,8 +166,8 @@ migration とそれを使う repository、backend と UI、Windows と macOS、�
 | `npm ci` / `npm run build` | B-01 完了後 |
 | `uv lock --check` / `uv sync --locked` | B-11 完了後 |
 | `uv run pytest` | B-13 完了後 |
-| `npx vitest run` | B-10 完了後 |
-| `npx playwright test` | C 〜 D フェーズ以降 |
+| `npm test`（lock 済み Vitest） | B-10 完了後 |
+| lock 済み Playwright を呼ぶ project script | C 〜 D フェーズ以降、依存採用 task 完了後 |
 | PyInstaller freeze | SPI-03/04 完了後 |
 | electron-builder package | SPI-05/06 完了後 |
 
