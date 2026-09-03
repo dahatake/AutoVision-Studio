@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SPI-08 fail-closed ONNX Runtime CPU and DirectML execution probe."""
+"""SPI-08 fail-closed ONNX Runtime CPU and platform accelerator probe."""
 
 from __future__ import annotations
 
@@ -11,22 +11,82 @@ import tempfile
 from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass
-from importlib import metadata
+from importlib import import_module, metadata
 from pathlib import Path
-from typing import TextIO
+from typing import Protocol, TextIO, cast
 
 SCHEMA_VERSION = 1
 TASK_ID = "SPI-08"
 CPU_PROVIDER = "CPUExecutionProvider"
 DML_PROVIDER = "DmlExecutionProvider"
+COREML_PROVIDER = "CoreMLExecutionProvider"
 MODEL_NODE_NAME = "spi08_add"
 MODEL_SHAPE = (1, 4)
+EXPECTED_OUTPUT = (4.0, 3.0, 2.0, -4.0)
 MODEL_OPSET = 17
 MODEL_IR_VERSION = 10
 PROFILE_KERNEL_SUFFIX = "_kernel_time"
 DML_FUSED_NODE_PREFIX = "DmlFusedNode_"
 MIN_WINDOWS_11_24H2_BUILD = 26100
 WINDOWS_WORKSTATION_PRODUCT_TYPE = 1
+MIN_MACOS_MAJOR_VERSION = 13
+WINDOWS_ORT_VERSION = "1.24.4"
+MACOS_ORT_VERSION = "1.23.2"
+
+
+class WindowsVersionInfo(Protocol):
+    major: int
+    minor: int
+    build: int
+    product_type: int
+
+
+class OrtSessionOptions(Protocol):
+    enable_mem_pattern: bool
+    execution_mode: object
+    graph_optimization_level: object
+    enable_profiling: bool
+    profile_file_prefix: str
+    log_severity_level: int
+
+
+class OrtInferenceSession(Protocol):
+    def disable_fallback(self) -> None: ...
+
+    def get_providers(self) -> list[str]: ...
+
+    def run(
+        self,
+        output_names: list[str],
+        input_feed: dict[str, object],
+    ) -> list[object]: ...
+
+    def end_profiling(self) -> str: ...
+
+
+class OrtEnum(Protocol):
+    ORT_SEQUENTIAL: object
+    ORT_DISABLE_ALL: object
+
+
+class OrtModule(Protocol):
+    __version__: str
+    SessionOptions: Callable[[], OrtSessionOptions]
+    ExecutionMode: OrtEnum
+    GraphOptimizationLevel: OrtEnum
+
+    def InferenceSession(
+        self,
+        model: bytes,
+        *,
+        sess_options: OrtSessionOptions,
+        providers: list[str],
+        enable_fallback: bool,
+    ) -> OrtInferenceSession: ...
+
+    def get_available_providers(self) -> list[str]: ...
+
+    def disable_telemetry_events(self) -> None: ...
 
 
 class ProbeFailure(RuntimeError):
@@ -98,6 +158,51 @@ def validate_windows_environment(
     )
 
 
+def parse_macos_version(version: str) -> tuple[int, int, int]:
+    stage = "environment-validation"
+    parts = version.split(".")
+    require(
+        1 <= len(parts) <= 3 and all(part.isdecimal() for part in parts),
+        stage,
+        "macos-version-unavailable",
+    )
+    numbers = tuple(int(part) for part in parts)
+    return cast(tuple[int, int, int], (numbers + (0, 0, 0))[:3])
+
+
+def validate_macos_environment(
+    *,
+    system: str,
+    architecture: str,
+    python_implementation: str,
+    python_version: tuple[int, int],
+    macos_version: tuple[int, int, int],
+) -> None:
+    stage = "environment-validation"
+    require(system == "Darwin", stage, "macos-required")
+    require(architecture.lower() == "arm64", stage, "arm64-required")
+    require(python_implementation == "CPython", stage, "cpython-required")
+    require(python_version == (3, 13), stage, "python-3.13-required")
+    require(
+        macos_version[0] >= MIN_MACOS_MAJOR_VERSION,
+        stage,
+        "macos-13-required",
+    )
+
+
+def get_windows_version_info() -> WindowsVersionInfo:
+    getter = cast(
+        Callable[[], WindowsVersionInfo] | None,
+        getattr(sys, "getwindowsversion", None),
+    )
+    if getter is None:
+        raise ProbeFailure(
+            "environment-validation",
+            "windows-version-unavailable",
+        )
+    return getter()
+
+
 def optional_distribution_version(distribution: str) -> str | None:
     try:
         return metadata.version(distribution)
@@ -105,8 +210,11 @@ def optional_distribution_version(distribution: str) -> str | None:
         return None
 
 
+def load_onnxruntime() -> OrtModule:
+    return cast(OrtModule, import_module("onnxruntime"))
+
+
 def make_add_model() -> bytes:
-    import onnx
     from onnx import TensorProto, helper
 
     left = helper.make_tensor_value_info("left", TensorProto.FLOAT, list(MODEL_SHAPE))
@@ -126,7 +234,11 @@ def make_add_model() -> bytes:
         opset_imports=[helper.make_operatorsetid("", MODEL_OPSET)],
     )
     model.ir_version = MODEL_IR_VERSION
-    onnx.checker.check_model(model)
+    check_model = cast(
+        Callable[[object], None],
+        vars(import_module("onnx.checker"))["check_model"],
+    )
+    check_model(model)
     return model.SerializeToString()
 
 
@@ -139,15 +251,19 @@ def profiled_node_providers(
         raise ProbeFailure(stage, "profile-root-not-array")
 
     kernel_events: list[tuple[str, str, str]] = []
-    for event in profile:
-        if not isinstance(event, dict) or event.get("cat") != "Node":
+    for event in cast(list[object], profile):
+        if not isinstance(event, dict):
             continue
-        name = event.get("name")
-        arguments = event.get("args")
-        if not isinstance(name, str) or not isinstance(arguments, dict):
+        event_record = cast(dict[object, object], event)
+        if event_record.get("cat") != "Node":
+            continue
+        name = event_record.get("name")
+        arguments_value = event_record.get("args")
+        if not isinstance(name, str) or not isinstance(arguments_value, dict):
             continue
         if not name.endswith(PROFILE_KERNEL_SUFFIX):
             continue
+        arguments = cast(dict[object, object], arguments_value)
         operation = arguments.get("op_name")
         provider = arguments.get("provider")
         if not isinstance(operation, str):
@@ -174,6 +290,13 @@ def profiled_node_providers(
             "directml-kernel-name-mismatch",
         )
         require(operation == fused_name, stage, "directml-operation-mismatch")
+    elif expected_provider == COREML_PROVIDER:
+        require(
+            kernel_name != PROFILE_KERNEL_SUFFIX,
+            stage,
+            "coreml-kernel-name-missing",
+        )
+        require(bool(operation), stage, "coreml-operation-empty")
     else:
         raise ProbeFailure(stage, "unsupported-expected-provider")
 
@@ -193,7 +316,9 @@ def run_session(
     profile_directory: Path,
 ) -> SessionResult:
     import numpy as np
-    import onnxruntime as ort
+    from numpy.typing import NDArray
+
+    ort = load_onnxruntime()
 
     options = ort.SessionOptions()
     options.enable_mem_pattern = False
@@ -211,7 +336,7 @@ def run_session(
             model,
             sess_options=options,
             providers=list(requested_providers),
-            enable_fallback=0,
+            enable_fallback=False,
         )
         session.disable_fallback()
         registered_providers = tuple(session.get_providers())
@@ -223,20 +348,25 @@ def run_session(
 
         left = np.asarray([[1.25, -2.0, 3.5, 0.0]], dtype=np.float32)
         right = np.asarray([[2.75, 5.0, -1.5, -4.0]], dtype=np.float32)
-        expected = np.asarray([[4.0, 3.0, 2.0, -4.0]], dtype=np.float32)
+        expected = np.asarray([EXPECTED_OUTPUT], dtype=np.float32)
         outputs = session.run(["output"], {"left": left, "right": right})
         require(len(outputs) == 1, "output-validation", "output-count-mismatch")
         output = outputs[0]
         if not isinstance(output, np.ndarray):
             raise ProbeFailure("output-validation", "output-not-array")
+        output_array = cast(NDArray[np.float32], output)
         require(
-            output.shape == MODEL_SHAPE, "output-validation", "output-shape-mismatch"
+            output_array.shape == MODEL_SHAPE,
+            "output-validation",
+            "output-shape-mismatch",
         )
         require(
-            output.dtype == np.float32, "output-validation", "output-dtype-mismatch"
+            output_array.dtype == np.float32,
+            "output-validation",
+            "output-dtype-mismatch",
         )
         require(
-            np.array_equal(output, expected),
+            np.array_equal(output_array, expected),
             "output-validation",
             "output-value-mismatch",
         )
@@ -258,7 +388,7 @@ def run_session(
         return SessionResult(
             requested_providers=requested_providers,
             registered_providers=registered_providers,
-            output=tuple(float(value) for value in output.reshape(-1)),
+            output=EXPECTED_OUTPUT,
             profiled_providers=providers,
             profiled_node_events=node_event_count,
             profiled_kernel_name=kernel_name,
@@ -275,41 +405,106 @@ def run_probe() -> dict[str, object]:
     try:
         import numpy as np
         import onnx
-        import onnxruntime as ort
+
+        ort = load_onnxruntime()
 
         stage = "environment-validation"
-        windows_version = sys.getwindowsversion()
-        validate_windows_environment(
-            system=platform.system(),
-            architecture=platform.machine(),
-            python_implementation=platform.python_implementation(),
-            python_version=sys.version_info[:2],
-            windows_version=(
-                windows_version.major,
-                windows_version.minor,
-                windows_version.build,
-            ),
-            product_type=windows_version.product_type,
-        )
+        system = platform.system()
+        architecture = platform.machine()
+        python_implementation = platform.python_implementation()
+        python_version = sys.version_info[:2]
+
+        if system == "Windows":
+            windows_version = get_windows_version_info()
+            validate_windows_environment(
+                system=system,
+                architecture=architecture,
+                python_implementation=python_implementation,
+                python_version=python_version,
+                windows_version=(
+                    windows_version.major,
+                    windows_version.minor,
+                    windows_version.build,
+                ),
+                product_type=windows_version.product_type,
+            )
+            runtime_distribution = "onnxruntime-directml"
+            runtime_version = WINDOWS_ORT_VERSION
+            competing_distribution = "onnxruntime"
+            accelerator_key = "directml"
+            accelerator_provider = DML_PROVIDER
+            environment: dict[str, object] = {
+                "os": system,
+                "osRelease": platform.release(),
+                "osVersion": platform.version(),
+                "osBuild": windows_version.build,
+                "windowsProductType": windows_version.product_type,
+                "architecture": architecture,
+                "pythonImplementation": python_implementation,
+                "pythonVersion": platform.python_version(),
+            }
+        elif system == "Darwin":
+            macos_version_text = platform.mac_ver()[0]
+            macos_version = parse_macos_version(macos_version_text)
+            validate_macos_environment(
+                system=system,
+                architecture=architecture,
+                python_implementation=python_implementation,
+                python_version=python_version,
+                macos_version=macos_version,
+            )
+            runtime_distribution = "onnxruntime"
+            runtime_version = MACOS_ORT_VERSION
+            competing_distribution = "onnxruntime-directml"
+            accelerator_key = "coreml"
+            accelerator_provider = COREML_PROVIDER
+            environment = {
+                "os": system,
+                "osRelease": platform.release(),
+                "osVersion": platform.version(),
+                "macOSVersion": macos_version_text,
+                "architecture": architecture,
+                "pythonImplementation": python_implementation,
+                "pythonVersion": platform.python_version(),
+            }
+        else:
+            raise ProbeFailure(stage, "supported-platform-required")
+
         require(onnx.__version__ == "1.22.0", stage, "onnx-version-mismatch")
-        require(ort.__version__ == "1.24.4", stage, "onnxruntime-version-mismatch")
         require(
-            optional_distribution_version("onnxruntime-directml") == "1.24.4",
+            ort.__version__ == runtime_version,
             stage,
-            "directml-distribution-version-mismatch",
+            "onnxruntime-version-mismatch",
         )
         require(
-            optional_distribution_version("onnxruntime") is None,
+            optional_distribution_version(runtime_distribution) == runtime_version,
             stage,
-            "competing-cpu-distribution-installed",
+            "onnxruntime-distribution-version-mismatch",
+        )
+        require(
+            optional_distribution_version(competing_distribution) is None,
+            stage,
+            "competing-onnxruntime-distribution-installed",
         )
 
         available_providers = tuple(ort.get_available_providers())
-        require(
-            available_providers == (DML_PROVIDER, CPU_PROVIDER),
-            stage,
-            "available-provider-order-mismatch",
-        )
+        if system == "Windows":
+            require(
+                available_providers == (DML_PROVIDER, CPU_PROVIDER),
+                stage,
+                "available-provider-order-mismatch",
+            )
+        else:
+            require(
+                COREML_PROVIDER in available_providers,
+                stage,
+                "coreml-provider-missing",
+            )
+            require(
+                CPU_PROVIDER in available_providers,
+                stage,
+                "cpu-provider-missing",
+            )
         ort.disable_telemetry_events()
 
         stage = "model-generation"
@@ -319,6 +514,7 @@ def run_probe() -> dict[str, object]:
         stage = "temporary-files"
         temporary_directory = tempfile.TemporaryDirectory(prefix="autovision-spi08-")
         temporary_root = Path(temporary_directory.name)
+        primary_failure = False
         try:
             stage = "cpu-session"
             cpu_result = run_session(
@@ -329,26 +525,32 @@ def run_probe() -> dict[str, object]:
                 temporary_root / "cpu",
             )
 
-            stage = "directml-session"
-            dml_result = run_session(
+            stage = f"{accelerator_key}-session"
+            accelerator_result = run_session(
                 model,
-                (DML_PROVIDER, CPU_PROVIDER),
-                (DML_PROVIDER, CPU_PROVIDER),
-                DML_PROVIDER,
-                temporary_root / "directml",
+                (accelerator_provider, CPU_PROVIDER),
+                (accelerator_provider, CPU_PROVIDER),
+                accelerator_provider,
+                temporary_root / accelerator_key,
             )
+        except BaseException:
+            primary_failure = True
+            raise
         finally:
             try:
                 temporary_directory.cleanup()
             except OSError as error:
-                raise ProbeFailure(
-                    "temporary-cleanup", "unexpected-exception", type(error).__name__
-                ) from None
+                if not primary_failure:
+                    raise ProbeFailure(
+                        "temporary-cleanup",
+                        "unexpected-exception",
+                        type(error).__name__,
+                    ) from None
 
         stage = "temporary-cleanup"
         require(not temporary_root.exists(), stage, "temporary-artifacts-remain")
         require(
-            cpu_result.output == dml_result.output,
+            cpu_result.output == accelerator_result.output,
             "cross-provider-validation",
             "provider-output-mismatch",
         )
@@ -358,20 +560,11 @@ def run_probe() -> dict[str, object]:
             "task": TASK_ID,
             "status": "ok",
             "verdict": "PASS",
-            "environment": {
-                "os": platform.system(),
-                "osRelease": platform.release(),
-                "osVersion": platform.version(),
-                "osBuild": windows_version.build,
-                "windowsProductType": windows_version.product_type,
-                "architecture": platform.machine(),
-                "pythonImplementation": platform.python_implementation(),
-                "pythonVersion": platform.python_version(),
-            },
+            "environment": environment,
             "runtime": {
                 "numpy": np.__version__,
                 "onnx": onnx.__version__,
-                "onnxRuntimeDistribution": "onnxruntime-directml",
+                "onnxRuntimeDistribution": runtime_distribution,
                 "onnxRuntime": ort.__version__,
             },
             "model": {
@@ -386,7 +579,7 @@ def run_probe() -> dict[str, object]:
             "availableProviders": list(available_providers),
             "sessions": {
                 "cpu": cpu_result.to_json(),
-                "directml": dml_result.to_json(),
+                accelerator_key: accelerator_result.to_json(),
             },
             "crossProviderOutputEqual": True,
             "temporaryArtifactsRemaining": 0,
@@ -425,31 +618,83 @@ def expect_probe_failure(
 
 
 def run_self_tests() -> dict[str, object]:
-    valid_environment = {
-        "system": "Windows",
-        "architecture": "AMD64",
-        "python_implementation": "CPython",
-        "python_version": (3, 14),
-        "windows_version": (10, 0, MIN_WINDOWS_11_24H2_BUILD),
-        "product_type": WINDOWS_WORKSTATION_PRODUCT_TYPE,
-    }
-    validate_windows_environment(**valid_environment)
+    validate_windows_environment(
+        system="Windows",
+        architecture="AMD64",
+        python_implementation="CPython",
+        python_version=(3, 14),
+        windows_version=(10, 0, MIN_WINDOWS_11_24H2_BUILD),
+        product_type=WINDOWS_WORKSTATION_PRODUCT_TYPE,
+    )
     expect_probe_failure(
         lambda: validate_windows_environment(
-            **{
-                **valid_environment,
-                "windows_version": (10, 0, MIN_WINDOWS_11_24H2_BUILD - 1),
-            }
+            system="Windows",
+            architecture="AMD64",
+            python_implementation="CPython",
+            python_version=(3, 14),
+            windows_version=(10, 0, MIN_WINDOWS_11_24H2_BUILD - 1),
+            product_type=WINDOWS_WORKSTATION_PRODUCT_TYPE,
         ),
         "environment-validation",
         "windows-11-24h2-required",
     )
     expect_probe_failure(
         lambda: validate_windows_environment(
-            **{**valid_environment, "product_type": 3}
+            system="Windows",
+            architecture="AMD64",
+            python_implementation="CPython",
+            python_version=(3, 14),
+            windows_version=(10, 0, MIN_WINDOWS_11_24H2_BUILD),
+            product_type=3,
         ),
         "environment-validation",
         "windows-client-required",
+    )
+
+    validate_macos_environment(
+        system="Darwin",
+        architecture="arm64",
+        python_implementation="CPython",
+        python_version=(3, 13),
+        macos_version=parse_macos_version("13.0"),
+    )
+    expect_probe_failure(
+        lambda: validate_macos_environment(
+            system="Darwin",
+            architecture="arm64",
+            python_implementation="CPython",
+            python_version=(3, 13),
+            macos_version=(12, 6, 9),
+        ),
+        "environment-validation",
+        "macos-13-required",
+    )
+    expect_probe_failure(
+        lambda: validate_macos_environment(
+            system="Darwin",
+            architecture="x86_64",
+            python_implementation="CPython",
+            python_version=(3, 13),
+            macos_version=(13, 0, 0),
+        ),
+        "environment-validation",
+        "arm64-required",
+    )
+    expect_probe_failure(
+        lambda: validate_macos_environment(
+            system="Darwin",
+            architecture="arm64",
+            python_implementation="CPython",
+            python_version=(3, 14),
+            macos_version=(13, 0, 0),
+        ),
+        "environment-validation",
+        "python-3.13-required",
+    )
+    expect_probe_failure(
+        lambda: parse_macos_version("not-a-version"),
+        "environment-validation",
+        "macos-version-unavailable",
     )
 
     cpu_profile = [
@@ -459,8 +704,16 @@ def run_self_tests() -> dict[str, object]:
     dml_profile = [
         profile_event(f"{dml_name}{PROFILE_KERNEL_SUFFIX}", dml_name, DML_PROVIDER)
     ]
+    coreml_profile = [
+        profile_event(
+            f"CoreMLExecutionProvider_{MODEL_NODE_NAME}{PROFILE_KERNEL_SUFFIX}",
+            "CoreMLExecutionProvider_spi08_add",
+            COREML_PROVIDER,
+        )
+    ]
     profiled_node_providers(cpu_profile, CPU_PROVIDER)
     profiled_node_providers(dml_profile, DML_PROVIDER)
+    profiled_node_providers(coreml_profile, COREML_PROVIDER)
     expect_probe_failure(
         lambda: profiled_node_providers(
             [
@@ -469,6 +722,20 @@ def run_self_tests() -> dict[str, object]:
                 )
             ],
             DML_PROVIDER,
+        ),
+        "profile-validation",
+        "target-node-provider-mismatch",
+    )
+    expect_probe_failure(
+        lambda: profiled_node_providers(
+            [
+                profile_event(
+                    f"CoreMLExecutionProvider_{MODEL_NODE_NAME}{PROFILE_KERNEL_SUFFIX}",
+                    "CoreMLExecutionProvider_spi08_add",
+                    CPU_PROVIDER,
+                )
+            ],
+            COREML_PROVIDER,
         ),
         "profile-validation",
         "target-node-provider-mismatch",
@@ -486,21 +753,43 @@ def run_self_tests() -> dict[str, object]:
         "profile-validation",
         "directml-kernel-name-mismatch",
     )
+    expect_probe_failure(
+        lambda: profiled_node_providers(
+            [
+                profile_event(
+                    f"CoreMLExecutionProvider_{MODEL_NODE_NAME}{PROFILE_KERNEL_SUFFIX}",
+                    "",
+                    COREML_PROVIDER,
+                )
+            ],
+            COREML_PROVIDER,
+        ),
+        "profile-validation",
+        "coreml-operation-empty",
+    )
 
     return {
         "schemaVersion": SCHEMA_VERSION,
         "task": TASK_ID,
         "status": "ok",
-        "selfTests": 8,
+        "selfTests": 16,
         "checks": [
             "windows-11-24h2-minimum-accepted",
             "pre-24h2-build-rejected",
             "server-product-type-rejected",
+            "macos-13-arm64-python-3.13-accepted",
+            "pre-macos-13-rejected",
+            "intel-macos-rejected",
+            "macos-python-3.14-rejected",
+            "malformed-macos-version-rejected",
             "cpu-profile-accepted",
             "directml-profile-accepted",
+            "coreml-profile-accepted",
             "wrong-directml-provider-rejected",
+            "wrong-coreml-provider-rejected",
             "mixed-kernel-events-rejected",
             "malformed-directml-kernel-rejected",
+            "empty-coreml-operation-rejected",
         ],
     }
 
