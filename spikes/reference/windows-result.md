@@ -5,7 +5,7 @@
 | 対象 | 状態 | 根拠 |
 |---|---|---|
 | Windows 別process lifecycle | **PASS** | manifest作成process終了後、新しいNode processでidentity/size/mtime/SHA-256を再検証 |
-| Windows read-only / relink primitive | **PASS** | strict compile後の28ケースself-testと独立smoke |
+| Windows read-only / relink primitive | **PASS** | strict compile後の29ケースself-testと独立smoke |
 | Windows実機OS reboot後アクセス | **NOT_RUN** | 別process結果をOS reboot結果へ転用しない |
 | Windows lane | **PARTIAL** | OS reboot未実施 |
 | SPI-19全体 | **PARTIAL** | Windows rebootとnative Apple Silicon macOS laneが未実施 |
@@ -44,7 +44,7 @@ manifest v1はschema/revision、`reference-read-only` mode、explicit selection�
 | Node.js | 24.19.0 (`win32/x64`) |
 | TypeScript | 7.0.2 |
 | npm | self-test/compileには不使用 |
-| source SHA-256 | `AAD3C41F9C0BD9D9248AA9E0BEE08D8C113E2F1DD55178BD6591AF66C7552D07` |
+| source SHA-256（2026-09-04修正後Windows作業ツリーbytes） | `CF83A934E89EB563E54F805C7C3DCF43C11F5616001FD9CB2783EE60F5B5DF5B` |
 
 ## 再現コマンドと結果
 
@@ -56,12 +56,12 @@ node <temp-build>/reference-access.js self-test
 ```
 
 - clean strict compile: exit 0
-- emitted JavaScript: 44,123 bytes、non-empty
-- self-test: `SELF_TESTED / 28_CASES_PASS`、exit 0
+- emitted JavaScript: 45,173 bytes、SHA-256 `2A32B6FB4A212955B90767FBDED17E12FFDC13AE1AFF5841078EE35BD63EFCE6`
+- self-test: `SELF_TESTED / 29_CASES_PASS`、exit 0
 - editor diagnostics: 0件
 - `git diff --check`: PASS
 
-## 永続self-test 28ケース
+## 永続self-test 29ケース
 
 | # | ケース | 検証 |
 |---:|---|---|
@@ -93,6 +93,7 @@ node <temp-build>/reference-access.js self-test
 | 26 | `verify-manifest-path-rebinding-detected` | verify中のmanifest path rebindをfail-closed検出 |
 | 27 | `relink-postwrite-failure-rolls-back-manifest` | post-write source faultでmanifest semantic contentを復元 |
 | 28 | `relink-path-rebinding-rolls-back-manifest` | candidate path rebindを検出しmanifest semantic contentを復元 |
+| 29 | `duplicate-manifest-key-rejected-read-only` | 重複JSON keyを含む非canonical manifestをexit 6で拒否し、source/manifest不変 |
 
 self-testのsource proofはraw content（内部Base64比較）、identity、SHA-256、size、mtime、birthtime、hardlink count、modeを比較する。read accessでWindows上変化し得たctimeは非変更判定に使用しない。値はstdoutや本記録へ出さない。
 
@@ -130,8 +131,9 @@ self-testとは別に、repository外fixtureで次を再実行した。
 10. child JSONのduplicate/余剰keyを受理した。
 11. fault防御を外したmutantでもself-testが通った。
 12. 旧結果文書がself-testと外部smokeを混在させ、FR-DAT-013/FR-PRJ-008全体を過大に対象化した。
+13. manifestのJSON key重複を`JSON.parse`が後勝ちで上書きし、重複`schemaVersion`を含むmanifestでも`VERIFIED`を返した。
 
-修正後、Windows 28ケース、strict compile、独立smokeを再実行した。最終独立コードレビューは再現可能な残存欠陥0。manifestのin-place writeをcrash-atomicにすること、並行writerのapplication lock、symlink/junction production監査は正本どおりREL-01/SEC-03等へ委譲する。
+13はserializerが生成するcanonical JSON bytesとの完全一致をparse後に要求し、重複key・余剰空白・別表現をfail-closedで拒否することで修正した。修正後、Windows 29ケース、strict compile、通常select/verify、重複key負例を再実行した。最終独立コードレビューは再現可能な残存欠陥0。manifestのin-place writeをcrash-atomicにすること、並行writerのapplication lock、symlink/junction production監査は正本どおりREL-01/SEC-03等へ委譲する。
 
 relink rollbackはmanifestのschema/revision/path/identity/size/mtimeNs/hashを含むsemantic bytesを復元する。filesystem上のmanifest mtimeはrollback writeで変わり得るため、不変とは主張しない。Reference sourceのmtimeは不変性検査対象である。
 

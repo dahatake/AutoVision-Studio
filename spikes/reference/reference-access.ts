@@ -312,7 +312,11 @@ function parseManifest(text: string): ReferenceManifestV1 {
     fail("INVALID_MANIFEST", "MANIFEST_SCHEMA_INVALID", EXIT.invalidManifest);
   }
 
-  return value as unknown as ReferenceManifestV1;
+  const manifest = value as unknown as ReferenceManifestV1;
+  if (serializeManifest(manifest) !== text) {
+    fail("INVALID_MANIFEST", "MANIFEST_JSON_NON_CANONICAL", EXIT.invalidManifest);
+  }
+  return manifest;
 }
 
 async function readManifestFromHandle(
@@ -1277,7 +1281,35 @@ async function runSelfTest(): Promise<readonly string[]> {
     );
     cases.push("relink-path-rebinding-rolls-back-manifest");
 
-    const expectedCaseCount = process.platform === "win32" ? 28 : 25;
+    const duplicateKey = await createSelectedFixture(root, "duplicate-key", scriptPath);
+    const duplicateKeyText = await readFile(duplicateKey.manifest, "utf8");
+    await writeFile(
+      duplicateKey.manifest,
+      duplicateKeyText.replace("{\n", '{\n  "schemaVersion": 999,\n'),
+      "utf8",
+    );
+    const duplicateKeySourceProof = await fileProof(duplicateKey.source);
+    const duplicateKeyManifestProof = await fileProof(duplicateKey.manifest);
+    expectChild(
+      scriptPath,
+      ["verify", duplicateKey.manifest],
+      "INVALID_MANIFEST",
+      EXIT.invalidManifest,
+      "MANIFEST_JSON_NON_CANONICAL",
+    );
+    await requireFileUnchanged(
+      duplicateKeySourceProof,
+      duplicateKey.source,
+      "duplicate-key-source",
+    );
+    await requireFileUnchanged(
+      duplicateKeyManifestProof,
+      duplicateKey.manifest,
+      "duplicate-key-manifest",
+    );
+    cases.push("duplicate-manifest-key-rejected-read-only");
+
+    const expectedCaseCount = process.platform === "win32" ? 29 : 26;
     if (cases.length !== expectedCaseCount) throw new Error("SELF_TEST_CASE_COUNT_MISMATCH");
     return cases;
   } finally {
