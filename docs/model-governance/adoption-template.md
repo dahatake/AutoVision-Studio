@@ -172,7 +172,7 @@
 | スコアの意味・単位・最小値・最大値 | [記入: 例 `softmax score、範囲 0–1、正解確率ではない`] |
 | 信頼度しきい値の既定値 | [記入] |
 | 決定論的推論の保証 | [記入: **保証あり** / 保証なし（理由を記入）] |
-| 非決定的演算が残る場合の明記箇所 | [記入: "なし" / 演算名と manifest・レポートでの明記箇所] |
+| 非決定的演算が残る場合の明記箇所 | [記入: 演算名と manifest・レポートでの明記箇所。決定論的ならmanifestの`nonDeterministicOperations`自体を省略] |
 | NFR-ANN-004 準拠確認 | image hash + checkpoint hash + prompt + preprocess + threshold + seed の全一致で同一候補を再現できるか: [記入: **はい** / いいえ（理由を記入）] |
 | seed 設定対象 | [記入: 例 `torch.manual_seed`, `numpy.random.seed`, ONNX Runtime seed 等] |
 

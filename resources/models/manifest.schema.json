@@ -590,6 +590,11 @@
                 "minItems": 1
               }
             }
+          },
+          "else": {
+            "not": {
+              "required": ["nonDeterministicOperations"]
+            }
           }
         }
       ]
