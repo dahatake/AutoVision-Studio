@@ -538,10 +538,12 @@ SPI-13 の research outcome は「候補を承認できないことを証拠不�
 | 承認者・承認日を暗黙補完していないか | research record を approval record に昇格する | 承認者なし、承認日なし、approved count 0 |
 | manifest を先行更新していないか | HOLD candidate が release payload に入る | manifest 未編集、`models: []`、Gate 2 BLOCKED |
 
-### 17.4 修正後の独立敵対レビュー
+### 17.4 独立敵対レビューと訂正履歴
 
-2026-09-03 の read-only 再レビューは、GCS HEAD metadata、Big Vision / Transformers / OpenAI CLIP の調査用固定 commit、native SigLIP mapping、WebLI 一般 corpus と exact SigLIP lineage の境界、一時 hash と保存証拠の境界を公式一次資料で再確認し、**追加の verified factual defect は 0 件**とした。NPZ / checkpoint body の取得、payload inspection、モデル実行、法務判断は実施していない。
+2026-09-03 の初回 read-only 再レビューは追加欠陥 0 件と報告したが、2026-09-04 の fixed-revision HF tree API 再照合で **verified transcription defect 1 件**を検出した。`model.safetensors` の Git blob ID を誤記 `b5e2d7feb2f7cf3a5f4a2c52b0ba036e828edf3b` から正しい `b5e2d7feb2f7cf3a5f4a2c52b0ba036e8283df3b` へ修正した。LFS SHA-256、file size、候補判定への影響はない。
 
-再レビュー結果は、**本 research record は HOLD / REJECT の根拠として commit 可能**、一方で **checkpoint の採用・manifest 登録・installer 同梱・G-DEP-08 / Gate 2 解除は不可**である。前者を後者の承認へ昇格させない。
+修正後の 2026-09-04 read-only 独立再レビューは、HF artifact identity、GCS HEAD metadata、Big Vision / Transformers / OpenAI CLIP の調査用固定 commit、native SigLIP mapping、WebLI 一般 corpus と exact SigLIP lineage の境界、一時 hash と保存証拠の境界を公式一次資料で再確認し、**現在の追加 verified factual defect は 0 件**とした。NPZ / checkpoint body の取得、payload inspection、モデル実行、法務判断は実施していない。
+
+修正後の再レビュー結果は、**本 research record は HOLD / REJECT の根拠として commit 可能**、一方で **checkpoint の採用・manifest 登録・installer 同梱・G-DEP-08 / Gate 2 解除は不可**である。前者を後者の承認へ昇格させない。
 
 敵対的レビュー後も blocking evidence は解消していない。最終結果は **SigLIP `HOLD`、OpenAI CLIP `REJECT`、承認済み Classification C7 `0`、G-DEP-08 / Gate 2 `BLOCKED`** のままとする。
