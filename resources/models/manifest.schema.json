@@ -18,7 +18,7 @@
     },
     "productVersion": {
       "type": "string",
-      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "pattern": "^(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)$",
       "description": "Semantic version of the product release this manifest is bundled with. Omit before first release."
     },
     "releaseStatus": {
@@ -393,6 +393,9 @@
         "localPath": {
           "type": "string",
           "pattern": "^docs/model-governance/[A-Za-z0-9_-][A-Za-z0-9._-]*(/[A-Za-z0-9_-][A-Za-z0-9._-]*)*$",
+          "not": {
+            "const": "docs/model-governance/adoption-template.md"
+          },
           "description": "Path to the local saved copy under docs/model-governance/. Each path component must begin with alphanumeric, underscore, or hyphen — prevents '..' traversal."
         },
         "sha256": {
@@ -418,6 +421,9 @@
         "recordPath": {
           "type": "string",
           "pattern": "^docs/model-governance/[A-Za-z0-9_-][A-Za-z0-9._-]*\\.md$",
+          "not": {
+            "const": "docs/model-governance/adoption-template.md"
+          },
           "description": "Path to the completed adoption record file (docs/dependency-policy.md §6, template: docs/model-governance/<slug>-<version>-adoption.md)."
         },
         "status": {
