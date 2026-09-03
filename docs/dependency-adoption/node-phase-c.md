@@ -6,7 +6,7 @@
 | 対象 | C0-NODE |
 | C0-PLAN | commit `6780ca274a149a2cce50e443e7fa91ce6700c137` |
 | 実行環境 | Windows 11 build 29648、x64、Node 24.19.0 |
-| 判定 | **BLOCKED** — 技術検証はWindowsで合格。未承認transitive licenseとnative macOS実行が残る |
+| 判定 | **CLOSED（Windows lane）** — 技術検証はWindowsで合格。transitive licenseはC0-REVIEWでowner条件付き承認、native macOS実行はowner指示によりWAIVED / NOT_RUN |
 
 ## 1. 採用範囲
 
@@ -88,13 +88,13 @@ Electron配布binaryの未署名は、最終製品署名を合格扱いにしな
 
 C0追加273件の内訳はMIT 207、ISC 33、BSD-2-Clause 5、Apache-2.0 5、Python-2.0 1、BSD-3-Clause 9、BlueOak-1.0.0 8、`WTFPL OR ISC` 1、WTFPL 1、0BSD 1、`MIT OR CC0-1.0` 1、`WTFPL OR MIT` 1。`docs/dependency-policy.md` §2の明示許可識別子に一致しない47件は全てdev treeである。
 
-未裁定packageは次のとおり。
+裁定対象packageは次のとおり。
 
 - ISC: `@electron/asar/minimatch@3.1.5`、`@electron/universal/minimatch@9.0.9`、`@isaacs/fs-minipass@4.0.1`、`abbrev@4.0.0`、`app-builder-lib/@electron/get/semver@6.3.1`、`app-builder-lib/semver@7.7.4`、`at-least-node@1.0.0`、`cliui@8.0.1`、`cross-spawn/isexe@2.0.0`、`cross-spawn/which@2.0.2`、`dir-compare/minimatch@3.1.5`、`filelist/minimatch@5.1.9`、`fs.realpath@1.0.0`、`get-caller-file@2.0.5`、`glob@7.2.3`、`glob/minimatch@3.1.5`、`hosted-git-info@4.1.0`、`hosted-git-info/lru-cache@6.0.0`、`hosted-git-info/yallist@4.0.0`、`inflight@1.0.6`、`inherits@2.0.4`、`json-stringify-safe@5.0.1`、`node-gyp/which@6.0.1`、`nopt@9.0.0`、`once@1.4.0`、`proc-log@6.1.0`、`rimraf@2.6.3`、`signal-exit@3.0.7`、`tiny-async-pool/semver@5.7.2`、`which@5.0.0`、`wrappy@1.0.2`、`y18n@5.0.8`、`yargs-parser@21.1.1`。
 - BlueOak-1.0.0: `chownr@3.0.0`、`isexe@3.1.5`、`minimatch@10.2.6`、`minipass@7.1.3`、`node-gyp/isexe@4.0.0`、`sax@1.6.1`、`tar@7.5.22`、`tar/yallist@5.0.0`。
 - その他: `argparse@2.0.1`（Python-2.0）、`sanitize-filename@1.6.4`（WTFPL OR ISC）、`truncate-utf8-bytes@1.0.2`（WTFPL）、`tslib@2.8.1`（0BSD）、`type-fest@0.13.1`（MIT OR CC0-1.0）、`utf8-byte-length@1.0.5`（WTFPL OR MIT）。
 
-OR式にMIT選択肢があっても、この記録だけで他の識別子をpolicyへ追加または法務承認したとは扱わない。47件のpolicy/法務裁定、または依存置換が終わるまでC0-NODEはCLOSEDにしない。
+47件は`docs/dependency-adoption/c0-review.md` §4.1で、projectのMIT licenseを基準としてexact version・dev-only用途に限りownerが **APPROVED_WITH_CONDITIONS** と裁定した。`WTFPL OR ISC`はISC、`MIT OR CC0-1.0`と`WTFPL OR MIT`はMITを選択する。これは一般allowlistの拡張ではなく、runtime移行、version/license変更、最終payload混入時は再審査する。
 
 ## 7. 脆弱性とdeprecated警告
 
@@ -115,7 +115,7 @@ OR式にMIT選択肢があっても、この記録だけで他の識別子をpol
 | Pyright | 1.1.413、strictで0 errors/0 warnings |
 | package import | `electron-builder`、`konva`、`react-konva`全てexit 0 |
 | Electron native smoke | Electron ABI 149内で`better-sqlite3` memory CRUD、exit 0 |
-| macOS arm64 install/smoke | **BLOCKED** — native Apple Silicon Mac未提供。Windows結果で代替しない |
+| macOS arm64 install/smoke | **WAIVED / NOT_RUN** — native Apple Silicon Mac未提供。owner指示によりC0 blockerから外すが、Windows結果で代替せずmacOS PASSとも記録しない |
 
 ## 9. 敵対的レビュー
 
@@ -131,13 +131,12 @@ OR式にMIT選択肢があっても、この記録だけで他の識別子をpol
 | NR-06 | npm 12 CLIを絶対pathで直接起動すればnested project scriptも同じnpmを使う | 再現せず。`build`内の`npm run`はPATH上の11.17.0を選び停止した | npm 12のbinをPATH先頭に置くことを実行前提として§8へ追記。再実行したbuild/test/typecheck/Pyright/auditは全て合格 |
 | NR-07 | C0追加273件に対して§6.2のlicense内訳合計が274件 | 再現せず。lock再集計は内訳合計273、policy外47。レビュー側の加算誤り | 数値を変更しない。機械集計結果を正とする |
 
-NR-01反映後も判定は **BLOCKED**。独立レビューが確認したnpm script境界、direct版、native Windows smoke、macOS停止条件には追加の実在不備がない。
+NR-01反映時点の判定は **BLOCKED** だった。後続C0-REVIEWでownerのlicense裁定とmacOS waiverを別途記録しており、初版レビュー当時の判断を遡及的にPASSへ書き換えない。独立レビューが確認したnpm script境界、direct版、native Windows smokeには追加の実在不備がない。
 
 ## 10. 判定と解除条件
 
-C0-NODEはexact manifest/lock、Windows clean install、Node/Electron native smoke、integrity、脆弱性、direct licenseまで実証した。一方、次が未完のため判定は **BLOCKED** である。
+C0-NODEはexact manifest/lock、Windows clean install、Node/Electron native smoke、integrity、脆弱性、全license identityまで実証した。policy明示許可外47 packageは`c0-review.md` §4.1でowner条件付き承認済みである。
 
-1. C0追加dev treeのpolicy明示許可外47 packageについて、license本文・NOTICE・利用形態を確認した書面裁定、または依存置換。
-2. native Apple Silicon Macでのnpm 12 strict clean install、Konva import、Electron 44内のdarwin-arm64 N-API CRUD、electron-builder CLI smoke。
+native Apple Silicon検証は`c0-review.md` §6のowner指示により **WAIVED / NOT_RUN** とし、C0 blockerから外す。macOSの適合性を合格扱いせず、macOS固有taskとGateは正本変更がない限り未実施のままとする。
 
-C0-NODEをCLOSEDにせず、C0-REVIEWおよびPhase C開始条件を満たしたとは扱わない。
+C0-REVIEWの独立敵対レビューはblocking finding 0で完了した。以上によりC0-NODEは **CLOSED（Windows lane）** とする。

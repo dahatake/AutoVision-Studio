@@ -7,7 +7,7 @@
 | C0-PLAN | commit `6780ca274a149a2cce50e443e7fa91ce6700c137` |
 | 実行環境 | Windows 11 build 29648、x64、CPython 3.14.7、uv 0.12.9 |
 | 対象環境 | Windows x64 / CPython 3.14、macOS arm64 / CPython 3.13 |
-| 判定 | **BLOCKED** — Windows実行と両targetのwheel/hash検証は合格。未承認licenseとnative macOS実行が残る |
+| 判定 | **CLOSED（Windows lane）** — Windows実行と両targetのwheel/hash検証は合格。license 6件はC0-REVIEWでowner条件付き承認、native macOS実行はowner指示によりWAIVED / NOT_RUN |
 
 ## 1. 採用範囲
 
@@ -152,7 +152,7 @@ PyTorch 2.13.0は既知advisoryを修正するが、対象arm64 wheelがmacOS 14
 | `altgraph` | 0.17.5 | 両OS | transitive | MIT | §2一致 |
 | `boolean-py` | 5.0 | 両OS | transitive | BSD-2-Clause | §2一致 |
 | `cachecontrol` | 0.14.4 | 両OS | transitive | Apache-2.0 | §2一致 |
-| `certifi` | 2026.7.22 | 両OS | transitive | MPL-2.0 | 要書面裁定 |
+| `certifi` | 2026.7.22 | 両OS | transitive | MPL-2.0 | C0条件付き承認 |
 | `charset-normalizer` | 3.5.1 | 両OS | transitive | MIT | §2一致 |
 | `colorama` | 0.4.6 | Windows | transitive | BSD-3-Clause | §2一致 |
 | `coloredlogs` | 15.0.1 | macOS | transitive | MIT | §2一致 |
@@ -177,7 +177,7 @@ PyTorch 2.13.0は既知advisoryを修正するが、対象arm64 wheelがmacOS 14
 | `mpmath` | 1.3.0 | 両OS | transitive | BSD-3-Clause | §2一致 |
 | `msgpack` | 1.2.1 | 両OS | transitive | Apache-2.0 | §2一致 |
 | `networkx` | 3.6.1 | 両OS | transitive | BSD-3-Clause | §2一致 |
-| `numpy` | 2.5.2 | 両OS | transitive | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0 | 要書面裁定 |
+| `numpy` | 2.5.2 | 両OS | transitive | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0 | C0条件付き承認 |
 | `onnx` | 1.22.0 | 両OS | runtime direct | Apache-2.0 | §2一致 |
 | `onnxruntime` | 1.23.2 | macOS | runtime direct | MIT | §2一致 |
 | `onnxruntime-directml` | 1.24.4 | Windows | runtime direct | MIT | §2一致 |
@@ -185,7 +185,7 @@ PyTorch 2.13.0は既知advisoryを修正するが、対象arm64 wheelがmacOS 14
 | `packageurl-python` | 0.17.6 | 両OS | transitive | MIT | §2一致 |
 | `packaging` | 26.3 | 両OS | transitive | Apache-2.0 OR BSD-2-Clause | §2一致 |
 | `pefile` | 2024.8.26 | Windows | transitive | MIT | §2一致 |
-| `pillow` | 12.3.0 | 両OS | transitive | MIT-CMU | 要書面裁定 |
+| `pillow` | 12.3.0 | 両OS | transitive | MIT-CMU | C0条件付き承認 |
 | `pip` | 26.2.1 | 両OS | transitive | MIT | §2一致 |
 | `pip-api` | 0.0.34 | 両OS | transitive | Apache-2.0 | §2一致 |
 | `pip-audit` | 2.10.1 | 両OS | dev direct | Apache-2.0 | §2一致 |
@@ -195,8 +195,8 @@ PyTorch 2.13.0は既知advisoryを修正するが、対象arm64 wheelがmacOS 14
 | `protobuf` | 7.36.0 | 両OS | transitive | BSD-3-Clause | §2一致 |
 | `py-serializable` | 2.1.0 | 両OS | transitive | Apache-2.0 | §2一致 |
 | `pygments` | 2.21.0 | 両OS | transitive | BSD-2-Clause | §2一致 |
-| `pyinstaller` | 6.22.2 | 両OS | dev direct | GPL-2.0-or-later WITH Bootloader-exception / Apache-2.0 / MIT | 要書面裁定 |
-| `pyinstaller-hooks-contrib` | 2026.7 | 両OS | transitive | GPL-2.0-or-later（standard）/ Apache-2.0（runtime） | 要書面裁定 |
+| `pyinstaller` | 6.22.2 | 両OS | dev direct | GPL-2.0-or-later WITH Bootloader-exception / Apache-2.0 / MIT | C0条件付き承認 |
+| `pyinstaller-hooks-contrib` | 2026.7 | 両OS | transitive | GPL-2.0-or-later（standard）/ Apache-2.0（runtime） | C0条件付き承認 |
 | `pyparsing` | 3.3.2 | 両OS | transitive | MIT | §2一致 |
 | `pytest` | 9.1.1 | 両OS | dev direct | MIT | §2一致 |
 | `pywin32-ctypes` | 0.2.3 | Windows | transitive | BSD-3-Clause | §2一致 |
@@ -212,13 +212,13 @@ PyTorch 2.13.0は既知advisoryを修正するが、対象arm64 wheelがmacOS 14
 | `tomli-w` | 1.2.0 | 両OS | transitive | MIT | §2一致 |
 | `torch` | 2.11.0 | 両OS | runtime direct | BSD-3-Clause | §2一致 |
 | `torchvision` | 0.26.0 | 両OS | runtime direct | BSD-3-Clause | §2一致 |
-| `tqdm` | 4.70.0 | 両OS | transitive | MPL-2.0 AND MIT | 要書面裁定 |
+| `tqdm` | 4.70.0 | 両OS | transitive | MPL-2.0 AND MIT | C0条件付き承認 |
 | `typing-extensions` | 4.16.0 | 両OS | transitive | PSF-2.0 | §2一致 |
 | `urllib3` | 2.7.0 | 両OS | transitive | MIT | §2一致 |
 
-67件中61件は§2の識別子だけで構成され、unknown/空欄は0件だった。ただし次の6件は明示allowlist外であり、自動承認しない。
+67件中61件は§2の識別子だけで構成され、unknown/空欄は0件だった。次の6件は明示allowlist外であり、自動承認せず、`docs/dependency-adoption/c0-review.md` §4.2でexact version・用途・配布条件を限定してownerが裁定した。
 
-| package | 経路 | 未裁定事項・証拠 |
+| package | 経路 | 裁定条件・証拠 |
 |---|---|---|
 | `certifi@2026.7.22` | dev `pip-audit`→`requests` | MPL-2.0。license SHA-256 `E93716DA6B9C0D5A4A1DF60FE695B370F0695603D21F6F83F053E42CFC10CAF7` |
 | `numpy@2.5.2` | runtime ONNX/Optuna/TorchVision/ORT | 複合expressionに0BSD/Zlib/CC0-1.0を含む。top license SHA-256 `A804DFF0EAD9FADC5293456410BCBFC32BF024BE9C4513459663FB7B442D2341` |
@@ -227,7 +227,7 @@ PyTorch 2.13.0は既知advisoryを修正するが、対象arm64 wheelがmacOS 14
 | `pyinstaller-hooks-contrib@2026.7` | dev PyInstaller | standard hooks/filesはGPL-2.0-or-later、`_pyinstaller_hooks_contrib/rthooks`はApache-2.0。license SHA-256 `91D0BAAFF00773038E72C0A1FC9D5D2D38706B7A2B9C04F34296608F931B9CD0`。freeze後payloadの実内容もSPI-03/04で照合する |
 | `tqdm@4.70.0` | runtime Optuna | MPL-2.0 AND MIT。license SHA-256 `FCFF87C3A47CE8028A8512AA182D4FCF0AD1C90544EE75CF9B343684CAC194DE` |
 
-PyInstallerのexceptionを確認した事実だけで法務承認済みとは扱わない。6件の書面裁定、policy改訂、または依存置換が終わるまでC0-PYTHONはCLOSEDにしない。
+6件は`c0-review.md` §4.2で **APPROVED_WITH_CONDITIONS** と裁定した。PyInstallerはbuild-onlyかつupstream未改変、bootloader exceptionの対象fileだけを結合物として配布する条件で承認する。MPL対象fileはlicense noticeと対応するSource Code Formの入手手段を配布時に示す。これは一般allowlistの拡張ではなく、条件不履行、version/license/用途変更時は承認を失効する。
 
 ## 7. 脆弱性監査
 
@@ -259,7 +259,7 @@ GitHub advisory取得時点では[setuptools advisory](https://github.com/adviso
 | CUDA | `torch 2.11.0+cpu`、CUDA unavailable、CUDA/NVIDIA/cuDNN package 0 |
 | DirectML | provider列挙のみ合格。採用model inferenceはSPI-08まで未判定 |
 | macOS target metadata | wheel-only/hash-requiredで62件展開、license metadata取得、exit 0 |
-| native macOS sync/import/MPS/CoreML/PyInstaller | **BLOCKED** — native Apple Silicon Mac未提供。cross-target展開を実行証拠にしない |
+| native macOS sync/import/MPS/CoreML/PyInstaller | **WAIVED / NOT_RUN** — native Apple Silicon Mac未提供。owner指示によりC0 blockerから外すが、cross-target展開を実行証拠またはmacOS PASSにしない |
 
 ## 9. 調査中に検出した不備と裁定
 
@@ -287,7 +287,7 @@ GitHub advisory取得時点では[setuptools advisory](https://github.com/adviso
 | FR-05 | PyInstaller bootloader exception全文を文書内へ転載すべき | C0要件として再現せず | 要件は採用版の全文確認であり全文転載ではない。固定tag URL、対象wheel内`COPYING.txt` hash、適用file群とexception効果を記録済み。法的解釈は行わず書面承認不足をBLOCKEDに維持 |
 | FR-06 | native macOS実行がない | 再現 | 正当にBLOCKED。cross-target wheel展開をnative smokeへ昇格しない |
 
-FR-03/04の証拠手順追記後、独立機械照合の全数値に追加不一致はない。最終レビュー判定は、技術証拠は **VERIFIED**、C0-PYTHON全体は外部解除条件により **BLOCKED** である。
+FR-03/04の証拠手順追記後、独立機械照合の全数値に追加不一致はない。この初版レビュー時点の判定は、技術証拠は **VERIFIED**、C0-PYTHON全体は外部解除条件により **BLOCKED** だった。後続C0-REVIEWでownerのlicense裁定とmacOS waiverを別途記録しており、初版判断を遡及的にPASSへ書き換えない。
 
 ### 9.2 レビュー反映後の最終再検証
 
@@ -304,9 +304,8 @@ FR-03/04の証拠手順追記後、独立機械照合の全数値に追加不一
 
 ## 10. 判定と解除条件
 
-C0-PYTHONはexact manifest/lock、正しいrequired environment、全artifact SHA-256、両target wheel coverage、Windows clean install/runtime smoke、全67 license identity、lock全体の脆弱性監査まで実証した。一方、次が未完のため判定は **BLOCKED** である。
+C0-PYTHONはexact manifest/lock、正しいrequired environment、全artifact SHA-256、両target wheel coverage、Windows clean install/runtime smoke、全67 license identity、lock全体の脆弱性監査まで実証した。policy明示allowlist外6 packageは`c0-review.md` §4.2でowner条件付き承認済みである。
 
-1. policy明示allowlist外6 packageについて、license本文・NOTICE・利用/配布形態を確認した書面裁定、policy改訂、または依存置換。
-2. native Apple Silicon Mac / macOS 13+ / CPython 3.13での`uv sync --locked`、test、Ruff、Pyright、Torch CPU/MPS、ORT CPU/CoreML、PyInstaller CLI smoke。
+native Apple Silicon検証は`c0-review.md` §6のowner指示により **WAIVED / NOT_RUN** とし、C0 blockerから外す。macOSの適合性を合格扱いせず、macOS固有taskとGateは正本変更がない限り未実施のままとする。
 
-C0-PYTHONをCLOSEDにせず、C0-REVIEWまたはPhase C開始条件を満たしたとは扱わない。
+C0-REVIEWの独立敵対レビューはblocking finding 0で完了した。以上によりC0-PYTHONは **CLOSED（Windows lane）** とする。

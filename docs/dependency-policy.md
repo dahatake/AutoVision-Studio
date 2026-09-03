@@ -2,14 +2,15 @@
 
 | 項目 | 内容 |
 |---|---|
-| 文書バージョン | 0.1 Draft |
+| 文書バージョン | 0.2 Draft |
 | 作成日 | 2026-09-02 |
+| 最終更新日 | 2026-09-03 |
 | 根拠要求 | FR-LIC-001〜008、FR-LIC-010〜015、FR-SEC-002〜004、NFR-SEC-001/003、NFR-MNT-001（FR-LIC-009 のUI・記録は DAT-13 が担当） |
 | 対象タスク | A-05（`docs/implementation-plan.md` §Phase A） |
 | 要求基準 SHA-256 | `2f1c57da192710ffb2fd764c7e342cf2e9106fa7387be7393133873cc815052f` |
 
 > **免責**: 本文書は技術・運用ポリシーであり、法的助言ではない（`docs/requirement-definition.md` §20 参照）。  
-> ライセンス判断は実際の採用バージョンが確定した時点で法務レビューを別途実施する。
+> ライセンス判断は実際の採用バージョンが確定した時点で、組織の法務担当または§2.1で定義するrepository license decision authorityが書面で実施する。外部法務意見がないowner判断を、弁護士による助言または暗号学的署名とは表示しない。
 
 ---
 
@@ -51,6 +52,20 @@ FR-LIC-001 に基づき、すべてのカテゴリーにわたり、名称・バ
 
 > 「許可ライセンスに一致する」は SPDX 識別子の照合だけを意味しない。NOTICE、帰属表示、特許条項、改変条件の遵守を確認して初めて「許可」となる。
 
+### 2.1 package固有の書面裁定
+
+明示allowlist外の既知licenseは、自動的に許可識別子へ追加しない。次を全て記録したpackage固有の書面裁定により、exact version・用途・配布形態を限定して`APPROVED_WITH_CONDITIONS`とできる。
+
+1. package名、exact version、lock fileとhash、runtime/dev/native区分。
+2. license expression、license/NOTICE本文の取得元とSHA-256。
+3. 商用利用、改変、再配布、用途制限、copyleft、source提供、帰属表示の確認。
+4. 最終payloadへの同梱有無と、SBOM、`THIRD_PARTY_NOTICES`、source入手手段などの履行条件。
+5. 承認者、役割、決定日、再審査条件。
+
+組織の法務担当が指定されていないowner管理repositoryでは、project copyright holderかつrepository ownerをrepository license decision authorityとする。owner裁定は当該repositoryのrisk acceptanceであり、配布主体または所有者が変わる場合は新しい主体の権限者が再審査する。`unknown`、空欄、`NOASSERTION`は本手続きでも承認できない。
+
+2026-09-03のC0 package固有裁定は`docs/dependency-adoption/c0-review.md`に記録する。これは一般allowlistを拡張せず、記録されたversion、用途、配布条件のいずれかが変われば失効する。
+
 **許可ライセンスの transitive 依存への適用**
 
 直接依存が許可ライセンスでも、transitive 依存が禁止カテゴリーに該当すれば同梱不可となる。SBOM 生成（§7）で全 transitive 依存を検査する。
@@ -63,7 +78,7 @@ FR-LIC-001 に基づき、すべてのカテゴリーにわたり、名称・バ
 
 | 分類 | 例 | 解除条件 |
 |---|---|---|
-| Copyleft または置換・再リンク等の追加義務を持つライセンス | GPL-2.0-only、GPL-3.0-or-later、AGPL-3.0、LGPL 系 | 法務がリンク形態、再リンク可能性、通知、ソース提供等を確認し、製品全体の配布条件との適合を**個別に書面で承認**した場合のみ。LGPL の動的リンクを自動的に不適合とは判定しない |
+| Copyleft または置換・再リンク等の追加義務を持つライセンス | GPL-2.0-only、GPL-3.0-or-later、AGPL-3.0、LGPL 系 | 組織の法務担当または§2.1のrepository license decision authorityがリンク・組込み形態、例外、通知、ソース提供等を確認し、製品全体の配布条件との適合を**package固有に書面で承認**した場合のみ。LGPL の動的リンクを自動的に不適合とは判定しない |
 | 研究限定 | "for research purposes only"、"academic use only" | 同上 |
 | 非商用限定 | CC-BY-NC 系、"non-commercial use" | 同上 |
 | 用途制限付き | "not for military use"、"not for clinical use" など特定用途禁止 | 同上 |
