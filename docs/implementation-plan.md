@@ -287,12 +287,14 @@ C0 は完了済み B-01/B-11/B-13 の履歴を上書きせず、Phase C で初�
 |---|---|---|---|
 | C0-PLAN | `docs/implementation-plan.md`, `docs/dependency-adoption/c0-plan-review.md` | B-GATE 初回実行 | 本節、D-17、依存DAG、Phase C開始条件を整合させ、独立敵対レビューで成果物不足・循環依存・正本task数不変を確認し、指摘・裁定・修正・再確認を記録する。 |
 | C0-NODE | `package.json`, `package-lock.json`, `docs/dependency-adoption/node-phase-c.md` | C0-PLAN | `better-sqlite3`、`electron-builder`、`konva`、`react-konva`、Microsoft公式npm `pyright`について、必要性、安定版、Node/Electron/React・Windows x64/macOS arm64対応、直接/transitive license、脆弱性、native binaryを一次資料と実installで確認し、runtime/devを分けてexact lockする。PyPIの非公式Pyright wrapperやruntime downloaderは採用しない。 |
-| C0-PYTHON | `ml/pyproject.toml`, `ml/uv.lock`, `docs/dependency-adoption/python-phase-c.md` | C0-PLAN | PyInstaller、PyTorch/TorchVision、Optuna、ONNX/ONNX RuntimeのOS別package、およびRuff、`pip-audit`について、Python 3.14・Windows x64/macOS arm64 wheel、license、脆弱性、provider競合を確認し、CUDA/cuDNNを暗黙導入せずexact lockする。`pip-audit`はdev dependencyとしてexact lockし、自身を含むlock済みPython依存の監査に使う。 |
+| C0-PYTHON | `ml/pyproject.toml`, `ml/uv.lock`, `docs/dependency-adoption/python-phase-c.md` | C0-PLAN | PyInstaller、PyTorch/TorchVision、Optuna、ONNX/ONNX RuntimeのOS別package、およびRuff、`pip-audit`について、Windows x64はPython 3.14、macOS arm64はPython 3.13を対象にwheel、license、脆弱性、provider競合を確認し、CUDA/cuDNNを暗黙導入せずexact lockする。`requires-python`、`tool.uv.environments`、`required-environments`をこの2組だけに整合させ、Pyright/Ruffの共有code targetをPython 3.13へ変更する。macOS 13+を満たさないwheelを理由に製品OS要件を黙って引き上げない。`pip-audit`はdev dependencyとしてexact lockし、自身を含むlock済みPython依存の監査に使う。 |
 | C0-REVIEW | `docs/dependency-adoption/c0-review.md` | C0-NODE, C0-PYTHON | lock差分・integrity/hash・OS marker・license・Critical/High・clean install・最小import/build smokeを独立敵対レビューする。指摘反映後のB-GATE実コマンド、環境、exit code、test件数、lock不変性とPASS/BLOCKED判定を同fileへ記録する。macOS実行をWindows結果で代替しない。 |
 
 C0-NODE と C0-PYTHON は出力fileが重ならないため C0-PLAN のレビュー完了後に並列実行できる。各採用記録には、package、用途と代替不能理由、runtime/dev区分、候補と採用exact版、一次資料URL・取得日・文書/release版、直接/transitive licenseとNOTICE、脆弱性確認コマンド・結果、対象OS/architectureの配布artifact・hash、実install/smoke結果、review指摘・裁定を記録する。
 
 採用版は調査時点の一次資料と実installで確定し、未指定の `latest`、`^`、`~`、未承認model binary、runtime downloadを入れない。PyInstallerの採否は採用版のbootloader exceptionを含むlicense全文を確認し、SPDX名だけで判断しない。ONNX RuntimeのWindows providerは公式の現行保守状態と配布packageを確認し、D-07/SPI-08の実測前に利用可能と断定しない。
+
+Python minorはOS別の公式wheel可用性に合わせてmarkerで分離し、共有worker codeとPyright/Ruffの言語targetは低い側のPython 3.13に合わせる。同一minorを根拠なく強制すること、macOS 14以上のwheelをmacOS 13対応として扱うこと、wheel tagを書き換えること、未計画のsource buildで回避することは禁止する。将来両OSで同一minorへ更新する場合も、C0と同じ依存・license・脆弱性・実機Gateを再実行する。
 
 ### Phase C — 高リスク PoC（本実装前）
 
