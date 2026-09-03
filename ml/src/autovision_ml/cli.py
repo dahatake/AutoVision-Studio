@@ -13,7 +13,9 @@ from autovision_ml import __version__
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="autovision-ml")
     commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser("health", help="Report application version and operating system.")
+    commands.add_parser(
+        "health", help="Report application version and operating system."
+    )
     return parser
 
 
