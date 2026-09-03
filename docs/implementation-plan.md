@@ -7,7 +7,7 @@
 | 最終更新日 | 2026-09-03 |
 | 対象 | Version 1（MVP） |
 | 状態 | **デフォルト決定承認済み・実装中** |
-| 要求基準 | `docs/requirement-definition.md` v0.3、914 行、SHA-256 `2f1c57da192710ffb2fd764c7e342cf2e9106fa7387be7393133873cc815052f` |
+| 要求基準 | `docs/requirement-definition.md` v0.3、914 行。SHA-256: Windows作業ツリーCRLF `2f1c57da192710ffb2fd764c7e342cf2e9106fa7387be7393133873cc815052f` / canonical Git blob LF `7a6e08e7e046a3ced59644a73bde44c4d7b279f55ba809bd78af60fdaa5b175c` |
 | 実装開始条件 | 2026-09-02 にユーザーが全デフォルト案の採用と全タスク実行を指示（充足済み） |
 
 > D-01〜D-19 はデフォルト案を採用する。検証できない事項は成功扱いにせず、該当 Gate を停止する。
