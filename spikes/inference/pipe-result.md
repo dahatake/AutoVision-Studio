@@ -7,6 +7,7 @@
 - macOS: **NOT_RUN**
 - Gate 1: **unresolved**
 - FR-INF-010: **not claimed**
+- 2026-09-04 adversarial revalidation: **PASS**（200 frames、malformed 3/3 fail-closed、mutant拒否）
 
 ## Environment outputs
 
@@ -53,11 +54,12 @@ Command produced no output
 		},
 		"frames_total": 200,
 		"frames_per_shape": 100,
-		"node_cpu_ns": 655000000,
-		"node_rss_peak_bytes": 144699392,
-		"python_cpu_ns": 531250000,
-		"python_rss_last_bytes": 24567808,
-		"python_rss_peak_bytes": 28504064,
+		"node_cpu_ns": 453000000,
+		"node_rss_sampled_peak_bytes": 131497984,
+		"python_cpu_ns": 546875000,
+		"python_rss_sample_bytes": 24494080,
+		"python_rss_peak_bytes": 28487680,
+		"python_rss_sample_kind": "current-working-set-after-last-frame",
 		"child_exit_code": 0,
 		"child_signal": null,
 		"child_stderr": "",
@@ -66,48 +68,48 @@ Command produced no output
 				"shape": "320x320",
 				"frames": 100,
 				"interval_ms": {
-					"mean": 99.9571282828283,
-					"p95": 110.0728,
-					"max": 197.2286
+					"mean": 99.90728484848485,
+					"p95": 113.7468,
+					"max": 128.0786
 				},
 				"jitter_ms": {
-					"mean": 9.023770707070707,
-					"p95": 10.1087,
-					"max": 98.2065
+					"mean": 4.321731313131313,
+					"p95": 15.2062,
+					"max": 32.7955
 				},
 				"send_to_ack_latency_ms": {
-					"mean": 3.5711760200000002,
-					"p95": 2.4127,
-					"max": 197.1955
+					"mean": 3.02609902,
+					"p95": 3.1494,
+					"max": 128.0462
 				},
 				"python_service_ms": {
-					"mean": 0.593517,
-					"p95": 0.7912,
-					"max": 1.0997
+					"mean": 0.517581,
+					"p95": 0.6878,
+					"max": 1.034
 				}
 			},
 			{
 				"shape": "640x640",
 				"frames": 100,
 				"interval_ms": {
-					"mean": 100.0053191919192,
-					"p95": 109.2337,
-					"max": 110.325
+					"mean": 100.02076969696971,
+					"p95": 110.4901,
+					"max": 112.3585
 				},
 				"jitter_ms": {
-					"mean": 7.13629698989899,
-					"p95": 9.4277,
-					"max": 10.325
+					"mean": 6.351767737373738,
+					"p95": 11.3092,
+					"max": 12.8314
 				},
 				"send_to_ack_latency_ms": {
-					"mean": 4.08260299,
-					"p95": 5.7063,
-					"max": 7.5198
+					"mean": 4.41483604,
+					"p95": 7.3513,
+					"max": 17.1791
 				},
 				"python_service_ms": {
-					"mean": 1.94034,
-					"p95": 2.4506,
-					"max": 4.6401
+					"mean": 2.061938,
+					"p95": 3.5262,
+					"max": 4.1927
 				}
 			}
 		]
@@ -197,9 +199,12 @@ pipe.ts
 | SR-01 | ackまたはchild終了が来ない場合に無期限待機する | code pathとして再現。各ack、正常close、負例close、SIGTERM後closeへ5秒上限を追加し、`exit`ではなくstdio終了後の`close`まで待機するよう修正 |
 | SR-02 | magic/version検査前に最大1,228,814 byteのbodyを読む | 再現するが上限検査済みで、固定shapeのlocal pipe PoCではblockingでない。streaming header検査はINF-05のproduction framingへdefer |
 | SR-03 | queue=1、warm-up、実model、camera、30分試験がない | 正本どおりSPI-07の非対象。SPI-09、INF-05〜15で検証し、本結果をFR-INF-010合格へ転用しない |
+| SR-04 | malformed probeが`observedFailClosed=false`でもtop-level `status=ok`になる | childの失敗exitを0へ変えた隔離mutantで3件すべてfalseのままexit 0を再現 | 3 probeそれぞれのexit 2、signalなし、error ack 1、summary false、stderr空、`observedFailClosed=true`をtop-level成功条件へ追加。mutantはexit 1へ変化 |
+| SR-05 | stdout callback内の不正JSON/field例外がmain promiseへ伝播せず、timeout時にmalformed childを回収しない | EventEmitter callbackのthrowと`withTimeout`拒否後にcleanupがないcode pathを確認 | callback failureをpromiseへ伝播し、正常/負例の全childを`finally`でSIGTERM、必要時SIGKILLまで待って回収 |
+| SR-06 | Nodeの離散sampleをpeakと断定し、POSIXの`ru_maxrss`をlast/current RSSと表示する | field名とplatform API意味が不一致 | Nodeは`sampled_peak`、Pythonは`sample`と`peak`を分離し、sample kindをWindows current working set / POSIX high-water markで明示 |
 | ER-01 | 数値、lock、OS/Gate境界がcode/実行結果と矛盾する | 再現せず。最終runの200 frames、3負例、CPU/RSS、process 0、lock hashへ同期 |
 
-SR-01修正後にTypeScript strict check、Ruff、Pyright、200-frame run、負例3件を再実行し、全て合格した。PoC scope内のblocking findingは0件。
+SR-04〜06反映後の2026-09-04再検証では、TypeScript strict check、Ruff check/format、Pyright、200-frame run、負例3件が全て合格した。raw JSONは2,512 bytes、SHA-256 `85B4E109CCFA5E2FDA241689077371D1067BEFDB7819E43A09BD8FFB923381A1`。PoC scope内のblocking findingは0件。
 
 最終エディタ診断:
 

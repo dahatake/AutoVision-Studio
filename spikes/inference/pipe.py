@@ -39,7 +39,9 @@ class ProtocolError(Exception):
     pass
 
 
-def read_exact(stream: BinaryIO, size: int, *, allow_clean_eof: bool = False) -> bytes | None:
+def read_exact(
+    stream: BinaryIO, size: int, *, allow_clean_eof: bool = False
+) -> bytes | None:
     if size < 0:
         raise ProtocolError("negative read size")
 
@@ -106,7 +108,9 @@ def get_process_rss_bytes() -> tuple[int, int]:
         counters = ProcessMemoryCountersEx()
         counters.cb = ctypes.sizeof(ProcessMemoryCountersEx)
         process_handle = get_current_process()
-        success = get_process_memory_info(process_handle, ctypes.byref(counters), counters.cb)
+        success = get_process_memory_info(
+            process_handle, ctypes.byref(counters), counters.cb
+        )
         if not success:
             raise OSError(ctypes.get_last_error(), "GetProcessMemoryInfo failed")
         return int(counters.WorkingSetSize), int(counters.PeakWorkingSetSize)
@@ -150,11 +154,15 @@ def validate(header: Header, payload_len: int, seq_expected: int) -> str:
     if header.reserved != RESERVED:
         raise ProtocolError(f"reserved must be 0, got {header.reserved}")
     if header.frame_index != seq_expected:
-        raise ProtocolError(f"frame index mismatch: {header.frame_index} != {seq_expected}")
+        raise ProtocolError(
+            f"frame index mismatch: {header.frame_index} != {seq_expected}"
+        )
 
     expected_payload = header.width * header.height * CHANNELS
     if payload_len != expected_payload:
-        raise ProtocolError(f"payload length mismatch: {payload_len} != {expected_payload}")
+        raise ProtocolError(
+            f"payload length mismatch: {payload_len} != {expected_payload}"
+        )
 
     return f"{header.width}x{header.height}"
 
@@ -228,8 +236,13 @@ def main() -> int:
             "ok": ok,
             "frames": seq,
             "cpu_process_ns": cpu_end_ns - cpu_start_ns,
-            "rss_last_bytes": rss_last,
+            "rss_sample_bytes": rss_last,
             "rss_peak_bytes": rss_peak,
+            "rss_sample_kind": (
+                "current-working-set-after-last-frame"
+                if os.name == "nt"
+                else "ru-maxrss-high-water-mark"
+            ),
             "error": error_message if not ok else None,
         }
     )

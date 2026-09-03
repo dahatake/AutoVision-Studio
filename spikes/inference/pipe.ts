@@ -1,5 +1,5 @@
 import { once } from 'node:events';
-import { spawn } from 'node:child_process';
+import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { performance } from 'node:perf_hooks';
 import { resolve } from 'node:path';
@@ -46,8 +46,9 @@ interface SummaryMessage {
   readonly ok: boolean;
   readonly frames: number;
   readonly cpu_process_ns: number;
-  readonly rss_last_bytes: number;
+  readonly rss_sample_bytes: number;
   readonly rss_peak_bytes: number;
+  readonly rss_sample_kind: string;
   readonly error: string | null;
 }
 
@@ -75,6 +76,16 @@ function requireCondition(condition: unknown, message: string): asserts conditio
   if (!condition) {
     throw new Error(message);
   }
+}
+
+function hasExactKeys(value: Record<string, unknown>, expected: readonly string[]): boolean {
+  const actual = Object.keys(value).sort();
+  const wanted = [...expected].sort();
+  return actual.length === wanted.length && actual.every((key, index) => key === wanted[index]);
+}
+
+function isNonNegativeSafeInteger(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 }
 
 function requireSummary(message: SummaryMessage | null): SummaryMessage {
@@ -142,11 +153,23 @@ function parseMessage(line: string): ChildMessage {
   if (record.type === 'ack') {
     requireCondition(typeof record.ok === 'boolean', 'ack ok is missing');
     if (record.ok) {
-      requireCondition(typeof record.seq === 'number', 'ack seq missing');
+      requireCondition(
+        hasExactKeys(record, [
+          'type',
+          'ok',
+          'seq',
+          'shape',
+          'body_len',
+          'payload_len',
+          'service_ns',
+        ]),
+        'ack fields are invalid',
+      );
+      requireCondition(isNonNegativeSafeInteger(record.seq), 'ack seq invalid');
       requireCondition(typeof record.shape === 'string', 'ack shape missing');
-      requireCondition(typeof record.body_len === 'number', 'ack body_len missing');
-      requireCondition(typeof record.payload_len === 'number', 'ack payload_len missing');
-      requireCondition(typeof record.service_ns === 'number', 'ack service_ns missing');
+      requireCondition(isNonNegativeSafeInteger(record.body_len), 'ack body_len invalid');
+      requireCondition(isNonNegativeSafeInteger(record.payload_len), 'ack payload_len invalid');
+      requireCondition(isNonNegativeSafeInteger(record.service_ns), 'ack service_ns invalid');
       return {
         type: 'ack',
         ok: true,
@@ -157,9 +180,13 @@ function parseMessage(line: string): ChildMessage {
         service_ns: record.service_ns,
       };
     }
-    requireCondition(typeof record.seq === 'number', 'ack error seq missing');
-    requireCondition(typeof record.error === 'string', 'ack error missing');
-    requireCondition(typeof record.service_ns === 'number', 'ack error service_ns missing');
+    requireCondition(
+      hasExactKeys(record, ['type', 'ok', 'seq', 'error', 'service_ns']),
+      'ack error fields are invalid',
+    );
+    requireCondition(isNonNegativeSafeInteger(record.seq), 'ack error seq invalid');
+    requireCondition(typeof record.error === 'string' && record.error.length > 0, 'ack error missing');
+    requireCondition(isNonNegativeSafeInteger(record.service_ns), 'ack error service_ns invalid');
     return {
       type: 'ack',
       ok: false,
@@ -170,24 +197,50 @@ function parseMessage(line: string): ChildMessage {
   }
 
   requireCondition(record.type === 'summary', 'unknown message type');
-  requireCondition(typeof record.ok === 'boolean', 'summary ok missing');
-  requireCondition(typeof record.frames === 'number', 'summary frames missing');
-  requireCondition(typeof record.cpu_process_ns === 'number', 'summary cpu_process_ns missing');
-  requireCondition(typeof record.rss_last_bytes === 'number', 'summary rss_last_bytes missing');
-  requireCondition(typeof record.rss_peak_bytes === 'number', 'summary rss_peak_bytes missing');
   requireCondition(
-    typeof record.error === 'string' || record.error === null,
-    'summary error missing',
+    hasExactKeys(record, [
+      'type',
+      'ok',
+      'frames',
+      'cpu_process_ns',
+      'rss_sample_bytes',
+      'rss_peak_bytes',
+      'rss_sample_kind',
+      'error',
+    ]),
+    'summary fields are invalid',
   );
+  requireCondition(typeof record.ok === 'boolean', 'summary ok missing');
+  requireCondition(isNonNegativeSafeInteger(record.frames), 'summary frames invalid');
+  requireCondition(isNonNegativeSafeInteger(record.cpu_process_ns), 'summary cpu_process_ns invalid');
+  requireCondition(isNonNegativeSafeInteger(record.rss_sample_bytes), 'summary rss sample invalid');
+  requireCondition(isNonNegativeSafeInteger(record.rss_peak_bytes), 'summary rss peak invalid');
+  requireCondition(
+    record.rss_sample_kind === 'current-working-set-after-last-frame' ||
+      record.rss_sample_kind === 'ru-maxrss-high-water-mark',
+    'summary rss sample kind invalid',
+  );
+  let summaryError: string | null;
+  if (record.ok) {
+    requireCondition(record.error === null, 'successful summary error must be null');
+    summaryError = null;
+  } else {
+    requireCondition(
+      typeof record.error === 'string' && record.error.length > 0,
+      'failed summary error is missing',
+    );
+    summaryError = record.error;
+  }
 
   return {
     type: 'summary',
     ok: record.ok,
     frames: record.frames,
     cpu_process_ns: record.cpu_process_ns,
-    rss_last_bytes: record.rss_last_bytes,
+    rss_sample_bytes: record.rss_sample_bytes,
     rss_peak_bytes: record.rss_peak_bytes,
-    error: record.error,
+    rss_sample_kind: record.rss_sample_kind,
+    error: summaryError,
   };
 }
 
@@ -232,16 +285,39 @@ async function withTimeout<T>(operation: Promise<T>, message: string): Promise<T
   }
 }
 
+async function terminateChild(
+  child: ChildProcessWithoutNullStreams,
+  closePromise: Promise<[number | null, NodeJS.Signals | null]>,
+  label: string,
+): Promise<void> {
+  if (child.exitCode !== null || child.signalCode !== null) return;
+  child.kill('SIGTERM');
+  try {
+    await withTimeout(closePromise, `${label} did not close after SIGTERM`);
+  } catch {
+    if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
+    await withTimeout(closePromise, `${label} did not close after SIGKILL`);
+  }
+}
+
 async function runMainTransport(pythonExe: string): Promise<void> {
   const scriptPath = resolve(process.cwd(), 'spikes/inference/pipe.py');
   const child = spawn(pythonExe, [scriptPath], {
     stdio: ['pipe', 'pipe', 'pipe'],
   });
+  const closePromise = once(child, 'close') as Promise<[
+    number | null,
+    NodeJS.Signals | null,
+  ]>;
 
   const readline = createInterface({ input: child.stdout });
   const ackQueue: (AckOk | AckError)[] = [];
-  const ackWaiters: Array<(ack: AckOk | AckError) => void> = [];
+  const ackWaiters: Array<{
+    resolve(ack: AckOk | AckError): void;
+    reject(error: Error): void;
+  }> = [];
   let summaryMessage: SummaryMessage | null = null;
+  let messageFailure: Error | undefined;
   const stderrChunks: Buffer[] = [];
 
   child.stderr.on('data', (chunk: Buffer) => {
@@ -249,17 +325,24 @@ async function runMainTransport(pythonExe: string): Promise<void> {
   });
 
   readline.on('line', (line) => {
-    const message = parseMessage(line);
-    if (message.type === 'summary') {
-      summaryMessage = message;
-      return;
+    if (messageFailure !== undefined) return;
+    try {
+      const message = parseMessage(line);
+      if (message.type === 'summary') {
+        summaryMessage = message;
+        return;
+      }
+      const waiter = ackWaiters.shift();
+      if (waiter !== undefined) {
+        waiter.resolve(message);
+        return;
+      }
+      ackQueue.push(message);
+    } catch (error: unknown) {
+      messageFailure = error instanceof Error ? error : new Error(String(error));
+      for (const waiter of ackWaiters.splice(0)) waiter.reject(messageFailure);
+      child.kill('SIGTERM');
     }
-    const waiter = ackWaiters.shift();
-    if (waiter !== undefined) {
-      waiter(message);
-      return;
-    }
-    ackQueue.push(message);
   });
 
   const waitForAck = async (): Promise<AckOk | AckError> => {
@@ -267,13 +350,13 @@ async function runMainTransport(pythonExe: string): Promise<void> {
     if (immediate !== undefined) {
       return immediate;
     }
-    return new Promise<AckOk | AckError>((resolveAck) => {
-      ackWaiters.push(resolveAck);
+    return new Promise<AckOk | AckError>((resolveAck, rejectAck) => {
+      ackWaiters.push({ resolve: resolveAck, reject: rejectAck });
     });
   };
 
   const nodeCpuStart = process.cpuUsage();
-  let nodeRssPeakBytes = process.memoryUsage.rss();
+  let nodeRssSampledPeakBytes = process.memoryUsage.rss();
 
   const byShape = new Map<string, Stats>();
   const sendTimesByShape = new Map<string, number[]>();
@@ -334,7 +417,7 @@ async function runMainTransport(pythonExe: string): Promise<void> {
         requireCondition(sendTimes !== undefined, `missing sendTimes for shape ${shape.label}`);
         sendTimes.push(Number(sendNs));
 
-        nodeRssPeakBytes = Math.max(nodeRssPeakBytes, process.memoryUsage.rss());
+        nodeRssSampledPeakBytes = Math.max(nodeRssSampledPeakBytes, process.memoryUsage.rss());
         globalSeq += 1;
       }
     }
@@ -353,12 +436,13 @@ async function runMainTransport(pythonExe: string): Promise<void> {
 
     child.stdin.end();
     const [exitCode, signal] = (await withTimeout(
-      once(child, 'close'),
+      closePromise,
       'Python worker did not close after stdin ended',
     )) as [number | null, NodeJS.Signals | null];
 
     requireCondition(signal === null, `child terminated by signal ${signal ?? 'unknown'}`);
     requireCondition(exitCode === 0, `child exited with code ${exitCode ?? -1}`);
+    if (messageFailure !== undefined) throw messageFailure;
     const summary = requireSummary(summaryMessage);
     requireCondition(summary.ok, `child summary indicates failure: ${summary.error}`);
     requireCondition(
@@ -404,6 +488,20 @@ async function runMainTransport(pythonExe: string): Promise<void> {
     });
 
     const probes = await runMalformedProbes(pythonExe, scriptPath);
+    requireCondition(
+      probes.length === 3 &&
+        probes.every(
+          (probe) =>
+            probe.exitCode === 2 &&
+            probe.signal === null &&
+            probe.ackOkCount === 0 &&
+            probe.ackErrorCount === 1 &&
+            probe.summaryOk === false &&
+            probe.stderr === '' &&
+            probe.observedFailClosed,
+        ),
+      'one or more malformed probes did not fail closed',
+    );
 
     const finalReport = {
       status: 'ok',
@@ -417,10 +515,11 @@ async function runMainTransport(pythonExe: string): Promise<void> {
         frames_total: TOTAL_EXPECTED_FRAMES,
         frames_per_shape: FRAMES_PER_SHAPE,
         node_cpu_ns: nodeCpuNs,
-        node_rss_peak_bytes: nodeRssPeakBytes,
+        node_rss_sampled_peak_bytes: nodeRssSampledPeakBytes,
         python_cpu_ns: summary.cpu_process_ns,
-        python_rss_last_bytes: summary.rss_last_bytes,
+        python_rss_sample_bytes: summary.rss_sample_bytes,
         python_rss_peak_bytes: summary.rss_peak_bytes,
+        python_rss_sample_kind: summary.rss_sample_kind,
         child_exit_code: exitCode,
         child_signal: signal,
         child_stderr: stderr,
@@ -435,11 +534,7 @@ async function runMainTransport(pythonExe: string): Promise<void> {
     if (!child.stdin.destroyed) {
       child.stdin.destroy();
     }
-    if (child.exitCode === null && child.signalCode === null) {
-      const close = once(child, 'close');
-      child.kill('SIGTERM');
-      await withTimeout(close, 'Python worker did not close after SIGTERM');
-    }
+    await terminateChild(child, closePromise, 'Python worker');
     readline.close();
   }
 }
@@ -451,11 +546,16 @@ async function runMalformedProbes(pythonExe: string, scriptPath: string): Promis
     const child = spawn(pythonExe, [scriptPath], {
       stdio: ['pipe', 'pipe', 'pipe'],
     });
+    const closePromise = once(child, 'close') as Promise<[
+      number | null,
+      NodeJS.Signals | null,
+    ]>;
 
     const readline = createInterface({ input: child.stdout });
     let ackOkCount = 0;
     let ackErrorCount = 0;
     let summaryOk: boolean | null = null;
+    let messageFailure: Error | undefined;
     const stderrChunks: Buffer[] = [];
 
     child.stderr.on('data', (chunk: Buffer) => {
@@ -463,46 +563,55 @@ async function runMalformedProbes(pythonExe: string, scriptPath: string): Promis
     });
 
     readline.on('line', (line) => {
-      const message = parseMessage(line);
-      if (message.type === 'ack') {
-        if (message.ok) {
-          ackOkCount += 1;
-        } else {
-          ackErrorCount += 1;
+      if (messageFailure !== undefined) return;
+      try {
+        const message = parseMessage(line);
+        if (message.type === 'ack') {
+          if (message.ok) {
+            ackOkCount += 1;
+          } else {
+            ackErrorCount += 1;
+          }
+          return;
         }
-        return;
+        summaryOk = message.ok;
+      } catch (error: unknown) {
+        messageFailure = error instanceof Error ? error : new Error(String(error));
+        child.kill('SIGTERM');
       }
-      summaryOk = message.ok;
     });
 
     try {
-      await packetWriter(child.stdin);
-      child.stdin.end();
-    } catch {
-      if (!child.stdin.destroyed) {
-        child.stdin.destroy();
+      try {
+        await packetWriter(child.stdin);
+        child.stdin.end();
+      } catch {
+        if (!child.stdin.destroyed) child.stdin.destroy();
       }
+
+      const [exitCode, signal] = await withTimeout(
+        closePromise,
+        `Malformed probe ${name} did not close`,
+      );
+      if (messageFailure !== undefined) throw messageFailure;
+      const stderr = Buffer.concat(stderrChunks).toString('utf8');
+      const observedFailClosed = ackOkCount === 0 && ackErrorCount >= 1 && exitCode !== 0;
+
+      results.push({
+        name,
+        exitCode,
+        signal,
+        ackOkCount,
+        ackErrorCount,
+        summaryOk,
+        stderr,
+        observedFailClosed,
+      });
+    } finally {
+      if (!child.stdin.destroyed) child.stdin.destroy();
+      await terminateChild(child, closePromise, `Malformed probe ${name}`);
+      readline.close();
     }
-
-    const [exitCode, signal] = (await withTimeout(
-      once(child, 'close'),
-      `Malformed probe ${name} did not close`,
-    )) as [number | null, NodeJS.Signals | null];
-    const stderr = Buffer.concat(stderrChunks).toString('utf8');
-    const observedFailClosed = ackOkCount === 0 && ackErrorCount >= 1 && exitCode !== 0;
-
-    results.push({
-      name,
-      exitCode,
-      signal,
-      ackOkCount,
-      ackErrorCount,
-      summaryOk,
-      stderr,
-      observedFailClosed,
-    });
-
-    readline.close();
   };
 
   await runProbe('bad_version', async (stdin) => {
