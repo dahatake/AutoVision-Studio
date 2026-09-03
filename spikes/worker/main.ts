@@ -7,14 +7,19 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const schemaVersion = 1;
 const workerPath = join(dirname(fileURLToPath(import.meta.url)), 'worker.py');
 
-interface WorkerEvent {
-  readonly schemaVersion: number;
-  readonly type: string;
+interface WorkerEventBase {
+  readonly schemaVersion: typeof schemaVersion;
   readonly jobId: string;
-  readonly completed?: number;
-  readonly total?: number;
-  readonly code?: string;
 }
+
+type WorkerEvent =
+  | (WorkerEventBase & { readonly type: 'started' | 'completed' })
+  | (WorkerEventBase & {
+      readonly type: 'progress';
+      readonly completed: number;
+      readonly total: number;
+    })
+  | (WorkerEventBase & { readonly type: 'warning'; readonly code: string });
 
 interface WorkerRun {
   readonly exitCode: number;
@@ -35,14 +40,55 @@ function requireCondition(condition: unknown, message: string): asserts conditio
   }
 }
 
+function hasExactKeys(value: Record<string, unknown>, expected: readonly string[]): boolean {
+  const actual = Object.keys(value).sort();
+  const wanted = [...expected].sort();
+  return actual.length === wanted.length && actual.every((key, index) => key === wanted[index]);
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+}
+
 function parseEvent(line: string): WorkerEvent {
   const value: unknown = JSON.parse(line);
   requireCondition(value !== null && typeof value === 'object', 'NDJSON event is not an object');
   const event = value as Record<string, unknown>;
   requireCondition(event.schemaVersion === schemaVersion, 'NDJSON schemaVersion mismatch');
-  requireCondition(typeof event.type === 'string', 'NDJSON event type is missing');
-  requireCondition(typeof event.jobId === 'string', 'NDJSON event jobId is missing');
-  return event as unknown as WorkerEvent;
+  requireCondition(typeof event.jobId === 'string' && event.jobId.length > 0, 'NDJSON event jobId is missing');
+
+  if (event.type === 'started' || event.type === 'completed') {
+    requireCondition(
+      hasExactKeys(event, ['schemaVersion', 'type', 'jobId']),
+      `NDJSON ${event.type} event fields are invalid`,
+    );
+    return event as unknown as WorkerEvent;
+  }
+  if (event.type === 'progress') {
+    requireCondition(
+      hasExactKeys(event, ['schemaVersion', 'type', 'jobId', 'completed', 'total']),
+      'NDJSON progress event fields are invalid',
+    );
+    requireCondition(
+      isNonNegativeInteger(event.completed) &&
+        isNonNegativeInteger(event.total) &&
+        event.total > 0 &&
+        event.completed <= event.total,
+      'NDJSON progress values are invalid',
+    );
+    return event as unknown as WorkerEvent;
+  }
+  if (event.type === 'warning') {
+    requireCondition(
+      hasExactKeys(event, ['schemaVersion', 'type', 'jobId', 'code']) &&
+        typeof event.code === 'string' &&
+        event.code.length > 0,
+      'NDJSON warning event fields are invalid',
+    );
+    return event as unknown as WorkerEvent;
+  }
+
+  throw new Error('NDJSON event type is unsupported');
 }
 
 async function runWorker(
@@ -58,6 +104,7 @@ async function runWorker(
   let stdoutBuffer = '';
   let stderr = '';
   let cancelSent = false;
+  let stdoutFailure: Error | undefined;
 
   child.stdout.setEncoding('utf8');
   child.stderr.setEncoding('utf8');
@@ -65,18 +112,25 @@ async function runWorker(
     stderr += chunk;
   });
   child.stdout.on('data', (chunk: string) => {
+    if (stdoutFailure !== undefined) return;
     stdoutBuffer += chunk;
     const lines = stdoutBuffer.split('\n');
     stdoutBuffer = lines.pop() ?? '';
     for (const line of lines) {
       if (!line) continue;
-      const event = parseEvent(line);
-      events.push(event);
-      if (cancelAfterProgress && event.type === 'progress' && !cancelSent) {
-        cancelSent = true;
-        child.stdin.end(
-          `${JSON.stringify({ schemaVersion, type: 'cancel', jobId: event.jobId })}\n`,
-        );
+      try {
+        const event = parseEvent(line);
+        events.push(event);
+        if (cancelAfterProgress && event.type === 'progress' && !cancelSent) {
+          cancelSent = true;
+          child.stdin.end(
+            `${JSON.stringify({ schemaVersion, type: 'cancel', jobId: event.jobId })}\n`,
+          );
+        }
+      } catch (error: unknown) {
+        stdoutFailure = error instanceof Error ? error : new Error(String(error));
+        child.kill();
+        break;
       }
     }
   });
@@ -97,8 +151,20 @@ async function runWorker(
     });
   });
 
+  if (stdoutFailure !== undefined) throw stdoutFailure;
   requireCondition(stdoutBuffer.length === 0, 'Worker emitted an unterminated NDJSON line');
   return { exitCode, events, stderr };
+}
+
+function requireEventSequence(
+  actual: readonly WorkerEvent[],
+  expected: readonly WorkerEvent[],
+  label: string,
+): void {
+  requireCondition(
+    JSON.stringify(actual) === JSON.stringify(expected),
+    `${label} worker event sequence is invalid`,
+  );
 }
 
 async function readPythonVersion(pythonExecutable: string): Promise<string> {
@@ -143,10 +209,15 @@ export async function runWorkerSmoke(pythonExecutable: string): Promise<WorkerSm
     const cancelledRun = await runWorker(pythonExecutable, cancelledInput, true);
 
     requireCondition(successfulRun.exitCode === 0, 'Successful worker exited non-zero');
-    requireCondition(
-      successfulRun.events.map((event) => event.type).join(',') ===
-        'started,progress,progress,completed',
-      'Successful worker event sequence is invalid',
+    requireEventSequence(
+      successfulRun.events,
+      [
+        { schemaVersion, type: 'started', jobId: 'spi02-complete' },
+        { schemaVersion, type: 'progress', jobId: 'spi02-complete', completed: 1, total: 2 },
+        { schemaVersion, type: 'progress', jobId: 'spi02-complete', completed: 2, total: 2 },
+        { schemaVersion, type: 'completed', jobId: 'spi02-complete' },
+      ],
+      'Successful',
     );
     requireCondition(
       successfulRun.stderr.trimEnd() === 'SPI-02 diagnostic channel' &&
@@ -154,14 +225,14 @@ export async function runWorkerSmoke(pythonExecutable: string): Promise<WorkerSm
       'Worker diagnostic channel is invalid',
     );
     requireCondition(cancelledRun.exitCode === 0, 'Cancelled worker exited non-zero');
-    requireCondition(
-      cancelledRun.events.map((event) => event.type).join(',') ===
-        'started,progress,warning',
-      'Cancelled worker event sequence is invalid',
-    );
-    requireCondition(
-      cancelledRun.events.at(-1)?.code === 'CANCELLED',
-      'Worker did not acknowledge cancellation',
+    requireEventSequence(
+      cancelledRun.events,
+      [
+        { schemaVersion, type: 'started', jobId: 'spi02-cancel' },
+        { schemaVersion, type: 'progress', jobId: 'spi02-cancel', completed: 1, total: 2 },
+        { schemaVersion, type: 'warning', jobId: 'spi02-cancel', code: 'CANCELLED' },
+      ],
+      'Cancelled',
     );
     requireCondition(cancelledRun.stderr === '', 'Cancelled worker wrote unexpected diagnostics');
 

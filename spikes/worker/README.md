@@ -12,7 +12,7 @@
 ## 実装境界
 
 - `main.ts`は一時ディレクトリにversioned JSON入力を作成し、`child_process.spawn`で`worker.py`をジョブ単位に起動する。
-- `worker.py`は入力fileを読み、stdoutへ改行終端のJSONだけをflushして出力する。通常系は`started → progress → progress → completed`、cancel系は`started → progress → warning(code=CANCELLED)`で終了する。
+- `worker.py`は入力fileを読み、stdoutへ改行終端のJSONだけをflushして出力する。Main側はevent typeごとのexact key、job ID、非負整数のprogress/total、warning codeを検証する。通常系は`started → progress(1/2) → progress(2/2) → completed`、cancel系は`started → progress(1/2) → warning(code=CANCELLED)`との完全一致を要求する。
 - cancel controlはstdinへ`{"schemaVersion":1,"type":"cancel","jobId":"..."}`をNDJSONで1行だけ送る。schema version、type、active job IDが一致しないcontrolは拒否する。
 - stderr経路は固定文言`SPI-02 diagnostic channel`だけで確認し、入力pathや画像を出力しない。
 - HTTP server、localhost listener、message broker、RPC framework、production sourceは作成していない。本PoCのevent詳細はJOB-03のproduction schemaを先取り固定しない。
@@ -81,6 +81,7 @@ node_modules\electron\dist\electron.exe spikes\worker\main.ts --autovision-worke
 | SR-02 | UTF-8文字がchunk境界をまたぐと`setEncoding('utf8')`で破損する | 再現せず。Node 24公式`readable.setEncoding()`は分割multi-byte文字を処理する。現在のeventはASCIIのみ。変更なし |
 | SR-03 | stderrにpathが漏れる | 現PoCでは再現せず。固定診断とallowlist済みエラー理由だけで、入力pathを補間しない。productionの多様な診断sanitizeはSEC-07/JOB-04責務 |
 | SR-04 | worker crash時のstdin EPIPE、timeout後の強制終了保証が未実装 | 現在の制御workerでは再現せず。production crash/猶予後killは明示的に非対象でJOB-04/05へdefer |
+| SR-05 | Main側がevent type列だけを確認し、progress値・job ID・event固有fieldの誤型を受理する | `completed`を文字列へ変えた隔離mutant workerでsmokeがexit 0となり再現 | 既存4 eventだけをexact field/valueで検証し、stdout callback内のparse失敗をprocess全体の制御された失敗へ変換。mutantを再実行してexit 1を確認 |
 
 一次資料はNode.js v24 stream API（2026-09-03取得）: `https://nodejs.org/docs/latest-v24.x/api/stream.html#writableendchunk-encoding-callback`、`https://nodejs.org/docs/latest-v24.x/api/stream.html#readablesetencodingencoding`。PoC scope内のblocking findingは0件。productionへcodeをそのまま移植可能とは判定しない。
 
