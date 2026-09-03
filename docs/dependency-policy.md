@@ -4,7 +4,7 @@
 |---|---|
 | 文書バージョン | 0.2 Draft |
 | 作成日 | 2026-09-02 |
-| 最終更新日 | 2026-09-03 |
+| 最終更新日 | 2026-09-04 |
 | 根拠要求 | FR-LIC-001〜008、FR-LIC-010〜015、FR-SEC-002〜004、NFR-SEC-001/003、NFR-MNT-001（FR-LIC-009 のUI・記録は DAT-13 が担当） |
 | 対象タスク | A-05（`docs/implementation-plan.md` §Phase A） |
 | 要求基準 SHA-256 | Windows作業ツリーCRLF `2f1c57da192710ffb2fd764c7e342cf2e9106fa7387be7393133873cc815052f` / canonical Git blob LF `7a6e08e7e046a3ced59644a73bde44c4d7b279f55ba809bd78af60fdaa5b175c` |

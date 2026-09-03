@@ -4,6 +4,7 @@
 |---|---|
 | 文書バージョン | 0.1 Skeleton |
 | 作成日 | 2026-09-02 |
+| 最終更新日 | 2026-09-04 |
 | 対象リリース | Version 1（MVP）|
 | 対象リポジトリ | `dahatake/AutoVision-Studio` |
 | 要求定義基準 | [`docs/requirement-definition.md`](requirement-definition.md) v0.3 |

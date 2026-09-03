@@ -4,7 +4,7 @@
 |---|---|
 | 文書バージョン | 0.3 Draft |
 | 作成日 | 2026-09-02 |
-| 最終更新日 | 2026-09-03 |
+| 最終更新日 | 2026-09-04 |
 | 対象 | Version 1（MVP） |
 | 状態 | **デフォルト決定承認済み・実装中** |
 | 要求基準 | `docs/requirement-definition.md` v0.3、914 行。SHA-256: Windows作業ツリーCRLF `2f1c57da192710ffb2fd764c7e342cf2e9106fa7387be7393133873cc815052f` / canonical Git blob LF `7a6e08e7e046a3ced59644a73bde44c4d7b279f55ba809bd78af60fdaa5b175c` |
