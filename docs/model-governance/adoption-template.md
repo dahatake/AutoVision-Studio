@@ -32,6 +32,7 @@
 | 取得元 URL | [記入: HuggingFace、GitHub Release 等の直接 URL] |
 | 取得日 | [記入: YYYY-MM-DD] |
 | checkpoint ファイル名 | [記入: 例 `model.safetensors`] |
+| build machine 上の検証元パス | [記入: 例 `vendor/models/base/model.safetensors`] |
 | checkpoint ファイルサイズ（正確なバイト数） | [記入] |
 | checkpoint SHA-256（64 桁 hex） | [記入] |
 
@@ -142,15 +143,15 @@
 
 ---
 
-## 8. Model Card — Intended Use / Out-of-Scope Use（C7 **必須**・C6 推奨）
+## 8. Intended Use / Out-of-Scope Use（C6/C7 **必須**）
 
-> **C7 は必須記入です。** C6 もモデルカードが存在する場合は記入を推奨します。
+> **C6/C7 とも必須記入です。** C7 は checkpoint の model card を使用します。C6 に model card がない場合は公式repository README、training recipe等の該当箇所を使用し、資料名を明記します。該当資料がない、または製品用途との適合を判断できない場合は `判断不能 → 同梱不可` と記録します。
 
 | 項目 | 内容 |
 |---|---|
-| Intended use（model card 原文） | [記入: model card の該当箇所をそのまま転記] |
+| Intended use（一次資料原文） | [記入: model card、公式README、training recipe等の資料名と該当箇所をそのまま転記] |
 | Intended use 日本語要約 | [記入] |
-| Out-of-scope use（model card 原文） | [記入: model card の該当箇所をそのまま転記] |
+| Out-of-scope use（一次資料原文） | [記入: model card、公式README、training recipe等の資料名と該当箇所をそのまま転記。記載なしと未確認を区別] |
 | Out-of-scope use 日本語要約 | [記入] |
 | 本製品用途が intended use に含まれるか | [記入: **含まれる** / 含まれない → **同梱不可** / 判断不能 → **同梱不可**] |
 | 本製品用途が out-of-scope use に該当するか | [記入: **該当しない** / 該当する → **同梱不可** / 判断不能 → **同梱不可**] |
@@ -168,7 +169,7 @@
 | 入力形式 | [記入: 例 `RGB uint8 (H × W)`、解像度範囲] |
 | 前処理（preprocess） | [記入: resize 方法、letterbox の有無、normalize mean/std、チャネル順等] |
 | 出力形式 | [記入: 例 `softmax logit (N,)` / `boxes (xyxy) + scores + class_ids`] |
-| スコアの意味と単位 | [記入: 例 `softmax 確率 0–1`] |
+| スコアの意味・単位・最小値・最大値 | [記入: 例 `softmax score、範囲 0–1、正解確率ではない`] |
 | 信頼度しきい値の既定値 | [記入] |
 | 決定論的推論の保証 | [記入: **保証あり** / 保証なし（理由を記入）] |
 | 非決定的演算が残る場合の明記箇所 | [記入: "なし" / 演算名と manifest・レポートでの明記箇所] |
@@ -249,12 +250,15 @@
 
 ## 14. リリースマニフェスト対応付け（FR-LIC-010/NFR-INS-007）
 
+`releaseStatus.ready=true`にする場合は、対象releaseの`productVersion`を必ずmanifestへ記録します。`ready=false`の空manifestでは省略できます。
+
 | 項目 | 値 |
 |---|---|
 | リリースマニフェスト内の識別子 | [記入] |
 | SBOM への記録状況 | [記入: 記録済み / 未記録] |
 | `THIRD_PARTY_NOTICES` への追記 | [記入: 追記済み / 未追記] |
-| インストーラー payload 内のパス | [記入: 例 `resources/models/base/model.safetensors`] |
+| build machine 上の検証元パス | [記入: 例 `vendor/models/base/model.safetensors`] |
+| インストーラー payload 内のパス | [記入: 例 `resources/models/base/model.safetensors`。検証元と同一hash/size] |
 | 署名・hash 検証の対象 | [記入: **はい** / いいえ] |
 | lock ファイルへの関連付け | [記入: 関連なし / 関連あり（エントリー名を記入）] |
 
@@ -319,7 +323,7 @@
 - [ ] 15. pickle 全体モデルを含まないことを確認した（§6）
 - [ ] 16. リモートコード実行が不要であることを確認した（§6 / FR-SEC-004/FR-LIC-011）
 
-### 16.5 Model Card（C7 必須）
+### 16.5 Intended Use / Model Card（C6/C7 必須）
 
 - [ ] 17. intended use を model card から転記した（§8 / FR-LIC-014）
 - [ ] 18. out-of-scope use を model card から転記した（§8 / FR-LIC-014）
@@ -369,7 +373,7 @@
 | FR-LIC-001 | 同梱部品ごとにライセンスと再配布条件を記録 | §1〜§3 |
 | FR-LIC-002 | 許可ライセンスの確認（NOTICE/帰属含む） | §3, §5 |
 | FR-LIC-003 | copyleft / 研究限定 / 非商用 / unknown は fail-closed | §3, §4, §15 |
-| FR-LIC-004 | C6 weight ごとに名称・版・URL・SHA-256・ライセンス・データ由来・NOTICE・承認者・承認日・一次資料 hash | §1, §2, §3, §4, §5, §7, §15 |
+| FR-LIC-004 | C6 weight ごとに名称・版・URL・SHA-256・ライセンス・データ由来・NOTICE・intended use・承認者・承認日・一次資料 hash | §1, §2, §3, §4, §5, §7, §8, §15 |
 | FR-LIC-005 | コードライセンスだけで重みを承認しない | §2, §3 |
 | FR-LIC-006 | ImageNet 由来重みを自動的に商用可と判定しない | §4 |
 | FR-LIC-007 | COCO 由来重みも由来確認なしに承認しない | §4 |
