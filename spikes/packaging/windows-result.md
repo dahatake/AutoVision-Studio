@@ -210,7 +210,7 @@ The bundle contains license-like files for MarkupSafe, NumPy (including bundled 
 
 ```text
 package-lock.json SHA-256=7F1BD82EFE1E4919DCE6DDFFDB763CEFF4404D29B60E8E946A150345A8DFE1A5
-ml/uv.lock SHA-256=D14D188A0D1F92F34A9436ECC0B2C801BB0375B36619199F846924C112C7E5FC
+ml/uv.lock canonical Git blob LF bytes SHA-256=D14D188A0D1F92F34A9436ECC0B2C801BB0375B36619199F846924C112C7E5FC
 ```
 
 Both locks remained equal to the C0 baseline. SPI-03 changes are limited to:

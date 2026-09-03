@@ -40,7 +40,7 @@ uv run --project ml --locked --system-certs python spikes/inference/provider_pro
 
 独立再検証でも `uv 0.12.9`、CPython `3.14.7` のlocked環境から同じprobeを実行し、CPU/DMLの実kernel attribution、exact output、provider順序、一時artifact 0を再確認した。`uv lock --check --project ml`もexit code `0`で、再検証前後の`ml/uv.lock` SHA-256は一致した。
 
-証拠を結び付ける SHA-256:
+証拠を結び付ける SHA-256（2026-09-03 Windows working-tree bytes。text fileは`core.autocrlf=true`によるCRLF）:
 
 | 対象 | SHA-256 |
 |---|---|

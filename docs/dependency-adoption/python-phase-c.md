@@ -75,7 +75,7 @@ PyTorch 2.13.0は既知advisoryを修正するが、対象arm64 wheelがmacOS 14
 | Windows wheel-only展開 | 63 requirements / 63 dist-info、hash-required、exit 0 |
 | macOS 13 wheel-only cross-target展開 | 62 requirements / 62 dist-info、hash-required、exit 0。Windows上で展開しただけで実行していない |
 | `ml/pyproject.toml` SHA-256 | `4631204BA6C1F632F92C5273462C92EC1CAF15BA15491FD0C03382AAF288F6FE` |
-| `ml/uv.lock` SHA-256 | `D14D188A0D1F92F34A9436ECC0B2C801BB0375B36619199F846924C112C7E5FC` |
+| `ml/uv.lock` canonical Git blob LF bytes SHA-256 | `D14D188A0D1F92F34A9436ECC0B2C801BB0375B36619199F846924C112C7E5FC` |
 
 ### 4.2 direct target wheel
 
@@ -300,7 +300,7 @@ FR-03/04の証拠手順追記後、独立機械照合の全数値に追加不一
 - health CLI: `{"version":"0.1.0","os":"Windows"}`、exit 0。
 - Torch CPU、Optuna 1 trial、ONNX checker、ORT CPU sessionのmemory smoke: exit 0。ORT sessionは明示的に`CPUExecutionProvider`を使用し、native provider一覧にはDML/CPUが含まれた。
 - lock由来外部67 unique requirementsのpip-audit JSON: exit 1、3 records / 2 packages。`setuptools`同一ID 2 recordsと`torch` 1 recordは§7と一致。
-- 最終`uv.lock` SHA-256: `D14D188A0D1F92F34A9436ECC0B2C801BB0375B36619199F846924C112C7E5FC`で再lock前後不変。
+- 最終`uv.lock` canonical Git blob LF bytes SHA-256: `D14D188A0D1F92F34A9436ECC0B2C801BB0375B36619199F846924C112C7E5FC`で再lock前後不変。
 
 ## 10. 判定と解除条件
 

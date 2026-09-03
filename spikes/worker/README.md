@@ -67,7 +67,7 @@ node_modules\electron\dist\electron.exe spikes\worker\main.ts --autovision-worke
 - Pyright 1.1.413 strict: 0 errors / 0 warnings / 0 informations
 - editor diagnostics: 0
 - `package-lock.json`: `7F1BD82EFE1E4919DCE6DDFFDB763CEFF4404D29B60E8E946A150345A8DFE1A5`から不変
-- `ml/uv.lock`: `D14D188A0D1F92F34A9436ECC0B2C801BB0375B36619199F846924C112C7E5FC`から不変
+- `ml/uv.lock` canonical Git blob LF bytes: `D14D188A0D1F92F34A9436ECC0B2C801BB0375B36619199F846924C112C7E5FC`から不変
 
 初回正常実行はPythonのWindows stderr改行が`CRLF`であるのに固定`LF`だけを期待したためexit 1となった。診断内容と単一行性を維持したままOS改行を許容し、再実行で合格した。次の実行ではPyrightが`json.loads`後のdict key/valueをUnknownと報告したため、object runtime検査後だけ`dict[str, Any]`へcastし、再実行で0 errorsを確認した。これらの失敗を成功証拠へ置き換えない。
 

@@ -188,7 +188,7 @@ pipe.ts
 
 `git diff --name-only -- package-lock.json ml/uv.lock` は出力なし（lock未変更）。
 
-最終run後の対象Node/Python processは0。lock SHA-256は`package-lock.json`=`7F1BD82EFE1E4919DCE6DDFFDB763CEFF4404D29B60E8E946A150345A8DFE1A5`、`ml/uv.lock`=`D14D188A0D1F92F34A9436ECC0B2C801BB0375B36619199F846924C112C7E5FC`で正本から不変だった。
+最終run後の対象Node/Python processは0。lock SHA-256は`package-lock.json`=`7F1BD82EFE1E4919DCE6DDFFDB763CEFF4404D29B60E8E946A150345A8DFE1A5`、`ml/uv.lock` canonical Git blob LF bytes=`D14D188A0D1F92F34A9436ECC0B2C801BB0375B36619199F846924C112C7E5FC`で正本から不変だった。
 
 ## 敵対的レビュー
 

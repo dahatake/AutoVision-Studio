@@ -22,7 +22,7 @@
 | Node採用記録 | commit `31a912f3e82ccce6acb3cff650298504de5421f4` の `docs/dependency-adoption/node-phase-c.md`、SHA-256 `2018C23382BCBA64E1EA82B1430D40B485F30D9CF9EF24A8B0AC91B3F0C1027E` |
 | Python採用記録 | commit `e0cb90af0e3d85eb983c32c82b2530055b1edd6b` の `docs/dependency-adoption/python-phase-c.md`、SHA-256 `BC29CCC68321BAEFD4549A39FF4A28275CAAFA32273C0FC64587C366B44862F1` |
 | Node lock | `package-lock.json`、SHA-256 `7F1BD82EFE1E4919DCE6DDFFDB763CEFF4404D29B60E8E946A150345A8DFE1A5` |
-| Python lock | `ml/uv.lock`、SHA-256 `D14D188A0D1F92F34A9436ECC0B2C801BB0375B36619199F846924C112C7E5FC` |
+| Python lock | `ml/uv.lock` canonical Git blob LF bytes、SHA-256 `D14D188A0D1F92F34A9436ECC0B2C801BB0375B36619199F846924C112C7E5FC` |
 
 上記commitの採用記録に列挙されたNode 47 packageとPython 6 packageを本裁定の完全な対象一覧とする。名称またはversionが1文字でも変わったpackageは対象外であり、再審査する。
 
@@ -138,7 +138,7 @@ owner指示により、native Apple Silicon実機がないことを理由とす�
 | pytest | 4 passed、exit 0 |
 | Ruff | all checks passed、exit 0 |
 | Pyright | 1.1.413、0 errors / 0 warnings、exit 0 |
-| lock不変性 | `package-lock.json`と`ml/uv.lock`は実行前後で§1のSHA-256から不変 |
+| lock不変性 | `package-lock.json`と`ml/uv.lock` canonical Git blob LF bytesは実行前後で§1のSHA-256から不変 |
 
 監査途中の`npm query ':pending'`はnpm 12で未対応のpseudo selectorとしてexit 1になったため、公式の`npm approve-scripts --allow-scripts-pending`へ置換した。Pyrightへ`pyproject.toml`をsource fileとして渡した初回呼出しもoperator errorとして棄却し、引数なしのconfig自動検出で再実行して合格した。失敗出力を製品codeの不合格とは数えず、同時に成功証拠から隠さない。
 
