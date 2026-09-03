@@ -314,7 +314,7 @@ PoC code は `spikes/` に隔離し、Gate 1/2 後に採用部分だけ producti
 | SPI-07 | Binary frame protocol throughput | `spikes/inference/pipe.ts`, `spikes/inference/pipe.py`, `spikes/inference/pipe-result.md` | SPI-02 | 320/640固定RGBを10Hz送受信し latency/CPU/memory を実測。 |
 | SPI-08 | ORT provider smoke | `spikes/inference/provider_probe.py`, `spikes/inference/provider-result.md` | B-11 | Windows DirectML/CPU、macOS CoreML/CPU の利用可否を実測 [P07][P08]。 |
 | SPI-09 | Camera→pipe→dummy output | `spikes/inference/camera.tsx`, `spikes/inference/camera-result.md` | SPI-07, SPI-08 | queue=1、drop、30分の基礎測定。数値は実測のみ記録。 |
-| SPI-10 | Rectangle canvas | `spikes/annotation/CanvasSpike.tsx`, `spikes/annotation/CanvasSpike.test.tsx`, `spikes/annotation/result.md`, `build/spi10/benchmark-entry.ts`, `build/spi10/index.html`, `build/spi10/main.mjs`, `build/spi10/vite.config.ts`, `build/spi10/vitest.config.ts`, `build/spi10/benchmark-result.json` | B-07, B-10 | 4K+100 box で create/select/move/resize/zoom/pan を実入力から画面 capture 完了まで実測 [P06]。 |
+| SPI-10 | Rectangle canvas | `spikes/annotation/CanvasSpike.tsx`, `spikes/annotation/CanvasSpike.test.tsx`, `spikes/annotation/result.md`, `build/spi10/run.mjs`, `build/spi10/benchmark-entry.ts`, `build/spi10/index.html`, `build/spi10/main.mjs`, `build/spi10/vite.config.ts`, `build/spi10/vitest.config.ts`, `build/spi10/benchmark-result.json` | B-07, B-10 | 4K+100 box で create/select/move/resize/zoom/pan を実入力から画面 capture 完了まで実測 [P06]。 |
 | SPI-11 | Classification base weight 監査 | `docs/model-governance/classification-base.md` | A-06 | license/data/intended use/re-distribution が全て known。RD TBD-02。 |
 | SPI-12 | Detection base weight 監査 | `docs/model-governance/detection-base.md` | A-06 | 同上。 |
 | SPI-13 | Classification assist 監査 | `docs/model-governance/classification-assist.md` | A-06 | SigLIP等を一次資料・hashで判定。RD §13.3。 |
@@ -325,7 +325,7 @@ PoC code は `spikes/` に隔離し、Gate 1/2 後に採用部分だけ producti
 | SPI-18 | Gate 1/2 判定 | `docs/adr/0004-spike-decisions.md`, `resources/models/manifest.json` | A-07, SPI-01〜17, SPI-19 | 採用/不採用と実測値を記録。未承認 model は manifest に追加しない。 |
 | SPI-19 | Reference 永続アクセス | `spikes/reference/reference-access.ts`, `spikes/reference/windows-result.md`, `spikes/reference/macos-result.md` | B-05, D-19 | 両OSで選択→再起動→read/hash検証、変更・消失・relinkを実測し、参照元を変更しない。 |
 
-SPI-10は§4.1のfile数上限に対する明示例外とする。PoC実装は`CanvasSpike.tsx`の1 fileだけであり、`build/spi10/`の5 source/config fileはElectron/Chromiumの実入力・paint・画面capture手順を保存するtask専用test harnessで、製品bundleには含めない。成功時のraw sample、source/bundle hash、環境は`benchmark-result.json`へ保存する。失敗診断JSONとVite bundleは`build/spi10/dist/`の一時生成物とし、Gitへ追跡しない。測定結果だけを手作業で転記してharness/raw sampleを失う方が検証再現性を損なうため、この例外を認める。この計画変更自体はSPI-10の合格を意味せず、旧測定値を新しい完了条件へ転用しない。現行sourceからbuildしたharnessがexit 0となり、raw evidenceと`result.md`が一致し、敵対的レビュー後の再検証が完了した場合だけVERIFIEDとする。
+SPI-10は§4.1のfile数上限に対する明示例外とする。PoC実装は`CanvasSpike.tsx`の1 fileだけであり、`build/spi10/`の6 source/config fileはElectron/Chromiumの実入力・paint・画面capture手順と、unit/type/build/benchmark/終了確認を直列実行するtask専用test harnessで、製品bundleには含めない。成功時のraw sample、source/build hash、環境、各command/exit、Electron終了後の残process確認は`benchmark-result.json`へ保存する。失敗診断JSON、Vite bundle、runtime profileは`build/spi10/dist/`の一時生成物とし、Gitへ追跡しない。測定結果だけを手作業で転記してharness/raw sampleを失う方が検証再現性を損なうため、この例外を認める。この計画変更自体はSPI-10の合格を意味せず、旧測定値を新しい完了条件へ転用しない。現行sourceからbuildしたharnessがexit 0となり、raw evidenceと`result.md`が一致し、敵対的レビュー後の再検証が完了した場合だけVERIFIEDとする。
 
 **並列:** SPI-01、SPI-02、SPI-10、SPI-11〜14 は B 完了後に並列可能。SPI-03/04、SPI-05/06、SPI-15/16 は OS/タスク別に並列可能。
 
