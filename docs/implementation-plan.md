@@ -2,7 +2,7 @@
 
 | 項目 | 内容 |
 |---|---|
-| 文書バージョン | 0.1 Draft |
+| 文書バージョン | 0.2 Draft |
 | 作成日 | 2026-09-02 |
 | 対象 | Version 1（MVP） |
 | 状態 | **デフォルト決定承認済み・実装中** |
@@ -80,7 +80,7 @@
 | D-14 | User guide path | A. `docs/users-guide.md` / B. `users-guide/` directory | **A** | 現在の文書が `docs/` にあり、単一日本語 MVP guide で十分だから。 | Gate 0 |
 | D-15 | AutoML の最大 Trial/時間 | A. 実機 mini-run 後に versioned policy を確定 / B. 根拠なく固定値を置く | **A** | 要求定義 TBD-03 が未決であり、測定前の数値を捏造しないため。Gate 2 の実測後まで model training 実装を固定しない。 | Gate 2・必須決定 |
 | D-16 | Windows/macOS release signing identity | A. 組織の正式証明書 / B. test/ad-hoc のまま出荷 | **A** | FR-INS-008/010 が正式署名を必須とする。証明書名・保管方法はユーザー提示が必要。 | Gate 5・必須決定 |
-| D-17 | Node/Electron/Python の版 | A. 実装開始時に全採用依存が公式対応する安定版を調べ、exact lock / B. 現時点で未検証の版番号を固定 | **A** | 実装前の空 repository で互換性未確認の版を捏造しない。B-01/B-11 で一次資料と実インストールを確認し、以後は lock を変更しない。 | B-01/B-11 前 |
+| D-17 | Node/Electron/Python の版 | A. 実装開始時に全採用依存が公式対応する安定版を調べ、exact lock / B. 現時点で未検証の版番号を固定 | **A** | 実装前の空 repository で互換性未確認の版を捏造しない。B-01/B-11 で基盤を固定し、Phase C で初めて必要になる依存と B-13 品質ツールの所有権不足は C0 で是正する。C0 後の変更は各採用 task に明記された場合だけ許可する。 | B-01/B-11、Phase C 前の C0 |
 | D-18 | UI component | A. semantic HTML/native control を先に使い、不足する操作だけ1つの headless libraryを追加 / B. UI kit 全体を先行導入 | **A** | 現在必要と判明しているのは dialog/table/tab 等に限られ、全 UI kit の先行導入は YAGNI になる。追加時は対象操作、accessibility、licenseを個別に検証する。 | 各 UI task 前 |
 | D-19 | Reference モードの永続アクセス | A. absolute path+file identity+hashを保存し、起動後に再検証・必要時relink / B. macOS App Sandbox/bookmarkを前提化 / C. Copyだけに制限 | **A（PoC 条件）** | direct-distribution の非 sandbox app を前提とし、要求された非破壊参照を最小構成で満たす。ただし Windows/macOS の再起動後アクセスを SPI-19 で実証できなければ再決定する。 | Gate 1 |
 
@@ -186,7 +186,8 @@ flowchart LR
 flowchart TD
     G0[Gate 0: 未決事項承認] --> A[Phase A: 方針・文書]
     A --> B[Phase B: 最小scaffold]
-    B --> C[Phase C: Risk Spikes]
+    B --> C0[C0: Dependency ownership / exact locks]
+    C0 --> C[Phase C: Risk Spikes]
     C --> G1[Gate 1: Architecture Feasible]
     C --> G2[Gate 2: Model / Budget Approved]
     G1 --> D[Phase D: Core / Project]
@@ -276,9 +277,26 @@ flowchart TD
 | B-10 | TS test setup | `vitest.config.ts`, `tests/setup.ts` | B-01 | DOM/unit test 1件が通る。 |
 | B-11 | Python project | `ml/pyproject.toml`, `ml/uv.lock` | A-05 | Python version と最小 dependency を lock [P11]。 |
 | B-12 | Python package/health CLI | `ml/src/autovision_ml/__init__.py`, `ml/src/autovision_ml/cli.py`, `ml/tests/test_cli_health.py` | B-11 | `health` command が version/OS を JSON で返す。 |
-| B-13 | Python quality config | `ml/pyproject.toml`, `ml/tests/conftest.py` | B-12 | pytest/Ruff/type check の対象を固定。 |
+| B-13 | Python quality config | `ml/pyproject.toml`, `ml/tests/conftest.py` | B-12 | pytest/Ruff/type check の対象を設定する。Ruff/Pyright実行packageのlock所有権は後続C0-PYTHONとする。 |
+
+### Checkpoint C0 — Phase C 依存lock所有権の是正
+
+C0 は完了済み B-01/B-11/B-13 の履歴を上書きせず、Phase C で初めて必要になる依存と、設定だけ存在して実行packageが未固定の品質ツールに所有者を与えるための**管理チェックポイント**である。下表の項目は §7 の正本253 taskには数えない。C0を `CLOSED` とするまでは SPI-01〜19を開始しない。
+
+| 項目 | 作成・編集 file | 依存 | 完了条件 |
+|---|---|---|---|
+| C0-PLAN | `docs/implementation-plan.md`, `docs/dependency-adoption/c0-plan-review.md` | B-GATE 初回実行 | 本節、D-17、依存DAG、Phase C開始条件を整合させ、独立敵対レビューで成果物不足・循環依存・正本task数不変を確認し、指摘・裁定・修正・再確認を記録する。 |
+| C0-NODE | `package.json`, `package-lock.json`, `docs/dependency-adoption/node-phase-c.md` | C0-PLAN | `better-sqlite3`、`electron-builder`、`konva`、`react-konva`について、必要性、安定版、Node/Electron/React・Windows x64/macOS arm64対応、直接/transitive license、脆弱性、native binaryを一次資料と実installで確認し、runtime/devを分けてexact lockする。 |
+| C0-PYTHON | `ml/pyproject.toml`, `ml/uv.lock`, `docs/dependency-adoption/python-phase-c.md` | C0-PLAN | PyInstaller、PyTorch/TorchVision、Optuna、ONNX/ONNX RuntimeのOS別package、およびRuff/Pyrightについて、Python 3.14・Windows x64/macOS arm64 wheel、license、脆弱性、provider競合を確認し、CUDA/cuDNNを暗黙導入せずexact lockする。 |
+| C0-REVIEW | `docs/dependency-adoption/c0-review.md` | C0-NODE, C0-PYTHON | lock差分・integrity/hash・OS marker・license・Critical/High・clean install・最小import/build smokeを独立敵対レビューする。指摘反映後のB-GATE実コマンド、環境、exit code、test件数、lock不変性とPASS/BLOCKED判定を同fileへ記録する。macOS実行をWindows結果で代替しない。 |
+
+C0-NODE と C0-PYTHON は出力fileが重ならないため C0-PLAN のレビュー完了後に並列実行できる。各採用記録には、package、用途と代替不能理由、runtime/dev区分、候補と採用exact版、一次資料URL・取得日・文書/release版、直接/transitive licenseとNOTICE、脆弱性確認コマンド・結果、対象OS/architectureの配布artifact・hash、実install/smoke結果、review指摘・裁定を記録する。
+
+採用版は調査時点の一次資料と実installで確定し、未指定の `latest`、`^`、`~`、未承認model binary、runtime downloadを入れない。PyInstallerの採否は採用版のbootloader exceptionを含むlicense全文を確認し、SPDX名だけで判断しない。ONNX RuntimeのWindows providerは公式の現行保守状態と配布packageを確認し、D-07/SPI-08の実測前に利用可能と断定しない。
 
 ### Phase C — 高リスク PoC（本実装前）
+
+**開始条件:** C0-REVIEW後のB-GATEがPASSし、C0がCLOSEDしていること。
 
 PoC code は `spikes/` に隔離し、Gate 1/2 後に採用部分だけ production file へ移す。不要な spike は Gate 記録後に削除する。
 
