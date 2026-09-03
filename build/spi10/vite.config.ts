@@ -7,6 +7,7 @@ const repositoryUrl = new URL('../../', import.meta.url);
 const buildSourceFiles = [
   'package.json',
   'package-lock.json',
+  'tsconfig.json',
   'spikes/annotation/CanvasSpike.tsx',
   'build/spi10/benchmark-entry.ts',
   'build/spi10/index.html',

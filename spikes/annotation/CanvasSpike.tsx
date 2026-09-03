@@ -65,6 +65,14 @@ export interface CanvasSpikeHandle {
   prepareInteraction(operation: CanvasOperationName): number;
   waitForInteraction(token: number): Promise<void>;
   getState(): CanvasState;
+  getVisualState(): CanvasVisualState;
+}
+
+export interface CanvasVisualState {
+  readonly viewport: CanvasViewport;
+  readonly boxes: readonly CanvasBox[];
+  readonly draft: Omit<CanvasBox, 'id'> | null;
+  readonly selectedId: string | null;
 }
 
 function requireFinite(value: number, label: string): void {
@@ -395,6 +403,32 @@ export const CanvasSpike = forwardRef<CanvasSpikeHandle>(function CanvasSpike(
     },
     getState() {
       return stateRef.current;
+    },
+    getVisualState() {
+      const stage = stageRef.current;
+      if (stage === null) throw new Error('canvas stage is unavailable');
+      return {
+        viewport: {
+          x: stage.x(),
+          y: stage.y(),
+          scale: stage.scaleX(),
+        },
+        boxes: stateRef.current.boxes.map((box) => {
+          const node = boxRefs.current.get(box.id);
+          if (node === undefined) throw new Error(`canvas node is missing for ${box.id}`);
+          return {
+            id: box.id,
+            x: node.x(),
+            y: node.y(),
+            width: node.width() * node.scaleX(),
+            height: node.height() * node.scaleY(),
+          };
+        }),
+        draft: draftRef.current === null
+          ? null
+          : boxFromPoints(draftRef.current.start, draftRef.current.end),
+        selectedId: stateRef.current.selectedId,
+      };
     },
   }), []);
 

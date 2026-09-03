@@ -35,7 +35,8 @@
     "build:renderer": "vite build --config vite.renderer.config.ts",
     "postinstall": "install-electron",
     "typecheck": "tsc -b tsconfig.main.json tsconfig.renderer.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "verify:spi10": "node build/spi10/run.mjs"
   },
   "dependencies": {
     "better-sqlite3": "13.0.3",

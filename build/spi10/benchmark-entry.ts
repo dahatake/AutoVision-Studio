@@ -6,6 +6,7 @@ import {
   type CanvasOperationName,
   type CanvasSpikeHandle,
   type CanvasState,
+  type CanvasVisualState,
 } from '../../spikes/annotation/CanvasSpike';
 
 declare const __SPI10_BUILD_SOURCE_HASHES__: Readonly<Record<string, string>>;
@@ -86,6 +87,7 @@ interface RendererBenchmarkApi {
   prepare(operation: CanvasOperationName): Promise<number>;
   wait(token: number): Promise<CanvasState>;
   settle(): Promise<CanvasState>;
+  visual(): Promise<CanvasVisualState>;
   measureAnimationFrames(count: number): Promise<readonly number[]>;
 }
 
@@ -137,6 +139,10 @@ window.spi10Benchmark = {
     const mounted = await mountedCanvas;
     await settleFrames();
     return mounted.handle.getState();
+  },
+  async visual() {
+    const mounted = await mountedCanvas;
+    return mounted.handle.getVisualState();
   },
   async measureAnimationFrames(count) {
     if (!Number.isInteger(count) || count < 2 || count > 120) {

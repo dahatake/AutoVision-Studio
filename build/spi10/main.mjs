@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash } from 'node:crypto';
+import { writeFileSync } from 'node:fs';
 import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { cpus, release, totalmem } from 'node:os';
 import { performance } from 'node:perf_hooks';
@@ -9,25 +10,35 @@ import { app, BrowserWindow, screen } from 'electron';
 
 app.commandLine.appendSwitch('disable-background-timer-throttling');
 
-const resultUrl = new URL('./benchmark-result.json', import.meta.url);
-const errorUrl = new URL('./dist/benchmark-error.json', import.meta.url);
+const requestedRunId = process.env.AUTOVISION_SPI10_RUN_ID ?? '';
+const runId = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(
+  requestedRunId,
+)
+  ? requestedRunId
+  : 'invalid-run-id';
+const resultUrl = new URL(`./dist/benchmark-process-result-${runId}.json`, import.meta.url);
+const errorUrl = new URL(`./dist/benchmark-error-${runId}.json`, import.meta.url);
 const repositoryUrl = new URL('../../', import.meta.url);
 const repositoryPath = fileURLToPath(repositoryUrl);
 const operations = ['move', 'resize', 'create', 'select', 'zoom', 'pan'];
 const sourceFiles = [
   'package.json',
   'package-lock.json',
+  'tsconfig.json',
   'spikes/annotation/CanvasSpike.tsx',
   'spikes/annotation/CanvasSpike.test.tsx',
   'build/spi10/benchmark-entry.ts',
   'build/spi10/index.html',
   'build/spi10/main.mjs',
+  'build/spi10/run.mjs',
   'build/spi10/vite.config.ts',
   'build/spi10/vitest.config.ts',
+  'tests/setup.ts',
 ];
 const bundleSourceFiles = [
   'package.json',
   'package-lock.json',
+  'tsconfig.json',
   'spikes/annotation/CanvasSpike.tsx',
   'build/spi10/benchmark-entry.ts',
   'build/spi10/index.html',
@@ -40,12 +51,49 @@ const captureRect = { x: 0, y: 0, width: 960, height: 540 };
 const markers = [];
 const rendererDiagnostics = [];
 let partialResult = null;
+let pendingSuccessEvidence = null;
 
 const mark = (name) => {
   const marker = { name, at: new Date().toISOString() };
   markers.push(marker);
   console.log(`spi10:${name}`);
 };
+
+app.once('quit', (_event, quitExitCode) => {
+  mark(`quit-event-${quitExitCode}`);
+  if (pendingSuccessEvidence === null) return;
+  mark('result-finalization-start');
+  const lateFatalRendererDiagnostics = rendererDiagnostics.filter(
+    (entry) => entry.type === 'render-process-gone' || entry.level === 'error',
+  );
+  const succeeded = quitExitCode === 0 && lateFatalRendererDiagnostics.length === 0;
+  const finalizedEvidence = {
+    ...pendingSuccessEvidence,
+    status: succeeded ? 'ok' : 'error',
+    verdict: succeeded ? 'PASS' : 'FAIL',
+    markers: [...markers],
+    lifecycle: {
+      quitEventExitCode: quitExitCode,
+      finalizedInQuitEvent: true,
+      finalizedAt: new Date().toISOString(),
+      lateFatalRendererDiagnosticCount: lateFatalRendererDiagnostics.length,
+    },
+    ...(succeeded
+      ? {}
+      : { failureReason: 'quit failed or fatal renderer diagnostics arrived before quit' }),
+  };
+  try {
+    writeFileSync(
+      fileURLToPath(succeeded ? resultUrl : errorUrl),
+      JSON.stringify(finalizedEvidence, null, 2),
+      'utf8',
+    );
+    console.log(`spi10:result-finalized:${quitExitCode}`);
+  } catch (error) {
+    process.exitCode = 1;
+    console.error('spi10:result-finalization-failed', error);
+  }
+});
 
 const timeout = async (promise, label, milliseconds) => {
   let timer;
@@ -87,11 +135,23 @@ async function hashSources() {
 
 async function hashBundle() {
   const assetsUrl = new URL('./dist/assets/', import.meta.url);
-  const entries = (await readdir(assetsUrl)).filter((entry) => entry.endsWith('.js'));
-  if (entries.length !== 1) throw new Error(`expected one JavaScript bundle, found ${entries.length}`);
+  const entries = (await readdir(assetsUrl)).sort();
+  const javaScriptEntries = entries.filter((entry) => entry.endsWith('.js'));
+  if (javaScriptEntries.length !== 1) {
+    throw new Error(`expected one JavaScript bundle, found ${javaScriptEntries.length}`);
+  }
+  const assets = [];
+  for (const entry of entries) {
+    assets.push({
+      file: `build/spi10/dist/assets/${entry}`,
+      sha256: sha256(await readFile(new URL(entry, assetsUrl))),
+    });
+  }
   return {
-    file: `build/spi10/dist/assets/${entries[0]}`,
-    sha256: sha256(await readFile(new URL(entries[0], assetsUrl))),
+    file: `build/spi10/dist/assets/${javaScriptEntries[0]}`,
+    sha256: sha256(await readFile(new URL(javaScriptEntries[0], assetsUrl))),
+    indexHtmlSha256: sha256(await readFile(new URL('./dist/index.html', import.meta.url))),
+    assets,
   };
 }
 
@@ -122,23 +182,61 @@ async function captureStage(window, label) {
   };
 }
 
-async function captureChangedStage(window, baseline, label) {
+function assertCaptureDimensions(reference, capture, label) {
+  if (
+    reference.size.width !== capture.size.width ||
+    reference.size.height !== capture.size.height ||
+    reference.byteLength !== capture.byteLength
+  ) {
+    throw new Error(`${label} capture dimensions changed unexpectedly`);
+  }
+}
+
+async function captureStableStage(window, label) {
   const maximumAttempts = 6;
+  let previous = null;
   for (let attempt = 1; attempt <= maximumAttempts; attempt += 1) {
     const capture = await captureStage(window, `${label} attempt ${attempt}`);
-    if (
-      baseline.size.width !== capture.size.width ||
-      baseline.size.height !== capture.size.height ||
-      baseline.byteLength !== capture.byteLength
-    ) {
-      throw new Error(`${label} capture dimensions changed unexpectedly`);
+    if (previous !== null) {
+      assertCaptureDimensions(previous, capture, label);
+      if (previous.sha256 === capture.sha256) {
+        return { capture, attemptCount: attempt };
+      }
     }
+    previous = capture;
+    await settleInput(window);
+  }
+  throw new Error(`${label} did not stabilize after ${maximumAttempts} attempts`);
+}
+
+async function captureChangedStage(window, baseline, label) {
+  const maximumAttempts = 8;
+  let previousChanged = null;
+  let firstChangedAt = null;
+  for (let attempt = 1; attempt <= maximumAttempts; attempt += 1) {
+    const capture = await captureStage(window, `${label} attempt ${attempt}`);
+    const capturedAt = performance.now();
+    assertCaptureDimensions(baseline, capture, label);
     if (baseline.sha256 !== capture.sha256) {
-      return { capture, attemptCount: attempt };
+      if (previousChanged !== null && previousChanged.sha256 === capture.sha256) {
+        return {
+          capture,
+          attemptCount: attempt,
+          firstStablePresentationAt: firstChangedAt,
+          stabilityConfirmedAt: capturedAt,
+        };
+      }
+      previousChanged = capture;
+      firstChangedAt = capturedAt;
+    } else {
+      previousChanged = null;
+      firstChangedAt = null;
     }
     await settleInput(window);
   }
-  throw new Error(`${label} did not change captured pixels after ${maximumAttempts} attempts`);
+  throw new Error(
+    `${label} did not produce two stable changed captures after ${maximumAttempts} attempts`,
+  );
 }
 
 function boxCenter(index) {
@@ -172,13 +270,18 @@ async function sendClick(window, point, verifyPresentation, label) {
   webContents.sendInputEvent({ type: 'mouseMove', ...point });
   webContents.sendInputEvent({ type: 'mouseDown', ...point, button: 'left', clickCount: 1 });
   await settleInput(window);
-  const responsiveBaselineCapture = verifyPresentation
-    ? await captureStage(window, `${label} before responsive input`)
+  const responsiveBaseline = verifyPresentation
+    ? await captureStableStage(window, `${label} before responsive input`)
+    : null;
+  const responsiveBaselineVisual = verifyPresentation
+    ? await rendererCall(window, 'visual')
     : null;
   const responsiveInputAt = performance.now();
   webContents.sendInputEvent({ type: 'mouseUp', ...point, button: 'left', clickCount: 1 });
   return {
-    responsiveBaselineCapture,
+    responsiveBaselineCapture: responsiveBaseline?.capture ?? null,
+    responsiveBaselineCaptureAttempts: responsiveBaseline?.attemptCount ?? 0,
+    responsiveBaselineVisual,
     responsiveInputAt,
     responsiveInputEvent: 'mouseUp',
     captureBeforeCompletion: false,
@@ -221,8 +324,11 @@ async function sendDrag(
     });
     await settleInput(window);
   }
-  const responsiveBaselineCapture = verifyPresentation
-    ? await captureStage(window, `${label} before responsive input`)
+  const responsiveBaseline = verifyPresentation
+    ? await captureStableStage(window, `${label} before responsive input`)
+    : null;
+  const responsiveBaselineVisual = verifyPresentation
+    ? await rendererCall(window, 'visual')
     : null;
   const responsiveInputAt = performance.now();
   if (!measureCompletion) {
@@ -235,7 +341,9 @@ async function sendDrag(
     });
   }
   return {
-    responsiveBaselineCapture,
+    responsiveBaselineCapture: responsiveBaseline?.capture ?? null,
+    responsiveBaselineCaptureAttempts: responsiveBaseline?.attemptCount ?? 0,
+    responsiveBaselineVisual,
     responsiveInputAt,
     responsiveInputEvent: measureCompletion ? 'mouseUp' : 'final-coordinate-mouseMove',
     captureBeforeCompletion: !measureCompletion,
@@ -287,8 +395,11 @@ async function injectOperation(window, operation, index, verifyPresentation) {
     }
     case 'zoom': {
       const point = boxCenter(index);
-      const responsiveBaselineCapture = verifyPresentation
-        ? await captureStage(window, `${label} before responsive input`)
+      const responsiveBaseline = verifyPresentation
+        ? await captureStableStage(window, `${label} before responsive input`)
+        : null;
+      const responsiveBaselineVisual = verifyPresentation
+        ? await rendererCall(window, 'visual')
         : null;
       const responsiveInputAt = performance.now();
       webContents.sendInputEvent({
@@ -301,7 +412,9 @@ async function injectOperation(window, operation, index, verifyPresentation) {
         canScroll: true,
       });
       return {
-        responsiveBaselineCapture,
+        responsiveBaselineCapture: responsiveBaseline?.capture ?? null,
+        responsiveBaselineCaptureAttempts: responsiveBaseline?.attemptCount ?? 0,
+        responsiveBaselineVisual,
         responsiveInputAt,
         responsiveInputEvent: 'mouseWheel',
         captureBeforeCompletion: false,
@@ -416,6 +529,172 @@ function assertOperationResult(operation, index, before, after) {
       return;
     default:
       throw new Error(`unknown operation result: ${operation}`);
+  }
+}
+
+function assertVisualState(visual, label) {
+  const viewportValues = [visual.viewport.x, visual.viewport.y, visual.viewport.scale];
+  if (
+    viewportValues.some((value) => !Number.isFinite(value)) ||
+    visual.viewport.scale <= 0
+  ) {
+    throw new Error(`${label} produced an invalid visual viewport`);
+  }
+  assertCanvasState({ boxes: visual.boxes }, `${label} visual state`);
+  if (
+    visual.draft !== null &&
+    [visual.draft.x, visual.draft.y, visual.draft.width, visual.draft.height]
+      .some((value) => !Number.isFinite(value))
+  ) {
+    throw new Error(`${label} produced invalid draft geometry`);
+  }
+}
+
+function assertResponsiveVisualChange(operation, index, before, after) {
+  assertVisualState(before, `${operation} sample ${index} baseline`);
+  assertVisualState(after, `${operation} sample ${index} after input`);
+  const id = `box-${index}`;
+  switch (operation) {
+    case 'create': {
+      const created = findBox(after, 'box-100');
+      if (
+        before.draft === null ||
+        created === undefined ||
+        JSON.stringify(before.draft) !== JSON.stringify({
+          x: created.x,
+          y: created.y,
+          width: created.width,
+          height: created.height,
+        }) ||
+        after.draft !== null
+      ) {
+        throw new Error(`create sample ${index} did not present the committed draft geometry`);
+      }
+      return;
+    }
+    case 'select':
+      if (before.selectedId === id || after.selectedId !== id) {
+        throw new Error(`select sample ${index} visual selection did not change to ${id}`);
+      }
+      return;
+    case 'move': {
+      const beforeBox = findBox(before, id);
+      const afterBox = findBox(after, id);
+      if (
+        beforeBox === undefined ||
+        afterBox === undefined ||
+        Math.abs(afterBox.x - beforeBox.x - 24) > 0.001 ||
+        Math.abs(afterBox.y - beforeBox.y - 16) > 0.001
+      ) {
+        throw new Error(
+          `move sample ${index} visual endpoint mismatch: ` +
+          `before=${JSON.stringify(beforeBox)}, after=${JSON.stringify(afterBox)}`,
+        );
+      }
+      return;
+    }
+    case 'resize': {
+      const beforeBox = findBox(before, id);
+      const afterBox = findBox(after, id);
+      if (
+        beforeBox === undefined ||
+        afterBox === undefined ||
+        (beforeBox.width === afterBox.width && beforeBox.height === afterBox.height)
+      ) {
+        throw new Error(`resize sample ${index} visual endpoint did not change ${id}`);
+      }
+      return;
+    }
+    case 'zoom':
+      if (before.viewport.scale === after.viewport.scale) {
+        throw new Error(`zoom sample ${index} visual scale did not change`);
+      }
+      return;
+    case 'pan':
+      if (
+        Math.abs(after.viewport.x - before.viewport.x + 20) > 0.001 ||
+        Math.abs(after.viewport.y - before.viewport.y + 10) > 0.001
+      ) {
+        throw new Error(
+          `pan sample ${index} visual endpoint mismatch: ` +
+          `before=${JSON.stringify(before.viewport)}, after=${JSON.stringify(after.viewport)}`,
+        );
+      }
+      return;
+    default:
+      throw new Error(`unknown responsive visual operation: ${operation}`);
+  }
+}
+
+function compactVisualProof(operation, index, before, after) {
+  const proof = {
+    beforeStateSha256: sha256(JSON.stringify(before)),
+    afterStateSha256: sha256(JSON.stringify(after)),
+  };
+  const id = `box-${index}`;
+  switch (operation) {
+    case 'create':
+      return {
+        ...proof,
+        beforeDraft: before.draft,
+        afterCreatedBox: findBox(after, 'box-100'),
+        afterDraft: after.draft,
+        beforeBoxCount: before.boxes.length,
+        afterBoxCount: after.boxes.length,
+      };
+    case 'select':
+      return { ...proof, beforeSelectedId: before.selectedId, afterSelectedId: after.selectedId };
+    case 'move':
+    case 'resize':
+      return { ...proof, beforeBox: findBox(before, id), afterBox: findBox(after, id) };
+    case 'zoom':
+    case 'pan':
+      return { ...proof, beforeViewport: before.viewport, afterViewport: after.viewport };
+    default:
+      throw new Error(`unknown compact visual proof operation: ${operation}`);
+  }
+}
+
+function assertCommittedStateMatchesVisual(operation, index, state, visual) {
+  const id = `box-${index}`;
+  switch (operation) {
+    case 'create': {
+      const committed = findBox(state, 'box-100');
+      const presented = findBox(visual, 'box-100');
+      if (JSON.stringify(committed) !== JSON.stringify(presented)) {
+        throw new Error(`create sample ${index} committed state differs from presentation`);
+      }
+      return;
+    }
+    case 'select':
+      if (state.selectedId !== visual.selectedId) {
+        throw new Error(`select sample ${index} committed selection differs from presentation`);
+      }
+      return;
+    case 'move':
+    case 'resize': {
+      const committed = findBox(state, id);
+      const presented = findBox(visual, id);
+      if (JSON.stringify(committed) !== JSON.stringify(presented)) {
+        throw new Error(`${operation} sample ${index} committed state differs from presentation`);
+      }
+      return;
+    }
+    case 'zoom':
+    case 'pan':
+      if (
+        state.viewport.x !== visual.viewport.x ||
+        state.viewport.y !== visual.viewport.y ||
+        state.viewport.scale !== visual.viewport.scale
+      ) {
+        throw new Error(
+          `${operation} sample ${index} committed viewport differs from presentation: ` +
+          `state=${JSON.stringify(state.viewport)}, visual=${JSON.stringify(visual.viewport)}`,
+        );
+      }
+      return;
+    default:
+      throw new Error(`unknown committed visual operation: ${operation}`);
   }
 }
 
@@ -567,8 +846,12 @@ async function runSample(window, operation, index, verifyPresentation) {
   const gestureStartedAt = performance.now();
   const interaction = await injectOperation(window, operation, index, verifyPresentation);
   const responsiveBaselineCapture = interaction.responsiveBaselineCapture;
+  const responsiveBaselineVisual = interaction.responsiveBaselineVisual;
   if (verifyPresentation && responsiveBaselineCapture === null) {
     throw new Error(`${operation} sample ${index} has no responsive-input baseline capture`);
+  }
+  if (verifyPresentation && responsiveBaselineVisual === null) {
+    throw new Error(`${operation} sample ${index} has no responsive-input visual baseline`);
   }
   let afterCapture;
   let captureAttemptCount = 0;
@@ -578,6 +861,9 @@ async function runSample(window, operation, index, verifyPresentation) {
   if (interaction.captureBeforeCompletion) {
     await settleInput(window);
     paintBoundaryAt = performance.now();
+    const responsiveAfterVisual = verifyPresentation
+      ? await rendererCall(window, 'visual')
+      : null;
     if (verifyPresentation) {
       const changed = await captureChangedStage(
         window,
@@ -586,16 +872,22 @@ async function runSample(window, operation, index, verifyPresentation) {
       );
       afterCapture = changed.capture;
       captureAttemptCount = changed.attemptCount;
+      capturedPresentationAt = changed.firstStablePresentationAt;
+      interaction.stabilityConfirmedAt = changed.stabilityConfirmedAt;
     } else {
       afterCapture = null;
     }
-    capturedPresentationAt = performance.now();
+    capturedPresentationAt ??= performance.now();
     await interaction.complete();
     after = await rendererCall(window, 'wait', [token]);
+    interaction.responsiveAfterVisual = responsiveAfterVisual;
   } else {
     await interaction.complete();
     after = await rendererCall(window, 'wait', [token]);
     paintBoundaryAt = performance.now();
+    interaction.responsiveAfterVisual = verifyPresentation
+      ? await rendererCall(window, 'visual')
+      : null;
     if (verifyPresentation) {
       const changed = await captureChangedStage(
         window,
@@ -604,14 +896,35 @@ async function runSample(window, operation, index, verifyPresentation) {
       );
       afterCapture = changed.capture;
       captureAttemptCount = changed.attemptCount;
+      capturedPresentationAt = changed.firstStablePresentationAt;
+      interaction.stabilityConfirmedAt = changed.stabilityConfirmedAt;
     } else {
       afterCapture = null;
     }
-    capturedPresentationAt = performance.now();
+    capturedPresentationAt ??= performance.now();
   }
 
   assertOperationResult(operation, index, before, after);
+  let visualProof = null;
   if (verifyPresentation) {
+    assertCommittedStateMatchesVisual(
+      operation,
+      index,
+      after,
+      interaction.responsiveAfterVisual,
+    );
+    assertResponsiveVisualChange(
+      operation,
+      index,
+      responsiveBaselineVisual,
+      interaction.responsiveAfterVisual,
+    );
+    visualProof = compactVisualProof(
+      operation,
+      index,
+      responsiveBaselineVisual,
+      interaction.responsiveAfterVisual,
+    );
     if (responsiveBaselineCapture.sha256 === afterCapture.sha256) {
       throw new Error(`${operation} sample ${index} capture retry returned unchanged pixels`);
     }
@@ -622,15 +935,19 @@ async function runSample(window, operation, index, verifyPresentation) {
     responsiveInputToPaintBoundaryMs: paintBoundaryAt - interaction.responsiveInputAt,
     responsiveInputToCapturedPresentationMs:
       capturedPresentationAt - interaction.responsiveInputAt,
+    responsiveInputToStabilityConfirmationMs:
+      (interaction.stabilityConfirmedAt ?? capturedPresentationAt) - interaction.responsiveInputAt,
     gestureToPaintBoundaryMs: paintBoundaryAt - gestureStartedAt,
     gestureToCapturedPresentationMs: capturedPresentationAt - gestureStartedAt,
     captureAttemptCount,
+    responsiveBaselineCaptureAttempts: interaction.responsiveBaselineCaptureAttempts,
     capture: verifyPresentation
       ? {
           size: afterCapture.size,
           byteLength: afterCapture.byteLength,
           beforeSha256: responsiveBaselineCapture.sha256,
           afterSha256: afterCapture.sha256,
+          visualProof,
         }
       : null,
   };
@@ -645,9 +962,12 @@ async function measureOperation(window, operation) {
 
   const responsiveInputToPaintBoundaryMs = [];
   const responsiveInputToCapturedPresentationMs = [];
+  const responsiveInputToStabilityConfirmationMs = [];
   const gestureToPaintBoundaryMs = [];
   const gestureToCapturedPresentationMs = [];
+  const responsiveBaselineCaptureAttemptCounts = [];
   const captureAttemptCounts = [];
+  const captureProofs = [];
   let responsiveInputEvent = null;
   let firstCapture = null;
   mark(`${operation}-measure-start`);
@@ -659,27 +979,48 @@ async function measureOperation(window, operation) {
     responsiveInputEvent = sample.responsiveInputEvent;
     responsiveInputToPaintBoundaryMs.push(sample.responsiveInputToPaintBoundaryMs);
     responsiveInputToCapturedPresentationMs.push(sample.responsiveInputToCapturedPresentationMs);
+    responsiveInputToStabilityConfirmationMs.push(
+      sample.responsiveInputToStabilityConfirmationMs,
+    );
     gestureToPaintBoundaryMs.push(sample.gestureToPaintBoundaryMs);
     gestureToCapturedPresentationMs.push(sample.gestureToCapturedPresentationMs);
+    responsiveBaselineCaptureAttemptCounts.push(sample.responsiveBaselineCaptureAttempts);
     captureAttemptCounts.push(sample.captureAttemptCount);
+    captureProofs.push(sample.capture);
     firstCapture ??= sample.capture;
   }
   mark(`${operation}-measure-end`);
   return {
     distinctRectangleTargets: operation === 'pan' || operation === 'create' ? null : 100,
-    pixelChangeCount: sampleCount,
+    pixelChangeCount: captureProofs.filter(
+      (proof) => proof.beforeSha256 !== proof.afterSha256,
+    ).length,
+    visualChangeCount: captureProofs.filter(
+      (proof) =>
+        proof.visualProof.beforeStateSha256 !== proof.visualProof.afterStateSha256,
+    ).length,
     responsiveInputEvent,
     firstCapture,
     responsiveInputToPaintBoundary: summarize(responsiveInputToPaintBoundaryMs),
     responsiveInputToCapturedPresentation: summarize(responsiveInputToCapturedPresentationMs),
+    responsiveInputToStabilityConfirmation: summarize(
+      responsiveInputToStabilityConfirmationMs,
+    ),
     gestureToPaintBoundary: summarize(gestureToPaintBoundaryMs),
     gestureToCapturedPresentation: summarize(gestureToCapturedPresentationMs),
+    maximumResponsiveBaselineCaptureAttempts: Math.max(
+      ...responsiveBaselineCaptureAttemptCounts,
+    ),
     maximumCaptureAttempts: Math.max(...captureAttemptCounts),
     rawResponsiveInputToPaintBoundaryMs: responsiveInputToPaintBoundaryMs,
     rawResponsiveInputToCapturedPresentationMs: responsiveInputToCapturedPresentationMs,
     rawGestureToPaintBoundaryMs: gestureToPaintBoundaryMs,
     rawGestureToCapturedPresentationMs: gestureToCapturedPresentationMs,
+    rawResponsiveBaselineCaptureAttemptCounts: responsiveBaselineCaptureAttemptCounts,
     rawCaptureAttemptCounts: captureAttemptCounts,
+    rawResponsiveInputToStabilityConfirmationMs:
+      responsiveInputToStabilityConfirmationMs,
+    captureProofs,
   };
 }
 
@@ -745,8 +1086,10 @@ async function runInputBenchmark(window) {
 async function runBenchmarkHarness() {
   let window;
   let exitCode = 0;
-  const runId = randomUUID();
   try {
+    if (runId === 'invalid-run-id') {
+      throw new Error('AUTOVISION_SPI10_RUN_ID must be a UUID v4 supplied by run.mjs');
+    }
     await rm(resultUrl, { force: true });
     await rm(errorUrl, { force: true });
     const runtimeProfileUrl = new URL(`./dist/runtime-profile-${runId}/`, import.meta.url);
@@ -824,9 +1167,9 @@ async function runBenchmarkHarness() {
     }
     assertBundleSourceHashes(benchmark.renderer.buildSourceHashes, sourceHashesAfter);
 
-    const output = JSON.stringify({
-      status: 'ok',
-      verdict: 'PASS',
+    pendingSuccessEvidence = {
+      status: 'pending-quit',
+      verdict: 'PENDING',
       runId,
       measuredAt: new Date().toISOString(),
       threshold: {
@@ -834,13 +1177,18 @@ async function runBenchmarkHarness() {
         metric: 'responsiveInputToCapturedPresentation.p95Ms',
         maximumMs: thresholdMs,
       },
-      command: 'node node_modules\\electron\\cli.js build\\spi10\\main.mjs',
+      command: 'node_modules\\electron\\dist\\electron.exe build\\spi10\\main.mjs',
       isolatedRuntimeProfile: true,
+      process: {
+        pid: process.pid,
+        parentPid: process.ppid,
+        execPath: process.execPath,
+        argv: process.argv,
+      },
       gitHead,
       gitStatus,
       sourceHashes: sourceHashesAfter,
       bundle: bundleAfter,
-      markers,
       rendererDiagnostics,
       platform: process.platform,
       architecture: process.arch,
@@ -878,9 +1226,8 @@ async function runBenchmarkHarness() {
         requirementMetric: 'responsiveInputToCapturedPresentation',
         ...benchmark,
       },
-    }, null, 2);
-    await writeFile(resultUrl, output, 'utf8');
-    mark('result-written');
+    };
+    mark('benchmark-evidence-ready');
   } catch (error) {
     exitCode = 1;
     const failure = JSON.stringify({
@@ -902,9 +1249,9 @@ async function runBenchmarkHarness() {
     }
     console.error('spi10:failed', error);
   } finally {
-    mark(`exit-${exitCode}`);
-    process.exitCode = exitCode;
-    app.quit();
+    mark(`quit-requested-${exitCode}`);
+    if (exitCode === 0) app.quit();
+    else app.exit(exitCode);
   }
 }
 
