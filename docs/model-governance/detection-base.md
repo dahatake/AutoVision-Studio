@@ -89,7 +89,7 @@
 | 固定 commit | `336d36e8db990a905498c73933e35231876e28bc` |
 | code license | `BSD-3-Clause` |
 | code の利用・再配布条件 | source/binary 再配布時の copyright notice、条件、免責文の保持、および権利者・contributor 名による endorsement 禁止を license 本文で確認 |
-| NOTICE inventory | **MISSING**。固定 tree 全体の NOTICE path 監査と最終配布 packet は本調査で実施していない |
+| NOTICE inventory | 固定 commit の recursive tree API は `truncated: false` で、basename が `NOTICE` または `NOTICE.*` の path は 0 件。これは最終配布 packet の完成を意味せず、製品 payload の license / copyright / attribution packet は **MISSING** |
 | 判定 | **C5 license text identified / 条件付き確認**。これは C6/C8 の許可ではなく、製品 payload の notice 完了も意味しない |
 
 TorchVision 文書自身が、pre-trained model には学習 dataset 由来の独自 license / terms があり得て、用途の permission を利用者が判断する責任があると明記する。この注意を BSD-3-Clause で上書きしない。
@@ -119,7 +119,8 @@ BSD-3-Clause は取得した TorchVision C5 code の license である。weight 
 | 公称 training dataset | COCO。weight metadata は COCO val2017 指標を示し、固定 detection recipe は `--dataset coco` を指定 |
 | 固定 recipe の主な設定 | 8 GPU、660 epochs、cosine annealing、LR `0.15`、batch size `24`、weight decay `0.00004`、`ssdlite` augmentation |
 | recipe と exact bytes の関係 | metadata は「paper と similar な recipe」と記載するだけで、exact artifact の完全な再現 provenance は **UNKNOWN** |
-| ImageNet backbone initialization | **UNKNOWN**。固定 recipe command に `--weights-backbone` はないが、この不在だけで exact artifact が ImageNet 非由来だとは証明しない |
+| 公開 recipe の backbone initialization | 固定 `train.py` は CLI 既定値 `None` を `weights_backbone` へ渡し、固定 README の SSDLite command は `--weights-backbone` を指定しない。したがって、その公開 recipe 実行経路は pretrained backbone weight を要求しない |
+| exact artifact の backbone lineage | **UNKNOWN**。公開 recipe と exact checkpoint bytes を結ぶ生成記録がないため、選択 artifact が ImageNet 非由来だとは証明しない |
 | その他の学習・事前学習データ | **UNKNOWN** |
 | COCO annotations / website | COCO Consortium が CC BY 4.0 と明記 |
 | COCO images | COCO Consortium は画像 copyright を所有しないと明記し、利用者に Flickr 条件への準拠と責任を求める |
@@ -181,7 +182,7 @@ CC BY 4.0 は licensor が権限を持つ copyright 等だけを許諾し、priv
 | code license | `Apache-2.0` |
 | code の利用・再配布条件 | Apache-2.0 本文の license copy、変更表示、copyright / patent / trademark / attribution notice 保持、存在する NOTICE の伝播等を要する |
 | patent 条項 | Apache-2.0 §3 の contributor patent grant を確認。ただし exact checkpoint や training images の権利へ拡張しない |
-| repository NOTICE inventory | **MISSING**。固定 tree 全体の NOTICE path 監査と製品配布 packet は本調査で実施していない |
+| repository NOTICE inventory | 固定 commit の recursive tree API は `truncated: false` で、basename が `NOTICE` または `NOTICE.*` の path は 0 件。これは attribution 不要の証明ではなく、製品配布 packet は **MISSING** |
 | product dependency adoption | YOLOX code は現行 project lock に採用されていない。transitive dependency / CVE / packaging 審査は **NOT_RUN** |
 | 判定 | **C5 license text identified / 条件付き確認**。C6/C8 の許可ではない |
 
@@ -320,6 +321,7 @@ C6 のため、C7 専用の manual-only vs assisted annotation 比較は `N/A（
 |---|---|---|---|
 | TorchVision version | `https://raw.githubusercontent.com/pytorch/vision/336d36e8db990a905498c73933e35231876e28bc/version.txt` | `0.26.0` | **MISSING / MISSING** |
 | TorchVision commit API | `https://api.github.com/repos/pytorch/vision/commits/336d36e8db990a905498c73933e35231876e28bc` | exact commit | **MISSING / MISSING** |
+| TorchVision recursive tree API | `https://api.github.com/repos/pytorch/vision/git/trees/336d36e8db990a905498c73933e35231876e28bc?recursive=1` | `truncated: false`、`NOTICE` / `NOTICE.*` basename 0 件 | **MISSING / MISSING** |
 | SSDLite source | `https://raw.githubusercontent.com/pytorch/vision/336d36e8db990a905498c73933e35231876e28bc/torchvision/models/detection/ssdlite.py` | enum、URL、COCO metadata、defaults、loader call | **MISSING / MISSING** |
 | SSD source | `https://raw.githubusercontent.com/pytorch/vision/336d36e8db990a905498c73933e35231876e28bc/torchvision/models/detection/ssd.py` | input/output、softmax、postprocess | **MISSING / MISSING** |
 | Weight API | `https://raw.githubusercontent.com/pytorch/vision/336d36e8db990a905498c73933e35231876e28bc/torchvision/models/_api.py` | Hub loader への委譲 | **MISSING / MISSING** |
@@ -337,6 +339,7 @@ C6 のため、C7 専用の manual-only vs assisted annotation 比較は `N/A（
 |---|---|---|---|
 | tag ref API | `https://api.github.com/repos/Megvii-BaseDetection/YOLOX/git/ref/tags/0.1.1rc0` | tag → exact commit | **MISSING / MISSING** |
 | commit API | `https://api.github.com/repos/Megvii-BaseDetection/YOLOX/commits/e1052df71842031413f6030723c3607b839c80ce` | exact source identity | **MISSING / MISSING** |
+| recursive tree API | `https://api.github.com/repos/Megvii-BaseDetection/YOLOX/git/trees/e1052df71842031413f6030723c3607b839c80ce?recursive=1` | `truncated: false`、`NOTICE` / `NOTICE.*` basename 0 件 | **MISSING / MISSING** |
 | release API | `https://api.github.com/repos/Megvii-BaseDetection/YOLOX/releases/tags/0.1.1rc0` | asset ID、size、`digest: null`、release note | **MISSING / MISSING** |
 | fixed README | `https://raw.githubusercontent.com/Megvii-BaseDetection/YOLOX/e1052df71842031413f6030723c3607b839c80ce/README.md` | Nano benchmark、別 weight URL、COCO 手順 | **MISSING / MISSING** |
 | fixed model zoo | `https://raw.githubusercontent.com/Megvii-BaseDetection/YOLOX/e1052df71842031413f6030723c3607b839c80ce/docs/model_zoo.md` | Nano benchmarkと`storage/0.0.1/yolox_nano.pth` URL | **MISSING / MISSING** |
@@ -365,9 +368,9 @@ release noteが指したrepository rootの`/model_zoo.md` URLは取得時にHTTP
 
 | 対象 | 確認できた内容 | 不足 |
 |---|---|---|
-| TorchVision C5 code | BSD-3-Clause license 本文 | final payload の copyright / conditions / disclaimer packet、NOTICE tree audit |
+| TorchVision C5 code | BSD-3-Clause license 本文。固定 recursive tree は完全応答で `NOTICE` / `NOTICE.*` basename 0 件 | final payload の copyright / conditions / disclaimer packet |
 | SSDLite C6 checkpoint | 公式 URL と enum | checkpoint rightsholder、license、commercial / redistribution statement、required attribution |
-| YOLOX C5 code | Apache-2.0 license 本文 | fixed tree NOTICE audit、license copy、変更表示、最終 attribution packet |
+| YOLOX C5 code | Apache-2.0 license 本文。固定 recursive tree は完全応答で `NOTICE` / `NOTICE.*` basename 0 件 | license copy、変更表示、最終 attribution packet |
 | YOLOX-Nano C6 checkpoint | release asset metadata | checkpoint 固有 license、copyright、NOTICE、再配布条件 |
 | COCO annotations | CC BY 4.0 表示 | checkpoint / derived artifact に関する具体的 attribution 判断 |
 | COCO images | COCO が copyright 非保有と明記 | image-by-image rightsholder、license、attribution、追加権利 inventory |
@@ -382,7 +385,7 @@ release noteが指したrepository rootの`/model_zoo.md` URLは取得時にHTTP
 |---|---|---|
 | FR-LIC-004 | **FAIL / BLOCKED** | 両候補とも checkpoint license、64 桁 SHA-256、全 C8 terms、NOTICE、保存済み一次資料 hash、承認者、承認日が不足 |
 | FR-LIC-005 | **PASS（調査手順のみ）** | C5/C6/C8 を分離し、BSD / Apache code license だけで checkpoint を承認していない |
-| FR-LIC-006 | **NOT PROVEN / HOLD** | SSDLite の exact recipe と YOLOX asset の完全 lineage がなく、ImageNet 非由来を断定しない。由来が判明しても自動承認しない |
+| FR-LIC-006 | **NOT PROVEN / HOLD** | SSDLite の公開 recipe 経路は pretrained backbone weight を要求しないが、exact checkpoint bytes との lineage はない。YOLOX asset も完全 lineage がなく、両 artifact の ImageNet 非由来を断定しない。由来が判明しても自動承認しない |
 | FR-LIC-007 | **FAIL / BLOCKED** | 両候補は COCO 由来。annotation と image rights を分離したが、全画像 evidence と法務書面判断がない |
 | FR-LIC-008 | **NOT PROVEN / HOLD** | 公開資料に Open Images は明記されないが、完全 provenance がないため absence を断定しない |
 | FR-LIC-011 | **FAIL / BLOCKED** | TorchVision は cache miss で自動 download。両候補とも product offline/network-zero test は NOT_RUN |
@@ -400,6 +403,7 @@ release noteが指したrepository rootの`/model_zoo.md` URLは取得時にHTTP
 - [x] SSDLite exact enum / URL と YOLOX exact tag / commit / release asset ID を記録した
 - [x] C5 code / C6 checkpoint / C8 training data を独立欄で判定した
 - [x] TorchVision BSD-3-Clause と YOLOX Apache-2.0 を checkpoint license に流用していない
+- [x] 両固定 repository の完全 recursive tree で `NOTICE` / `NOTICE.*` basename が 0 件であることと、最終配布 packet が MISSING であることを分離した
 - [x] COCO annotation license と image rights を分離した
 - [x] upstream input / preprocess / output と製品側 `UNKNOWN` を分離した
 - [ ] exact checkpoint と exact training code / data snapshot の publisher-verified chain of custody がある
@@ -491,14 +495,21 @@ release noteが指したrepository rootの`/model_zoo.md` URLは取得時にHTTP
 | `digest: null` を空 hash または GitHub 保証として扱っていないか | YOLOX release asset の integrity を過大評価しやすい | literal `digest: null` を保存し、64 桁 SHA-256 を `UNKNOWN` とした |
 | byte size / asset ID を integrity としていないか | `14,069,355`、`7,694,953`、`42724999` は識別には役立つが内容保証ではない | 属性を分離し、完全 hash と publisher signature を別 blocker にした |
 | tag = exact asset build commit としていないか | GitHub release tag と asset upload の共存から build provenance を推定しやすい | tag commit は code identity のみとし、asset build provenance を `UNKNOWN` とした |
-| YOLOX の二つの public URL を同一 artifact としていないか | README の `storage/0.0.1` と release `0.1.1rc0` は同名 | equivalence evidence を `MISSING` とし、selected asset を release ID / asset ID で限定した |
+| YOLOX の二つの public URL を同一 artifact としていないか | README の `storage/0.0.1` と release `0.1.1rc0` は同名 | exact byte size の不一致を記録し、byte-identical ではないと確定した。tensor / state_dict 等価性と変換 provenance は `UNKNOWN / MISSING` のままにした |
 | source / release note の矛盾を隠していないか | YOLOX normalization removal と fixed demo normalization が両立しない | 矛盾を明示し、selected asset preprocess を `UNKNOWN` とした |
 | `.pth` / state_dict 名称だけで安全としていないか | 両 loader が pickle-compatible load を行い得る | binary 未取得・payload 未検査・safe load NOT_RUN とし、FR-SEC-007 を blocked とした |
 | `check_hash=True` で全 gate 合格としていないか | SSDLite は prefix 検査を行う | prefix integrity と full hash / payload safety / rights を分離した |
 | public AP / FLOPs を製品実測または別artifactへ転用していないか | COCO AP 21.3 / 25.3 を品質合格へ転用しやすく、YOLOX 25.3はbyte sizeの異なるstorage asset側の表にある | 全parity/quality/performance/OS/EP試験を`NOT_RUN`とし、選択release assetの指標には使わない |
-| 公開 recipe にないデータを「不使用」としていないか | ImageNet / Open Images / その他データの absence を推定しやすい | exact training lineage がないため非使用を断定せず `UNKNOWN` とした |
+| 公開 recipe と exact artifact lineage を混同していないか | SSDLite の公開 recipe が pretrained backbone weight を要求しないことから、checkpoint bytes も ImageNet 非由来と推定しやすい | 公開 recipe の実行経路は確認済み事実として記録し、exact artifact の backbone lineage は `UNKNOWN` のまま分離した |
+| repository の NOTICE path 不在を配布義務なしとしていないか | 完全 tree で NOTICE path が 0 件でも、license text、copyright、checkpoint/data attribution の履行は別途必要 | tree 監査結果と最終配布 packet を分離し、後者を `MISSING` とした |
 | URL 取得を保存証拠と誤認していないか | immutable URL があっても local saved copy/hash はない | 全 source の保存コピー / SHA-256 を `MISSING` とした |
 | HOLD を一般的な違法判断にしていないか | governance decision と法的結論を混同しやすい | AutoVision Studio の fail-closed gate に限定し、法的助言ではないと明記した |
 | research record を approval record に昇格していないか | 詳細な調査表が承認済みに見え得る | 承認者・日付 MISSING、C6 承認 0、manifest 未編集、G-DEP-07 / Gate 2 BLOCKED を明記した |
+
+### 13.1 修正後の独立敵対レビュー
+
+2026-09-03 の read-only 再レビューは、YOLOX 同名 asset の byte size 不一致、固定 `docs/model_zoo.md`、SSDLite 公開 recipe の `weights_backbone=None` 経路、両 repository の完全 recursive tree における `NOTICE` / `NOTICE.*` basename 0 件を公式一次資料で再確認し、**追加の verified factual defect は 0 件**とした。binary download、payload load、モデル実行、法務判断は実施していない。
+
+再レビューが列挙した license、hash、C8、NOTICE packet、承認、技術試験の不足は、いずれも本記録が既に `UNKNOWN` / `MISSING` / `NOT_RUN` として保持する正当な blocker である。したがって、**本 research record を HOLD の証拠として commit できること**と、**checkpoint の採用・manifest 登録・installer 同梱・Gate 2 解除ができないこと**を分離する。前者は後者の承認を意味しない。
 
 レビュー後も blocking evidence は解消していない。最終決定は **SSDLite HOLD、YOLOX-Nano HOLD、承認済み検出 C6 は 0 件、G-DEP-07 と Gate 2 は BLOCKED** のままとする。
