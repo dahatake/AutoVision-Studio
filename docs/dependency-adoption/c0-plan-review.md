@@ -30,11 +30,20 @@ C0-PLANの入力となる初回B-GATEは次の結果で **BLOCKED** と判定し
 |---|---|---|---|
 | AR-01 | C0-REVIEW成果物にB-GATE再実行のPASS/BLOCKED証拠が明記されていない | 再現 | `c0-review.md`へ環境、実コマンド、exit code、test件数、lock不変性、判定を必須化した。 |
 | AR-02 | C0-PLAN自身のreview記録fileがない | 証拠保存の不足として再現 | 本fileをC0-PLAN成果物へ追加した。レビュー後に再検証する通常手順であり、自己参照による無限ループという指摘部分はNot-a-defect。 |
-| AR-03 | B-13の設定責務とRuff/Pyrightのlock責務が曖昧 | 再現 | B-13は対象設定、実行packageのexact lockはC0-PYTHONと明記した。 |
+| AR-03 | B-13の設定責務とRuff/Pyrightのlock責務が曖昧 | 再現 | 初回裁定ではB-13を対象設定、実行packageのexact lockをC0-PYTHONとした。その後の公式配布元調査に基づき、Pyrightのlock所有権だけをAR-08でC0-NODEへ再補正した。 |
 | AR-04 | Node/Python採用記録の必須欄が不足 | 再現 | 用途、区分、exact版、一次資料、license/NOTICE、transitive、脆弱性、artifact/hash、smoke、review裁定を必須化した。 |
 | AR-05 | C0追加で正本253 taskが変化する | 再現せず | C0は管理項目として別表に置き、正本taskには数えない。 |
 | AR-06 | C0-NODEとC0-PYTHONに循環または出力重複がある | 再現せず | 両者はC0-PLANだけに依存し、package系とPython系で成果物が分離されている。 |
-| AR-07 | Phase C必須packageがC0範囲から欠落する | 再現せず | better-sqlite3、electron-builder、Konva/react-konva、PyInstaller、PyTorch/TorchVision、Optuna、ONNX/ONNX Runtime、Ruff、Pyrightを列挙済み。 |
+| AR-07 | Phase C必須packageがC0範囲から欠落する | 再現せず | better-sqlite3、electron-builder、Konva/react-konva、PyInstaller、PyTorch/TorchVision、Optuna、ONNX/ONNX Runtime、Ruff、Pyrightを列挙済み。後続調査で判明した監査toolの欠落はAR-09で`pip-audit`を追加し、Pyrightの所有先はAR-08で補正した。 |
+
+### 採用調査開始後の追補レビュー
+
+C0-NODE/C0-PYTHONの採用調査で公式所有者と監査手段を一次資料まで遡った結果、初回レビュー時には顕在化していなかった次の実在不備を確認した。
+
+| ID | 指摘 | 再現 | 裁定・反映 |
+|---|---|---|---|
+| AR-08 | Pyrightの実行packageをC0-PYTHONへ割り当てていたが、Microsoft公式配布はnpm `pyright`であり、PyPI `pyright`はMicrosoft非公式wrapperである | 再現。Microsoft公式repositoryとnpm packageは`microsoft/pyright`を指し、PyPI wrapper自身がMicrosoft非提携と明記し、環境によってNode/npmをruntime取得する | 公式npm `pyright`のexact lockをC0-NODEへ移した。C0-PYTHONからPyrightを外し、PyPI wrapperとruntime downloaderを明示的に不採用とした。既存の`[tool.pyright]`設定は公式CLIから使用する。 |
+| AR-09 | `docs/dependency-policy.md`が`uv run pip-audit`を必須化している一方、`pip-audit`実行packageのlock所有者がC0に存在しない | 再現。現行`ml/pyproject.toml`/`ml/uv.lock`はpytestだけをdev依存として持ち、B-GATEでもPython脆弱性監査を実行できない | `pip-audit`をC0-PYTHONのdev dependencyとしてexact lockし、lock済みPython依存の監査対象自身にも含めることを完了条件へ追加した。 |
 
 ## 修正後の確認
 
@@ -45,6 +54,13 @@ C0-PLANの入力となる初回B-GATEは次の結果で **BLOCKED** と判定し
 - C0-PLANでpackage、lock、production codeは変更していない。
 - 最終独立再レビューでは、AR-02/03/05/06/07が反映済みで、文書内の実行証拠との矛盾がないことを確認した。
 - AR-01のB-GATE PASS記録とAR-04のpackage別採用証拠は、依存先であるC0-NODE/C0-PYTHON/C0-REVIEWの未実施を示す正当なDeferred項目である。C0-PLANで実証を先取りすると依存順に違反するため、C0-PLANの欠陥ではないと裁定した。
+
+### 追補修正後の確認
+
+- AR-08/09の修正対象はC0のpackage所有権だけであり、C0管理項目数、正本task ID、依存DAG、Phase C開始条件を変更していない。
+- C0-NODEとC0-PYTHONの出力fileは引き続き重複せず、公式npm PyrightをNode側へ移しても循環依存は生じない。
+- Pyrightの設定責務はB-13、実行packageとlock責務はC0-NODEに分離され、Ruffと`pip-audit`の実行packageはC0-PYTHONが所有する。
+- `pip-audit`を監査対象から除外する例外は設けず、C0-REVIEWでPython lock全体のCritical/Highをfail-closed確認する。
 
 ## 判定
 
