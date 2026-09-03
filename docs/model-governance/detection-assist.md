@@ -552,7 +552,7 @@ Candidate registry と release manifest を混同しない。manifest は fully 
 
 ## 18. 修正後の独立敵対レビュー
 
-2026-09-03 に本記録を read-only で再レビューし、公開一次資料と repository の要求・dependency lock に照合した。
+2026-09-04 に本記録を read-only で再レビューし、公開一次資料と repository の要求・dependency lock に照合した。
 
 | 攻撃的確認 | 再確認結果 |
 |---|---|
@@ -564,6 +564,6 @@ Candidate registry と release manifest を混同しない。manifest は fully 
 | NOTICE path 不在を表示義務なしと解釈していないか | 後発 revision の完全 tree における basename 0 件という観測に限定し、release tag source と最終 packet を未完としている |
 | research record を checkpoint approval に昇格していないか | HOLD 3件、approved detection C7 0件、manifest 未編集、G-DEP-08 / Gate 2 BLOCKED を維持している |
 
-再レビューで確認された **verified factual defect は 0 件**であり、DA-B01〜DA-B10 は文書欠陥ではなく未解決の正当な blocker と判定した。checkpoint binary の download、payload inspection、model execution、法務判断はレビュー範囲外であり、実施していない。
+モデル・source assertion に関する **verified factual defect は 0 件**だった。レビュー節の初版では資料取得日 `2026-09-03` をレビュー日として転記していたため、現在日時との照合で確認した **recordkeeping defect 1 件**として実施日 `2026-09-04` へ修正した。修正後の追加欠陥は 0 件であり、DA-B01〜DA-B10 は文書欠陥ではなく未解決の正当な blocker と判定した。checkpoint binary の download、payload inspection、model execution、法務判断はレビュー範囲外であり、実施していない。
 
 したがって、**本 research record は HOLD の根拠として commit 可能**である。一方、**checkpoint 採用、manifest 登録、installer 同梱、G-DEP-08 / Gate 2 解除は不可**であり、model-release readiness は **NO** のままとする。
