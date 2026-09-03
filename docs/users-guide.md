@@ -470,7 +470,7 @@ OS の権限要求の前に、利用目的・保存有無・停止方法をア�
 
 ### 性能について
 
-- 推奨ハードウェアと承認済み軽量モデルで 10 FPS（100 ms 間隔）を目標とします（FR-INF-010）。
+- 推奨ハードウェアと承認済み軽量モデルでは、30 分連続試験で FR-INF-010 / NFR-PERF-004 の service time、capture-to-display p95、10 Hz 全フレーム処理、drop 0 を満たすことが**出荷条件**です。
 - 端末が 100 ms を超える場合は最新フレーム優先で継続し、実 FPS・レイテンシ・drop 数・性能警告を表示します（FR-INF-011）。
 
 ### 学習と推論のリソース競合
@@ -495,10 +495,10 @@ Project・Dataset Revision・Training Run・Model Version・キャッシュご�
 - 再生成可能なキャッシュ（NFR-STO-003）
 - 失敗 Run の一時チェックポイント（NFR-STO-003）
 
-**削除されないデータ：**
+**キャッシュ・一時 checkpoint の削除では削除されないデータ：**
 - Reference モードの参照元ファイル（FR-PRJ-008、FR-DAT-012）
 - 確定済み Dataset Revision（上書き不可）
-- 成功済み Model Version（上書き不可）
+- 成功済み Model Version（上書き不可）。Model Version 自体の明示削除は FR-MOD-004 に従い、使用中・親子依存を表示して確認した場合だけ行います。
 
 ### ライセンスと第三者通知
 
