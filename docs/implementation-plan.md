@@ -73,7 +73,7 @@
 | D-06 | Python bundle 形式 | A. PyInstaller `onedir` を installer へ内包 / B. PyInstaller `onefile` / C. Python runtime をそのまま同梱 | **A** | top-level installer は1ファイルのまま、worker 起動ごとの展開を避けられる。PyInstaller は `onedir` を既定とし、`onefile` は起動時展開を行う [P05]。 | Gate 1 |
 | D-07 | Camera frame → inference process | A. 固定サイズRGB binary pipe / B. localhost HTTP / C. custom-built `onnxruntime-node` | **A** | network listener を作らず、macOS CoreML を公式 Python package で検証できる。Node binding の公開 matrix は macOS CoreML を明示保証していない [P08]。10 Hz 可否は SPI-07〜09 で測定する。 | Gate 1 |
 | D-08 | Curated/Assist model | A. 要求定義候補から法務・PoC 合格モデルを選定 / B. 未監査モデルで先行実装 | **A（fail closed）** | 要求定義 §13.3 は承認済み Assist Model がないと明記する。モデル固有実装は checkpoint、学習データ由来、再配布、品質の承認後にのみ開始する。 | Gate 2・必須決定 |
-| D-09 | 承認済み model binary の保管 | A. build machine の `vendor/models/` に手動配置し hash 検証 / B. Git LFS / C. build 時自動 download | **A** | runtime/build の暗黙通信を避け、大容量 binary を通常 Git 履歴へ入れない。追跡対象は manifest と証拠文書だけにする。 | Gate 2 |
+| D-09 | 承認済み model binary の保管 | A. build machine の `vendor/models/` に手動配置し hash 検証 / B. Git LFS / C. build 時自動 download | **A** | runtime/build の暗黙通信を避け、大容量 binary を通常 Git 履歴へ入れない。manifest の `sourcePath` は検証元 `vendor/models/`、`payloadPath` は同一bytesの同梱先 `resources/models/` として分離し、追跡対象はmanifestと証拠文書だけにする。 | Gate 2 |
 | D-10 | Product identity | A. `io.github.dahatake.autovisionstudio` / B. 所有 domain ベース / C. 別 ID | **A（暫定）** | repository owner を基に衝突しにくい。署名、macOS TCC、upgrade identity に影響するため正式 build 前に確定が必要。 | Gate 3・必須決定 |
 | D-11 | CI/release 実行場所 | A. local/self-hosted Windows+Mac / B. GitHub-hosted CI / C. hybrid | **A** | Cloud 不使用を最も厳格に守り、model/signing key を外部 runner へ置かない。Apple notarization だけは要求定義 §3.3 の配布工程例外とする。 | Gate 1 |
 | D-12 | Update | A. 新しい署名済み installer を手動実行 / B. online auto-updater | **A** | MVP は更新確認と runtime 通信を禁止する。in-place upgrade は新 installer の実行で満たす。 | Gate 0 |
@@ -257,7 +257,7 @@ flowchart TD
 | A-04 | Packaging ADR | `docs/adr/0003-packaging.md` | A-01 | electron-builder、PyInstaller onedir、OS別build、manual update を固定 [P02]〜[P05]。 |
 | A-05 | Dependency/license policy | `docs/dependency-policy.md` | A-01 | 許可/禁止 license、追加手順、unknown fail を記録。FR-LIC。 |
 | A-06 | Model adoption template | `docs/model-governance/adoption-template.md` | A-05 | code/checkpoint/data/terms/hash/quality の証拠欄を定義。FR-LIC-004/014。 |
-| A-07 | Model manifest schema | `resources/models/manifest.schema.json`, `resources/models/manifest.json` | A-06 | 空の承認済み一覧から開始。未承認 model を登録しない。 |
+| A-07 | Model manifest schema | `resources/models/manifest.schema.json`, `resources/models/manifest.json` | A-06 | 空の承認済み一覧から開始。未承認 model を登録せず、`vendor/models/`検証元と`resources/models/`同梱先を別fieldで保持する。 |
 | A-08 | User guide skeleton | `docs/users-guide.md` | A-01, D-14 | Install/Project/Data/Annotation/Training/Report/Camera/Troubleshooting 見出しだけ作成。 |
 | A-09 | 開発・検証方針 | `CONTRIBUTING.md` | A-02, A-04 | 小タスク規約、Windowsはpwsh 7+、OS別test方針を記録。 |
 | A-10 | 生成物と秘密情報の ignore 規則 | `.gitignore` | A-04 | `node_modules/`、Electron/Python出力、local Project/cache、`vendor/models/`、署名秘密を除外し、`package-lock.json`、`uv.lock`、`ml/packaging/*.spec` は追跡対象にする。既存の `build/` と `*.spec` 除外を確認してから例外を追加する。 |
@@ -578,7 +578,7 @@ AST-08 は表の位置にかかわらず TRN-21 後まで開始しない。初�
 
 | ID | タスク | 作成・編集 file | 依存 | 完了条件 |
 |---|---|---|---|---|
-| PKG-01 | Model payload verifier | `scripts/models/verify.py`, `scripts/models/verify.test.py`, `resources/models/manifest.json` | AST-01, Gate 2 | `vendor/models/` のapproved hashだけ通す。downloadしない。 |
+| PKG-01 | Model payload verifier | `scripts/models/verify.py`, `scripts/models/verify.test.py`, `resources/models/manifest.json` | AST-01, Gate 2 | manifestの`sourcePath`にある`vendor/models/`のapproved hash/sizeだけを通し、同一bytesを`payloadPath`へ対応付ける。downloadしない。 |
 | PKG-02 | Windows worker freeze | `ml/packaging/worker-windows.spec`, `scripts/build-python-worker.ps1` | SPI-03, LIC-03, Gate 4 | production commands/torch/ORTをonedir。採用した場合だけ承認済みCUDA/cuDNN runtimeを含める。 |
 | PKG-03 | macOS worker freeze | `ml/packaging/worker-macos.spec`, `scripts/build-python-worker.sh` | SPI-04, Gate 4 | arm64 onedir、nested binaries列挙。 |
 | PKG-04 | Common Electron package | `electron-builder.yml`, `scripts/verify-package-resources.mjs`, `scripts/verify-package-resources.test.mjs` | PKG-01 | app、worker、models、noticesをextraResourcesへ置く共通規則。OS固有設定は含めない。 |
