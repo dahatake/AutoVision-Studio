@@ -122,7 +122,7 @@ Windows 11 24H2未満でも旧probeがPASSし得る欠陥も敵対的レビュ�
 
 native Apple Silicon Mac を使用できないため、macOS arm64 の CPU/CoreML session、output、profile attribution は取得していない。lock metadata、Windows 上の package 調査、または CoreML provider の公式説明を native 実行証拠へ読み替えない。
 
-probe sourceはmacOS locked laneを実行できるplatform分岐へ修正済みだが、CoreML profileの実際のkernel名・operation名・provider登録順は推測で固定していない。native実行では1件のkernel event、非空operation、`CoreMLExecutionProvider` attribution、CPUとのexact output一致を要求し、実profileが条件を満たさなければfail-closedする。したがってコード修正はmacOS `NOT_RUN`を`PASS`へ変更しない。
+probe sourceはmacOS locked laneを実行できるplatform分岐へ修正済みである。CoreML profileの実際のkernel名・operation名は推測で固定せず、provider登録順は要求した`CoreMLExecutionProvider`, `CPUExecutionProvider`とのexact一致を要求する。native実行ではさらに1件のkernel event、非空operation、`CoreMLExecutionProvider` attribution、CPUとのexact output一致を要求し、実profileが条件を満たさなければfail-closedする。したがってコード修正はmacOS `NOT_RUN`を`PASS`へ変更しない。
 
 固定revision `v1.23.2` の公式sourceも照合した。`BinaryOpBuilder`はFP32/FP16の`Add`を対象とし、最小opsetは7で、ML ProgramとNeural Networkの両経路に変換処理を持つ。`CoreMLExecutionProvider::GetCapability`はbuilderが対応と判定したnodeからpartitionを作成する。このため本probeのFP32 `Add` / opset 17は静的にはCoreML変換候補である。ただしsource上の対応可否はnative環境でのcompile・execution・profile attributionを証明しないため、macOS判定は`NOT_RUN`のままとする。
 
