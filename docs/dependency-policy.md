@@ -82,9 +82,10 @@ FR-LIC-001 に基づき、すべてのカテゴリーにわたり、名称・バ
 | 研究限定 | "for research purposes only"、"academic use only" | 同上 |
 | 非商用限定 | CC-BY-NC 系、"non-commercial use" | 同上 |
 | 用途制限付き | "not for military use"、"not for clinical use" など特定用途禁止 | 同上 |
-| **unknown** | SPDX が `NOASSERTION` または空欄 | **解除なし — unknown は常にリリース失敗** |
+| **unknown / 未確定状態語彙** | SPDX が `NOASSERTION`、空欄、`TBD`、`PENDING`、`MISSING`、`NOT_RUN`、`UNCONFIRMED`、`HOLD`、`BLOCKED`、`REJECTED`、`N/A` | **解除なし — 未確定値は常にリリース失敗** |
 
 > `unknown` を承認で上書きする手段は存在しない。ライセンスが確認できない部品は含めない（FR-LIC-010）。
+> 上記状態語彙は調査中の採用記録で blocker を表すために使用できるが、`resources/models/manifest.json` の承認済みentryには転記しない。
 
 ---
 
@@ -158,15 +159,18 @@ FR-LIC-005 および FR-LIC-015 に基づき、**3 つのレイヤーを独立�
 | 再配布条件 | ✓ |
 | NOTICE 内容 | ✓ |
 | 判断根拠一次資料 URL + 保存 hash | ✓ |
+| intended use / out-of-scope use と製品用途の適合 | ✓ |
 | 承認者氏名 | ✓ |
 | 承認日 | ✓ |
 
 - 上記のいずれかが **unknown** の場合は同梱しない（fail-closed）。
+- manifestの`sourcePath`はbuild machine上の`vendor/models/`、`payloadPath`はinstaller内の`resources/models/`を指す。両者は同一binaryであり、manifestに記録した単一のSHA-256とbyteSizeが検証元・同梱後の双方に一致しなければならない（D-09/PKG-01）。
+- `releaseStatus.ready=true`では対象releaseの`productVersion`を必須とする。空または部分承認状態の`ready=false`では省略できる。
 - `docs/model-governance/adoption-template.md`（A-06 成果物）を証拠記録の統一フォームとして使用する。
 
 ### 6.2 Annotation Assist Model checkpoint（C7）— FR-LIC-014 準拠
 
-C6 の全項目に加え、次を追加記録する。
+C6 の全項目に加え、C7ではcheckpoint model cardを一次資料として次を追加記録する。
 
 | 追加項目 | 必須 |
 |---|---|
