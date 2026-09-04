@@ -5,10 +5,10 @@
 | ステータス | 承認済み（デフォルト採用） |
 | 作成日 | 2026-09-02 |
 | 対象タスク | A-02 |
-| 要求基準 | `docs/requirement-definition.md` v0.3 Draft §8（FR-SEC-004〜006、FR-INF-003/009、FR-TRN-010/013/014、FR-DAT-013）、§11（NFR-REL-003/004）、§13（参考） |
-| 実装計画基準 | `docs/implementation-plan.md` §3 |
+| 要求基準 | `docs/requirement-definition.md` v0.4 Draft §4、§8（FR-SEC-004〜006、FR-INF-003/009、FR-TRN-010/013/014、FR-DAT-013）、§11（NFR-REL-003/004）、§13（参考） |
+| 実装計画基準 | `docs/implementation-plan.md` §1.3〜1.4、§3、§6 |
 
-> **注意:** 本 ADR はアーキテクチャ方針を記録した文書である。実装コードはまだ存在しない。
+> **注意:** 本 ADR はアーキテクチャ方針を記録した文書であり、実装完了や Gate 合格を宣言するものではない。現在の検証範囲は §2.8 に記録する。
 
 ---
 
@@ -18,9 +18,11 @@ AutoVision Studio はデスクトップアプリケーションとして、次�
 
 - 完全オフライン動作（外部 API・Cloud resource なし）
 - 商用ライセンス要件（全部品の監査）
-- Windows x64 および macOS arm64 の自己完結型インストーラー
+- Version 1 は Windows 11 24H2 以降 x64 の自己完結型インストーラーだけを対象とする
 - バックグラウンド学習とリアルタイムカメラ推論の並立
 - UI の応答性を学習・推論の負荷から切り離す
+
+macOS arm64 の MPS 学習、CoreML 推論、カメラ権限、署名・notarization・PKG に関する既存調査は、技術的な将来候補を示す履歴として保持する。ただし、Version 1 の実装、Gate 1〜5、受入、完了率には含めず、Windows の証拠を macOS の合格証拠へ転用しない。
 
 これらを満たすために、プロセス境界とデータフローのデフォルトを記録する。
 
@@ -47,7 +49,7 @@ React Renderer ──(control / camera frame を限定 API へ渡す)──▶ E
                                 (spawn / JSON + NDJSON)            (spawn / binary RGB frame + NDJSON)
                                         │                                          │
                                   PyTorch / Optuna                          ONNX Runtime
-                                  ONNX Export                         DirectML / CoreML / CPU EP
+                                  ONNX Export                          DirectML / CPU EP
 ```
 
 HTTP サーバー、localhost API、message broker、汎用 RPC framework は一切作らない。
@@ -95,7 +97,7 @@ HTTP サーバー、localhost API、message broker、汎用 RPC framework は一
 4. Worker は推論結果を NDJSON で stdout へ返す。
 5. フレームキューの最大深度は 1 とし、古い pending フレームは新しいフレームで置換する（最新フレーム優先）。
 
-> **Gate 1 PoC 必須事項（未検証）:** binary pipe の 10 Hz スループット (SPI-07) と OS Execution Provider の実機動作 (SPI-08) は **Gate 1 PoC で実測するまで確定していない**。本 ADR のバイナリパイプ仕様および DirectML / CoreML EP の採用は、PoC が合格した場合にのみ確定する。
+> **Gate 1 PoC 境界:** Version 1 では Windows の binary pipe (SPI-07) と DirectML / CPU Execution Provider (SPI-08) を Gate 1 の証拠とする。保存済み PoC の到達範囲と未完了条件は §2.8 のとおりであり、Gate 1 全体は未解決である。CoreML/MPS の実機検証は将来 macOS backlog であり、Gate 1/4 の証拠には含めない。
 
 ### 2.6 障害・キャンセル動作
 
@@ -117,6 +119,17 @@ HTTP サーバー、localhost API、message broker、汎用 RPC framework は一
 - **Reference モードの参照元ファイルは削除も変更もしない。** アプリが書き込むのは Project 作業領域だけである。
 - **カメラフレームと推論結果はメモリ上のみで処理する。** ディスクやログへ保存しない。
 
+### 2.8 現在の検証状態
+
+| 対象 | 保存済み証拠 | 本 ADR で主張しないこと |
+|---|---|---|
+| SPI-07 binary pipe | Windows 11 24H2+ x64 で 320/640 固定 RGB、各 100 frame の transport PoC と不正入力 3 件の fail-closed を確認済み \[E07\] | カメラ統合、queue=1、実モデル、warm-up、30 分連続性能、FR-INF-010 / Gate 4 合格 |
+| SPI-08 ORT provider | Windows 11 24H2+ x64 で単一 FP32 `Add` model の CPUExecutionProvider / DmlExecutionProvider session、exact output、profile attribution を確認済み \[E08\] | 採用モデルの演算網羅性、部分 fallback、GPU adapter、latency、throughput、10 FPS、production 採用確定 |
+| SPI-03 Windows onedir | 現在の Windows host で Python path から隔離した onedir worker の CPU/DirectML 実行を確認済み。ただし clean Windows 実行は `NOT_RUN / BLOCKED` \[E03\] | 自己完結 installer、clean-host、license payload、Gate 1 合格 |
+| macOS CoreML/MPS | 公式資料、lock/package 調査、validator/parser および過去の設計研究を保持 | native Apple Silicon 実行、CoreML/MPS 合格、Version 1 Gate 1/4 の証拠 |
+
+したがって、Main / Renderer / Preload / Job Worker / Inference Worker の境界は Version 1 の承認済みデフォルトである一方、binary protocol の production 固定、採用モデルでの DirectML 適合、性能、packaging は各後続 Gate の合格まで未確定事項を残す。
+
 ---
 
 ## 3. 採用しない選択肢と理由
@@ -125,7 +138,7 @@ HTTP サーバー、localhost API、message broker、汎用 RPC framework は一
 |---|---|
 | **常駐 Python HTTP サーバー（localhost API）** | ネットワークリスナーを持つサーバーの起動・停止・権限・ポート競合管理が不要な複雑さを生む。オフライン要件とも相性が悪い。ジョブ単位の CLI spawn で同等の分離が実現できる \[実装計画 §1.3 ルール 7\]。 |
 | **常駐 Python サービス（message broker 付き）** | MVP ではキュー深度の大きい非同期処理を必要としない。学習は 1 件 FIFO、推論は queue=1 で十分であり、broker の依存と運用コストは YAGNI になる。 |
-| **onnxruntime-node（Node.js バインディング）による推論** | 公開済みの prebuilt matrix が macOS CoreML を明示保証していないため、Python ONNX Runtime の実機 PoC (SPI-08) が優先される \[P08\]。 |
+| **onnxruntime-node（Node.js バインディング）による推論** | Version 1 は Windows の DirectML / CPU を公式 Python package と分離 worker で検証し、学習系 Python runtime と推論実装を揃える。過去に調査した Node prebuilt matrix と macOS CoreML の不確実性は、将来 macOS 対応時に再評価する \[P08\]。 |
 | **汎用 RPC framework（gRPC / protobuf codegen）** | MVP の IPC は versioned JSON と NDJSON で十分であり、codegen と追加ランタイム依存は不要な抽象層になる。 |
 | **汎用プラグイン API / モデルプラグインレジストリ** | 承認済みモデル以外を実行時に追加する経路を作らない。未監査コードのロードを禁止するためのシンプルな許可リストで足りる \[実装計画 §1.3 ルール 7\]。 |
 | **Redux / MobX（全体状態管理）** | 画面単位の React hooks で必要な state が賄えると判断している。必要性が実測で生じた場合のみ別タスクを起票する \[実装計画 §1.3 ルール 5\]。 |
@@ -137,7 +150,8 @@ HTTP サーバー、localhost API、message broker、汎用 RPC framework は一
 - Renderer に OS リソースへの直接 API を公開しないため、Renderer 内の不正入力が直接 filesystem や child process へ到達する経路を減らせる \[P01\]。
 - Main が単一の DB ライターとなり、データ競合と partial write を防止できる。
 - Python worker の異常終了を UI プロセスから分離できる。端末全体のメモリ圧迫などの資源競合は別途検出・制御が必要であり、プロセス分離だけで防げるとは扱わない。
-- binary pipe プロトコルと DirectML / CoreML EP の採用は Gate 1 PoC (SPI-07/SPI-08) で実測合格後に確定する。それまでは「設計案」であり「実証済み事実」ではない \[P07\]\[P08\]。
+- Windows の binary pipe transport と単一 `Add` model による DirectML / CPU smoke は保存済み PoC の範囲で確認済みである。ただし production protocol、採用モデル互換性、30 分性能、packaging を含む Gate 1/4 合格は主張しない \[P07\]\[E07\]\[E08\]\[E03\]。
+- macOS CoreML/MPS の調査は将来 backlog として保持するが、Version 1 の実装・Gate・受入証拠には含めない \[P08\]。
 - localhost サーバー・RPC framework・プラグイン API を持たないため、実行時ポート競合・プラグイン起因の脆弱性・認証の複雑さが生じない。
 
 ---
@@ -148,10 +162,13 @@ HTTP サーバー、localhost API、message broker、汎用 RPC framework は一
 |---|---|
 | \[P01\] | Electron, [Security](https://www.electronjs.org/docs/latest/tutorial/security) — context isolation、sandbox、IPC sender 検証、navigation/CSP |
 | \[P07\] | ONNX Runtime, [DirectML Execution Provider](https://onnxruntime.ai/docs/execution-providers/DirectML-ExecutionProvider.html) — DirectX 12、sequential Run、fixed shape |
-| \[P08\] | ONNX Runtime, [CoreML Execution Provider](https://onnxruntime.ai/docs/execution-providers/CoreML-ExecutionProvider.html) / [Node.js binding](https://onnxruntime.ai/docs/get-started/with-javascript/node.html) — macOS CoreML Python package と Node prebuilt matrix |
-| \[RD\] | `docs/requirement-definition.md` v0.3 — 機能・非機能要求の根拠 |
-| \[IP\] | `docs/implementation-plan.md` §1.3、§3 — オーバーエンジニアリング防止ルールとプロセス境界設計 |
+| \[P08\] | ONNX Runtime, [CoreML Execution Provider](https://onnxruntime.ai/docs/execution-providers/CoreML-ExecutionProvider.html) / [Node.js binding](https://onnxruntime.ai/docs/get-started/with-javascript/node.html) — 将来 macOS 対応のため保持する CoreML Python package と Node prebuilt matrix の調査 |
+| \[RD\] | `docs/requirement-definition.md` v0.4 Draft — Windows 11 24H2 以降 x64 の Version 1 要求と将来 macOS 要求の境界 |
+| \[IP\] | `docs/implementation-plan.md` §1.3〜1.4、§3、§6 — オーバーエンジニアリング防止、Windows MVP のプロセス境界と Gate 条件 |
+| \[E07\] | `spikes/inference/pipe-result.md` — Windows binary transport PoC の保存済み結果と制限 |
+| \[E08\] | `spikes/inference/provider-result.md` — Windows CPU/DirectML provider smoke の保存済み結果と制限 |
+| \[E03\] | `spikes/packaging/windows-result.md` — Windows onedir PoC の部分合格と未完了条件 |
 
 ---
 
-*本 ADR は実装完了を宣言するものではない。Gate 1 PoC の結果によって §2.5「Inference Worker」の詳細仕様が更新される可能性がある。*
+*本 ADR は実装完了または Gate 合格を宣言するものではない。Windows の後続 PoC と Gate 1/4 の結果によって §2.5「Inference Worker」の詳細仕様が更新される可能性がある。macOS CoreML/MPS は将来版で新しい要求・PoC・Gate を設定して再決定する。*

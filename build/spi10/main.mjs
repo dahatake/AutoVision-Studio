@@ -52,6 +52,7 @@ const markers = [];
 const rendererDiagnostics = [];
 let partialResult = null;
 let pendingSuccessEvidence = null;
+let focusRecoveryCount = 0;
 
 const mark = (name) => {
   const marker = { name, at: new Date().toISOString() };
@@ -263,6 +264,23 @@ function createDragPoints(index) {
 
 async function settleInput(window) {
   await rendererCall(window, 'settle');
+}
+
+async function ensureBenchmarkFocus(window, label) {
+  if (window.isFocused() && window.webContents.isFocused()) return;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    window.show();
+    if (window.isMinimized()) window.restore();
+    window.moveTop();
+    window.focus();
+    window.webContents.focus();
+    await settleInput(window);
+    if (window.isFocused() && window.webContents.isFocused()) {
+      focusRecoveryCount += 1;
+      return;
+    }
+  }
+  throw new Error(`${label} could not restore benchmark window focus`);
 }
 
 async function sendClick(window, point, verifyPresentation, label) {
@@ -826,7 +844,10 @@ async function verifyPanGeometryExclusion(window, start, label, selectFirst) {
   const beforeBox = findBox(before, 'box-0');
   const afterBox = findBox(after, 'box-0');
   if (JSON.stringify(beforeBox) !== JSON.stringify(afterBox)) {
-    throw new Error(`${label} changed rectangle geometry`);
+    throw new Error(
+      `${label} changed rectangle geometry: ` +
+      `before=${JSON.stringify(beforeBox)}, after=${JSON.stringify(afterBox)}`,
+    );
   }
   if (before.viewport.x === after.viewport.x && before.viewport.y === after.viewport.y) {
     throw new Error(`${label} did not pan the viewport`);
@@ -835,13 +856,9 @@ async function verifyPanGeometryExclusion(window, start, label, selectFirst) {
 }
 
 async function runSample(window, operation, index, verifyPresentation) {
+  await ensureBenchmarkFocus(window, `${operation} sample ${index}`);
   const before = await prepareSample(window, operation, index);
-  if (verifyPresentation && (!window.isFocused() || !window.webContents.isFocused())) {
-    throw new Error(
-      `${operation} sample ${index} lost focus after capture: ` +
-      `window=${window.isFocused()}, webContents=${window.webContents.isFocused()}`,
-    );
-  }
+  await ensureBenchmarkFocus(window, `${operation} sample ${index} after preparation`);
   const token = await rendererCall(window, 'prepare', [operation]);
   const gestureStartedAt = performance.now();
   const interaction = await injectOperation(window, operation, index, verifyPresentation);
@@ -956,7 +973,14 @@ async function runSample(window, operation, index, verifyPresentation) {
 async function measureOperation(window, operation) {
   mark(`${operation}-warmup-start`);
   for (let index = 0; index < warmupCount; index += 1) {
-    await runSample(window, operation, index, false);
+    try {
+      await runSample(window, operation, index, false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`${operation} warm-up sample ${index} failed: ${message}`, {
+        cause: error,
+      });
+    }
   }
   mark(`${operation}-warmup-end`);
 
@@ -972,7 +996,15 @@ async function measureOperation(window, operation) {
   let firstCapture = null;
   mark(`${operation}-measure-start`);
   for (let index = 0; index < sampleCount; index += 1) {
-    const sample = await runSample(window, operation, index, true);
+    let sample;
+    try {
+      sample = await runSample(window, operation, index, true);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`${operation} measurement sample ${index} failed: ${message}`, {
+        cause: error,
+      });
+    }
     if (responsiveInputEvent !== null && responsiveInputEvent !== sample.responsiveInputEvent) {
       throw new Error(`${operation} changed responsive input event during measurement`);
     }
@@ -1076,6 +1108,7 @@ async function runInputBenchmark(window) {
   return {
     renderer,
     focus,
+    focusRecoveryCount,
     adversarialChecks,
     animationFrameIntervalsMs,
     animationFrameCadence: summarize(animationFrameIntervalsMs),

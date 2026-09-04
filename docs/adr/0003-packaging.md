@@ -2,205 +2,147 @@
 
 | 項目 | 内容 |
 |---|---|
-| 文書バージョン | 1.0 |
+| 文書バージョン | 1.1 |
 | 作成日 | 2026-09-02 |
-| ステータス | 採用済み（デフォルト決定） |
+| 最終更新日 | 2026-09-04 |
+| ステータス | 採用済み（Version 1 Windows MVP） |
 | 依存 ADR | なし（A-01 完了後の第一 ADR） |
-| 対応タスク | A-04 |
-| 要求基準 | `docs/requirement-definition.md` v0.3（FR-INS-001〜020、FR-SEC-011、NFR-INS-001〜008） |
+| 対応タスク | A-04 / WIN-SCOPE-03C |
+| 要求基準 | `docs/requirement-definition.md` v0.4 Draft（FR-INS-001〜020、FR-SEC-011、NFR-INS-001〜008） |
 
 ---
 
 ## 1. コンテキスト
 
-AutoVision Studio は Windows x64 と macOS arm64 の 2 OS 向けに、アプリ本体・Python runtime・機械学習依存ライブラリ・承認済み基盤重み・Annotation Assist Model・ONNX Runtime・SBOM・ライセンス通知を **1 ファイルのオフライン自己完結インストーラー** にまとめて配布しなければならない（FR-INS-001〜006）。
+AutoVision Studio Version 1（MVP）は、**Windows 11 24H2 以降の x64 のみ**を対象とする。アプリ本体、Electron/Node runtime、組み込み Python runtime、固定済み依存ライブラリ、ONNX Runtime と CPU EP、Windows accelerator integration、承認済み基盤重み、Annotation Assist Model、SBOM、ライセンス通知を、利用者が起動する **1 ファイルのオフライン自己完結インストーラー**にまとめる必要がある（FR-INS-001〜006）。
 
-配布に際して次の制約が定まっている。
+Version 1 の配布では、追加 runtime の手動導入、driver の導入・更新、実行時 download、更新確認、テレメトリ、CDN を禁止する。Windows installer と全 PE は Authenticode 署名し、clean install、repair、upgrade、rollback、uninstall を Windows で毎リリース検証する。
 
-- インストール後に Python・Node.js・CUDA Toolkit・開発者ツールの手動導入を利用者に要求しない（FR-INS-005）。
-- GPU/NPU ドライバーをインストーラーから導入・更新しない（FR-INS-006）。
-- 実行時にモデル・コード・Execution Provider をネットワーク経由で取得しない（FR-LIC-011、FR-INS-003）。
-- 更新確認・テレメトリ・CDN を既定で使用しない（FR-SEC-002）。
-- Windows 配布物はコード署名し、macOS 配布物は Developer ID 署名・Hardened Runtime・Notarization を行う（FR-SEC-011、FR-INS-008、FR-INS-010）。
-
-これらを満たす配布ツール・Python バンドル形式・アップグレード方式を確定する必要がある。
+macOS arm64、MPS/CoreML、flat PKG、Developer ID 署名、Hardened Runtime、notarization、stapling、Gatekeeper、macOS servicing は将来対応である。既存の調査資料は保持するが、Version 1 の実装、依存関係、PoC、Gate、受入条件、リリース前提には含めない。
 
 ---
 
-## 2. 決定事項
+## 2. Version 1 の決定事項
 
-### 2.1 共通
+### 2.1 現行決定
 
-| 項目 | 決定 | 根拠 |
+| 項目 | Version 1 の決定 | 根拠 |
 |---|---|---|
-| インストーラービルドツール | **electron-builder** | D-05 \[P02\]\[P03\]\[P04\] |
-| Python バンドル形式 | **PyInstaller onedir** | D-06 \[P05\] |
-| sidecar の組み込み方法 | electron-builder `extraResources` | D-05 \[P03\] |
-| アップグレード方式 | **手動（新しい署名済みインストーラーの実行）** | D-12 |
-| CI/リリース実行場所 | **ローカル／セルフホスト Windows + Mac** | D-11 |
+| 対象 OS / architecture | **Windows 11 24H2 以降 x64 のみ** | RD §1、§4、FR-INS-001 |
+| build tool / format | **electron-builder / NSIS 1 ファイル EXE** | D-05、[P02] |
+| Python bundle | **PyInstaller onedir** | D-06、[P05] |
+| sidecar 組み込み | electron-builder `extraResources` | D-05、[P03] |
+| 署名 | **Windows Authenticode**。最終 EXE と全 PE に信頼 CA chain と secure timestamp を適用 | FR-SEC-011、FR-INS-008、[S33]、[W01] |
+| install scope | per-user を既定とし、選択時だけ per-machine + UAC | FR-INS-009 |
+| 成果物名 | `AutoVision-Studio-<version>-windows-x64.exe` | FR-INS-002 |
+| 更新 | 新しい署名済み EXE の手動実行による in-place upgrade | D-12、FR-INS-015 |
+| release host | local / self-hosted Windows | D-11 |
 
-### 2.2 Windows 向け
+NSIS の「1 ファイル」は利用者が起動する配布物を指す。Python worker は PyInstaller `onedir` で生成し、そのディレクトリ全体を EXE payload として同梱する。worker を PyInstaller `onefile` にする決定ではない。
 
-| 項目 | 決定 |
-|---|---|
-| フォーマット | NSIS **1 ファイル EXE** |
-| インストール先 | 既定は **per-user**（管理者権限不要） |
-| per-machine オプション | 管理者または組織の選択時のみ標準 UAC を許可（FR-INS-009） |
-| ファイル名 | `AutoVision-Studio-<version>-windows-x64.exe` |
-| 署名 | Authenticode 署名（信頼された CA へ連鎖）＋ secure timestamp（FR-INS-008） |
-| 対象アーキテクチャ | x64 のみ（Windows on ARM は MVP 対象外） |
+### 2.2 Python sidecar とオフライン境界
 
-### 2.3 macOS 向け
-
-| 項目 | 決定 |
-|---|---|
-| フォーマット | **flat PKG** |
-| インストール先 | `/Applications/AutoVision Studio.app` |
-| ファイル名 | `AutoVision-Studio-<version>-macos-arm64.pkg` |
-| アプリ署名 | Developer ID Application（app 本体・全 nested executable/framework/helper）（FR-INS-010） |
-| PKG 署名 | Developer ID Installer（FR-INS-010） |
-| Hardened Runtime | 有効・最小限の entitlement（カメラ用途のみ追加）（FR-INS-010） |
-| Notarization | Apple notary service への提出と ticket の staple（FR-INS-010） |
-| 対象アーキテクチャ | arm64（Apple Silicon）のみ（Intel Mac は MVP 対象外） |
-
-### 2.4 Python sidecar
-
-| 項目 | 決定 |
-|---|---|
-| バンドル形式 | **PyInstaller onedir**（ディレクトリ形式） |
-| ビルド環境 | **OS ネイティブビルド必須**（Windows 上で Windows、macOS 上で macOS） |
-| 含む内容 | PyTorch / Optuna / ONNX Runtime（CPU EP 必須）、OS 別 accelerator integration（CUDA/DirectML は Windows 実機、CoreML は macOS 実機でそれぞれ PoC で確認） |
-| electron-builder との連携 | onedir ディレクトリ全体を `extraResources` に配置 |
-| 実行時インストール | しない（ビルド時に全依存を freeze） |
-
-### 2.5 ランタイムオフライン要件
-
-- **インストール完了後、追加ダウンロードをしない。**
-- モデル・Execution Provider・ライブラリはすべてインストーラーに同梱する（FR-INS-004）。
-- Windows ML の実行プロバイダー自動取得機能には依存しない（FR-LIC-011）。
-
-### 2.6 ドライバー非同梱
-
-- GPU/NPU ドライバーはインストーラーから導入・更新しない（FR-INS-006）。
-- ドライバー不在の場合も CPU fallback により全機能を利用可能とし、初回診断でアクセラレーション不可の理由のみを表示する。
+- Windows x64 上で native build した PyInstaller `onedir` を使用する。
+- worker、固定済み Python dependencies、PyTorch、Optuna、ONNX Runtime CPU EP を含める。
+- Windows accelerator integration と CUDA/cuDNN runtime は、承認、再配布検査、Windows 実機 PoC を通過した場合だけ含める。
+- pip install、model download、EP download を実行時に行わない。
+- GPU/NPU driver は同梱せず、利用不能時は CPU fallback を使う（FR-INS-006）。
 
 ---
 
-## 3. 根拠
+## 3. 採用理由
 
-**electron-builder を採用した理由。**
-
-1. NSIS EXE と flat PKG を同一設定ファイル（`electron-builder.yml`）で管理でき、ツールチェーンを 1 つに収められる \[P02\]。
-2. `extraResources` 機能により、PyInstaller onedir ディレクトリや承認済みモデルバイナリをインストーラーへ組み込める \[P03\]。
-3. macOS の Hardened Runtime・entitlements・notarization を設定レベルで扱える \[P04\]。ただし Apple の要件（S35・S36）を優先し、electron-builder の設定はその補助として使う。
-
-**PyInstaller onedir を採用した理由。**
-
-1. `onefile` はアプリ起動ごとに一時ディレクトリへ展開するため、大容量バンドル（PyTorch 等）では起動遅延が生じる \[P05\]。
-2. `onedir` は展開済みディレクトリとして存在し、Electron からのプロセス起動が高速で `extraResources` からの相対パス参照が自然に扱える。
-3. PyInstaller 公式文書が `onedir` を既定形式として扱っている \[P05\]。
-
-**手動アップグレードを採用した理由。**
-
-- MVP では更新確認や実行時ネットワーク通信を禁止する（FR-SEC-002、FR-LIC-011）。
-- in-place upgrade は新しい署名済みインストーラーを実行することで満たす（D-12）。
-- 既存 Project データは upgrade 後も保持する（FR-INS-015）。
+- electron-builder は NSIS target と `extraResources` を提供する [P02][P03]。
+- PyInstaller `onedir` は worker 起動ごとの一時展開を避けられる。`onefile` は起動時展開を行う [P05]。
+- PyInstaller は OS 間クロスコンパイルをサポートしないため、Version 1 bundle は Windows 上でのみ生成する [P05]。
+- 更新確認通信を実装せず、新しい署名済み EXE の手動実行で Project を保持したまま更新する。
 
 ---
 
-## 4. 検証済み文書事実
+## 4. Version 1 ビルド・検証マトリクス
 
-以下は 2026-09-02 時点の公式文書から確認できた事実である。**実装・実機試験・成果物の存在を意味しない。**
+| Lane | Build host | 成果物 | Python | 署名 | 必須検証 | Version 1 Gate |
+|---|---|---|---|---|---|---|
+| Windows x64 | Windows 11 24H2+ x64 local / self-hosted | NSIS 1 ファイル EXE | PyInstaller onedir | Authenticode + secure timestamp | offline clean install、初回起動、repair、upgrade、rollback、uninstall、payload/SBOM、署名 | **必須** |
+| Future macOS | 将来選定する native Apple Silicon Mac | flat PKG 候補 | PyInstaller onedir 候補 | Developer ID / notarization 候補 | 将来の要求・PoC・Gate で再定義 | **対象外** |
 
-| 事実 | 根拠 |
-|---|---|
-| electron-builder は NSIS をターゲットに持ち、Windows EXE を生成できる | \[P02\] https://www.electron.build/nsis.html |
-| electron-builder は PKG をターゲットに持ち、macOS 用 flat PKG を生成できる | \[P02\] https://www.electron.build/pkg.html |
-| electron-builder の `extraResources` はアプリ外部のファイル・ディレクトリをインストーラーに含める機能である | \[P03\] https://www.electron.build/contents.html |
-| electron-builder は macOS signing の `hardenedRuntime`・`entitlements`・`entitlementsInherit` と notarization 設定をサポートする | \[P04\] https://github.com/electron-userland/electron-builder/blob/master/website/docs/features/code-signing/notarization.md および https://github.com/electron-userland/electron-builder/blob/master/website/docs/mac.md |
-| PyInstaller `onedir` は依存ライブラリをすべてディレクトリに展開した自己完結バンドルを作る | \[P05\] https://pyinstaller.org/en/stable/operating-mode.html |
-| PyInstaller `onefile` はアプリ起動ごとに一時ディレクトリへ展開する | \[P05\] https://pyinstaller.org/en/stable/operating-mode.html |
-| PyInstaller は OS 間のクロスコンパイルをサポートしない（Windows バンドルは Windows 上、macOS バンドルは macOS 上でのみ生成できる） | \[P05\] https://pyinstaller.org/en/stable/usage.html#supporting-multiple-operating-systems |
-| Windows Installer の文書は clean install・rollback・repair・upgrade・uninstall の試験を列挙する。ただし MSI 固有の文書であり、NSIS の機能保証には使わない。本製品の repair は同一 NSIS EXE の再実行による再インストールとして別途実機検証する | \[P12\] https://learn.microsoft.com/windows/win32/msi/windows-installer-best-practices |
-| flat PKG は Developer ID Installer で署名し、notarize して ticket を staple するのが Apple の配布要件である | \[P13\] https://developer.apple.com/documentation/xcode/packaging-mac-software-for-distribution |
-| Notarization には Hardened Runtime と secure timestamp の適用が必要である | \[S36\] https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution |
-| Windows 配布物には信頼された CA へ連鎖する署名が必要である | \[S33\] https://learn.microsoft.com/windows/apps/package-and-deploy/choose-distribution-path |
-| Authenticode 署名は常に timestamp し、SHA-256 と RFC 3161 timestamp を使うことが推奨される | \[W01\] https://learn.microsoft.com/windows/win32/seccrypto/time-stamping-authenticode-signatures |
-| Windows Installer の署名・servicing・uninstall試験に関するベストプラクティス | \[S34\] https://learn.microsoft.com/windows/win32/msi/windows-installer-best-practices |
-| per-user インストールは管理者権限なしで導入できる構成である | FR-INS-009 |
+Version 1 の task または Gate は Future macOS lane の machine、証明書、PoC、成果物、試験結果に依存してはならない。Windows の結果を macOS の合格証拠へ転用してはならず、過去の macOS `NOT_RUN` は成功を意味しない。
 
----
+### 4.1 根拠資料と未検証境界
 
-## 5. PoC で確認が必要な前提
-
-以下は技術的に成立すると判断しているが、**実機での PoC または本番 package テストで合格するまでは確定でない前提**である。PoC が不合格の場合、対象項目について代替案を再評価し、Gate 1 を通過しない。
-
-| 前提 | 対応 PoC | リスク |
+| 調査事項 | 根拠 | Version 1 で必要な実証 |
 |---|---|---|
-| PyInstaller onedir に PyTorch・Optuna・ONNX Runtime を含め、Python 未導入のクリーン Windows で import と CPU 実行が成功する | SPI-03 | native extension や hidden import の欠落 |
-| PyInstaller onedir に PyTorch・MPS・CoreML EP を含め、Python 未導入のクリーン macOS arm64 で import・CPU/MPS/CoreML probe が成功する | SPI-04 | macOS nested binary signing、dynamic linker の制約 |
-| electron-builder NSIS target が onedir ディレクトリを `extraResources` へ同梱し、インストール後に起動できる | SPI-05 | ファイル数・パス長・圧縮形式の制約 |
-| electron-builder PKG target が onedir ディレクトリを同梱し、PKG の nested code 構造として署名を通過できる | SPI-06 | macOS Gatekeeper の nested code 署名要件 |
-| CUDA/DirectML EP を同梱した場合の PE 一覧と cold-start 時間が許容範囲内に収まる | SPI-03 | サイズ膨張、CUDA 再配布可能ファイルの範囲（LIC-03） |
-| CoreML EP の compile cache を model hash ごとに分離し、モデル変更時に古いキャッシュを再利用しない設計が macOS 実機で機能する | SPI-04、INF-06 | CoreML cache 管理 API の実機動作確認が必要 |
-| clean Windows 11 x64 で EXE 1 ファイルからオフラインインストールし、再起動なしで Project 作成まで到達できる | PKG-11 | 依存 runtime の欠落、PE 署名エラー |
-| clean Apple Silicon Mac で PKG 1 ファイルからオフラインインストールし、Gatekeeper assessment 後に Applications から Project 作成まで到達できる | PKG-12 | notarize 済み ticket の staple、Gatekeeper の挙動 |
-| upgrade・repair・rollback・uninstall が両 OS で Project データを保持したまま完結できる | PKG-13 | 旧版との互換 migration、rollback の整合性 |
+| electron-builder の NSIS target | [P02] | SPI-05、PKG-05、PKG-11 |
+| `extraResources` による directory 同梱 | [P03] | SPI-05、PKG-04〜05 |
+| PyInstaller `onedir` と `onefile` の動作差、OS 別 build | [P05] | SPI-03、PKG-02 |
+| Windows code signing と Authenticode timestamp | [S33]、[W01] | PKG-07、PKG-11 |
+| clean install、rollback、repair、upgrade、uninstall の試験観点 | [P12]、[S34] | MSI の保証とは扱わず、NSIS を PKG-11/13 で実証 |
+
+Apple の [P13]、[S35]、[S36] と electron-builder の macOS 資料 [P02]、[P04] は将来 macOS の候補調査として保持する。これらは AutoVision Studio で flat PKG、Developer ID 署名、Hardened Runtime、notarization、stapling、Gatekeeper、macOS servicing を検証済みであるという主張ではない。
 
 ---
 
-## 6. リリース前提条件
+## 5. Version 1 PoC・package 試験
 
-以下は Gate 5（リリース判定）より前に満たさなければならない条件である。いずれかが未達の場合はリリースを停止する。
+次の項目は Windows 実機で合格するまで未確定であり、不合格時は対象 component を再評価する。
+
+| 前提 | 対応 PoC / task | リスク |
+|---|---|---|
+| Python 未導入の clean Windows で onedir worker の import、health、CPU 実行が成功する | SPI-03 | native extension、hidden import、runtime 欠落 |
+| NSIS EXE が onedir を `extraResources` として同梱し、install 後に worker を起動できる | SPI-05 | file 数、path 長、圧縮、resource path |
+| accelerator を採用する場合、再配布範囲、PE 一覧、cold start、CPU fallback が合格する | SPI-03、LIC-03 | payload 増大、license、provider 初期化 |
+| clean Windows 11 x64 標準ユーザー環境で EXE 1 ファイルから offline install し、再起動なしで Project 作成できる | PKG-11 / POC-11 | runtime、署名、権限、容量 |
+| repair、upgrade、旧版拒否、rollback、uninstall が Project を既定保持して完結する | PKG-13 / POC-13 | migration、使用中 file、rollback |
+| 最終 EXE と全 PE の Authenticode chain、timestamp、payload hash が合格する | PKG-07 | 署名漏れ、証明書、timestamp service |
+| payload inventory と SBOM、license、model manifest、hash が一致する | PKG-14 | 欠落、余剰、unknown license、hash 不一致 |
+
+SPI-04、SPI-06、PKG-03、PKG-06、PKG-08、PKG-12、PKG-18、PKG-20、PKG-21 と macOS 固有試験は Future macOS backlog であり、Version 1 の完了条件または依存 DAG に含めない。
+
+---
+
+## 6. Version 1 リリース前提条件
+
+以下は Gate 5 より前に満たす。未達なら Windows リリースを停止する。
 
 | 条件 | 担当タスク |
 |---|---|
-| 組織の正式 Windows コード署名証明書を取得し、秘密鍵を安全に管理する | D-16 |
-| Apple Developer Program の Developer ID 証明書（Application / Installer 両方）を取得し、秘密鍵を安全に管理する | D-16 |
-| 全 PE 実行ファイル・DLL を信頼 CA 連鎖の証明書と secure timestamp で Authenticode 署名する | PKG-07 |
-| app bundle 内の全 nested executable / framework / helper / Python onedir 内の全 Mach-O binary を Developer ID Application で署名する | PKG-08 |
-| flat PKG を Developer ID Installer で署名する | PKG-08 |
-| Hardened Runtime と最小限の entitlement を適用する | PKG-06、PKG-08 |
-| PKG を notarize して ticket を staple する | PKG-08 |
-| 署名・notarization・staple を build gate で検証する（`codesign`・notary log・stapled ticket・Gatekeeper assessment を含む） | NFR-INS-006 |
-| SBOM と `THIRD_PARTY_NOTICES` を全 payload と照合し、欠落・余剰・hash 不一致・unknown license があればビルドを失敗させる | LIC-01、PKG-14、NFR-INS-007 |
-| Windows/macOS 同一製品版で schema version・Curated Base Weight version・Annotation Assist Model version・機能フラグ・ライセンス通知が一致することを検証する | PKG-21 |
-| Product ID（`io.github.dahatake.autovisionstudio`、暫定 D-10）を正式な配布前に確定する | D-10 |
+| 正式 Windows code-signing 証明書を取得し、秘密鍵を安全に管理する | D-16 |
+| 最終 installer と全 PE を信頼 CA chain + secure timestamp で Authenticode 署名する | PKG-07 |
+| installer と全 payload の署名・hash を build gate で検証する | PKG-07、NFR-INS-006 |
+| offline clean install、repair、upgrade、rollback、uninstall を clean Windows で合格させる | PKG-11、PKG-13 |
+| SBOM と `THIRD_PARTY_NOTICES` を全 payload と照合し、欠落、余剰、hash 不一致、unknown license を拒否する | LIC-01、PKG-14、NFR-INS-007 |
+| model manifest と payload の承認状態、hash、size を照合する | PKG-01 |
+| payload size と一時領域 + 10% を算出し、install 前に検査する | PKG-16〜17、NFR-INS-003 |
+| Product ID `io.github.dahatake.autovisionstudio`（暫定 D-10）を正式 build 前に確定する | D-10 |
+
+Apple Developer Program、Developer ID 証明書、Apple Silicon Mac、notarization credential、macOS package 試験は Version 1 のリリース前提ではない。
 
 ---
 
-## 7. 署名・Notarization の境界
-
-### 7.1 Windows 署名
+## 7. Windows Authenticode の境界
 
 | 対象 | 方法 |
 |---|---|
-| 最終 EXE インストーラー | Authenticode 署名 + secure timestamp |
-| アプリ内の全 PE 実行ファイル（`.exe`/`.dll`） | 同上 |
+| 最終 NSIS EXE | Authenticode 署名 + secure timestamp |
+| Electron app 内の `.exe` / `.dll` | 同上 |
 | Python onedir 内の全 PE | 同上 |
-| ONNX Runtime・native addon の PE | 同上（再配布時の署名要件を個別確認） |
-| インストール前の署名・payload 検証 | 最終 installer と全 payload hash を検証してからインストール開始（FR-INS-008） |
+| ONNX Runtime、native addon、採用した accelerator runtime の PE | 同上。再配布条件と既存 vendor signature の扱いを個別確認 |
+| install 前 | installer signature、payload signature、payload hash を検証し、不合格なら system 変更前に停止 |
 
-GPU/NPU ドライバーの署名・インストールはスコープ外とする（FR-INS-006）。
+GPU/NPU driver の署名・導入・更新はスコープ外である（FR-INS-006）。実行時の OCSP/CRL は OS の機能であり、本製品が独自実装しない。署名鍵・証明書の保管方法は D-16 で確定する。
 
-### 7.2 macOS 署名・Notarization
+### 7.1 Servicing とデータ保持
 
-| 対象 | 方法 |
+| 操作 | Version 1 の方針 |
 |---|---|
-| app bundle 内の全 nested executable / framework / helper | Developer ID Application で署名 |
-| Python onedir 内の全 Mach-O binary | Developer ID Application で署名 |
-| flat PKG | Developer ID Installer で署名 |
-| Hardened Runtime | 有効化し、Electron と同梱workerの動作に必要な最小限の entitlement だけを適用 |
-| Notarization | 承認済み製品payloadを含む最終署名済みPKGを Apple notary service へ提出。ユーザー画像・ラベル・Project・ユーザー学習済みモデル・学習結果はPKGに含めず送信しない |
-| Ticket の staple | notarize 完了後に PKG へ staple |
-| Gatekeeper assessment | build gate で `spctl --assess --type install` を実行して検証（NFR-INS-006） |
+| clean install | per-user を既定とし、offline、再起動なし、Start menu から起動可能にする |
+| upgrade | 新しい署名済み EXE を手動実行し、migration 前 backup 後に in-place upgrade する |
+| repair | 同一版 EXE の再実行で repair / reinstall を案内する |
+| downgrade | 新版導入済み端末への旧版上書きを互換性検査後に既定拒否する |
+| rollback | 失敗時に部分 install を除去し、旧版を起動可能な状態へ戻す |
+| uninstall | Windows の Apps から到達可能にし、app/runtime を削除する。Project は既定保持する |
 
-Notarization は D-11 の採用済みデフォルトに従う。提出対象は最終PKG全体であり、そこには FR-INS-004 の承認済み Curated Base Weight / Annotation Assist Model が製品payloadとして含まれ得る。一方、ユーザーの画像・ラベル・Project・ユーザー学習済みモデル・学習結果は提出物に含めない。この区別を release inventory で検証する。
-
-### 7.3 境界の外
-
-- 実行時の OCSP・CRL による証明書失効確認は OS 機能であり、本製品の管理外とする。
-- 署名鍵・証明書の保管方法は D-16 で別途確定する。現時点では未決である。
+Windows Installer 資料 [P12][S34] は試験観点として参照するが、MSI 固有機能を NSIS の実装済み能力として扱わず、PKG-11/13/19 で実証する。log は個人情報、画像、ラベル、Project 内容を含まないローカル log とする。
 
 ---
 
@@ -220,61 +162,70 @@ Notarization は D-11 の採用済みデフォルトに従う。提出対象は�
 
 ---
 
-## 9. 却下した選択肢
+## 9. 却下または延期した選択肢
 
-| 選択肢 | 却下理由 |
+| 選択肢 | Version 1 の判断 |
 |---|---|
-| **Electron Forge** | 今回必要な NSIS EXE・PKG・`extraResources`・署名設定を electron-builder の1設定系で扱うデフォルトを選んだため、同じ目的の2つ目のパッケージング基盤は導入しない。 |
-| **WiX（Windows）＋個別 macOS スクリプト** | ツールチェーンが 2 系統になり保守コストが増大する。electron-builder で両 OS を統一できるため採用しない。 |
-| **PyInstaller onefile** | アプリ起動ごとに一時ディレクトリへ展開するため、PyTorch・ONNX Runtime 等の大容量バンドルでは起動遅延が生じる \[P05\]。 |
-| **Python runtime をそのまま同梱（zip / venv）** | `site-packages` の完全同梱は動的 import や C extension 解決が複雑で OS ごとの動作保証が難しい。PyInstaller は C extension 依存解析と hidden import 解決に実績がある。 |
-| **online auto-updater** | 実行時の外向き通信を禁止する要件（FR-SEC-002、FR-LIC-011）と両立しない。MVP の更新は手動インストーラー実行で満たす（D-12）。 |
-| **GitHub-hosted CI** | Cloud 不使用方針（FR-SEC-001〜003）と、署名鍵・モデルバイナリを外部 runner に置かない要件から除外する（D-11）。 |
+| Electron Forge | NSIS、`extraResources`、Windows signing を electron-builder の設定系へ集約するため採用しない。 |
+| WiX / MSI | Version 1 は electron-builder NSIS を PoC と package 試験で実証する。servicing 要件を満たせない場合だけ再評価する。 |
+| Windows + macOS の同時 MVP | **延期。** macOS を Version 1 の依存・Gate に含めない。 |
+| flat PKG を Version 1 で作成 | **延期。** Apple 関連調査は §10 に保持するが、現行成果物ではない。 |
+| PyInstaller onefile | worker 起動ごとの一時展開と大容量 bundle の起動遅延を避けるため採用しない [P05]。 |
+| Python runtime / venv をそのまま同梱 | import/C extension 解決と配布構造を PyInstaller onedir へ集約するため採用しない。 |
+| online auto-updater | FR-SEC-002、FR-LIC-011 と両立しない。手動 installer upgrade を使う。 |
+| web / stub installer | offline 自己完結要件に反するため採用しない。 |
+| GitHub-hosted release CI | model/signing key を外部 runner へ置かない local/self-hosted Windows とする（D-11）。 |
+| driver 同梱 | FR-INS-006 に反するため採用しない。 |
 
 ---
 
-## 10. OS ネイティブビルドの必須要件
+## 10. Future macOS — 保持する調査と再決定事項
 
-**PyInstaller は OS 間のクロスコンパイルをサポートしない。** Windows バンドルは Windows 上でのみ、macOS バンドルは macOS 上でのみ生成できる \[P05\]。
+この節は**明示的な将来 backlog**であり、Version 1 の現行決定、実装義務、PoC、Gate、受入条件、ブロッカーではない。
 
-この制約から次が従う。
+| 調査項目 | 旧案から保持する候補 | 現在の状態 |
+|---|---|---|
+| package | electron-builder flat PKG | 文書調査のみ。プロジェクトで未検証 |
+| install 先 | `/Applications/AutoVision Studio.app` | 将来要件候補 |
+| app / package 署名 | Developer ID Application / Installer | 未検証 |
+| runtime security | Hardened Runtime + 最小 entitlement | 未検証 |
+| notarization | 最終署名済み PKG の提出と ticket staple | 未検証 |
+| assessment | Gatekeeper / `spctl` 等 | 未検証 |
+| Python | native Apple Silicon Mac 上の PyInstaller onedir | 未検証 |
+| ML | MPS、CoreML EP、CPU fallback、model-hash 別 cache | 未検証 |
+| servicing | clean install、upgrade、repair、rollback、uninstall | 未検証 |
 
-- Windows release lane と macOS release lane は独立した実機が必要である。
-- macOS freeze・sign・package・test（PKG-03〜08・PKG-12〜20）は Apple Silicon Mac のネイティブ環境が必要であり、Windows 上でエミュレーション・代替してはならない。
-- SPI-03（Windows onedir PoC）と SPI-04（macOS onedir PoC）は独立して実施し、双方が合格するまで PKG-02・PKG-03（本番 freeze）を開始しない。
+将来 macOS を再開する場合、TBD-04 に従い architecture、OS 下限、Python/ML wheel、MPS/CoreML、camera permission、配布経路、署名、notarization、servicing を新しい要求、依存監査、PoC、Gate で再決定する。Windows の証拠を macOS の合格へ転用しない。
+
+notarization を採用する場合も、提出対象は製品 package に限定し、ユーザー画像、ラベル、Project、ユーザー学習済み model、学習結果を含めない。これは将来設計の保持条件であり、現時点の実施または検証を意味しない。
 
 ---
 
-## 11. 現時点のブロッカー
+## 11. Version 1 外部ブロッカー
 
-> **未解決ブロッカー（2026-09-02 時点）**
->
-> 1. **macOS ネイティブ実機が存在しない。**
->    SPI-04・SPI-06・PKG-03・PKG-06・PKG-08・PKG-12〜14・PKG-20〜22 は Apple Silicon Mac なしに実行・合格扱いできない。これらのタスクは macOS 実機が用意されるまで **停止（Blocked）** である（実装計画 §1.4）。
->
-> 2. **Apple Developer ID 証明書が取得されていない。**
->    Developer ID Application・Developer ID Installer の両証明書と秘密鍵が確保されない限り、macOS 署名・notarization・staple（PKG-08）は実行できない（D-16）。
->
-> 3. **Windows コード署名証明書が取得されていない。**
->    組織の正式証明書が確保されない限り、Windows 署名（PKG-07）は実行できない（D-16）。
+Windows packaging における外部ブロッカーは、正式な Windows code-signing identity の確保だけである。
 
-**これらのブロッカーは Gate 5（リリース判定）より前に解消しなければならない。未解消の状態でリリースを判定してはならない。**
+| ブロッカー | 影響 | 対応 |
+|---|---|---|
+| Windows 正式 code-signing 証明書と安全な signing identity | 最終 EXE と全 PE を配布可能な状態にできない | D-16 で取得、保管、更新、失効、timestamp 手順を確定 |
 
-macOS 関連の PoC タスクは、現在の Windows 作業環境においては「未判定（Not Verified）」として扱い、合格扱いにしない。
+Windows local/self-hosted build/test machine はプロジェクト準備事項として管理する。Apple Developer ID、notary credential、Apple Silicon Mac は Future macOS の将来準備事項であり、Version 1 blocker ではない。
 
 ---
 
 ## 12. 結果
 
-この決定により次の制約と義務が生じる。
+この決定により、Version 1 には次の制約と義務が生じる。
 
-- `electron-builder.yml` を Windows・macOS で共有するが、OS 固有設定（NSIS・PKG・entitlements）を分けて管理する（PKG-04〜06）。共有設定ファイルは PKG-06 完了後に固定し、それより前に本番設定ファイルは作成しない。
-- PyInstaller onedir の各 OS 版を build pipeline の freeze ステップで生成し、`extraResources` 経由で組み込む（PKG-02〜03）。
-- macOS の全 nested binary 署名をリストアップし、署名漏れを build gate で検出する（PKG-08、NFR-INS-006）。
-- アップグレードは新インストーラーの実行で完結させ、実行時の更新確認通信を実装しない（D-12）。
-- ドライバー非同梱を維持し、CPU fallback で全機能を保証する（FR-INS-006）。
-- `vendor/models/` は Git 追跡対象外とし、release build 時に手動配置・hash 検証で管理する（D-09）。
-- SBOM・ライセンス検証・payload size 計算をビルドパイプラインに統合し、不合格時はビルドを失敗させる（LIC-01、PKG-16）。
+- `electron-builder` の Windows NSIS 設定を固定し、1 ファイル EXE を生成する（PKG-04〜05）。
+- Windows native build の PyInstaller onedir を `extraResources` 経由で組み込む（PKG-02、PKG-04〜05）。
+- 最終 EXE と全 PE を Authenticode 署名し、署名漏れと hash 不一致を build gate で拒否する（PKG-07、NFR-INS-006）。
+- clean install、repair、upgrade、downgrade rejection、rollback、uninstall、Project 保持を Windows で検証する（PKG-11、PKG-13、PKG-19）。
+- 更新確認通信を実装せず、新しい署名済み installer の手動実行で更新する（D-12）。
+- driver 非同梱を維持し、CPU fallback で全機能を利用可能にする（FR-INS-006）。
+- `vendor/models/` は Git 追跡対象外とし、release build 時の配置、manifest、hash で管理する（D-09）。
+- SBOM、license、model、payload size の検証を build pipeline に統合し、不合格時は build を失敗させる（LIC-01、PKG-01、PKG-14、PKG-16）。
+- Future macOS は独立 backlog とし、Version 1 task または Gate から参照しない。
 
 ---
 

@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="component-diagram-title component-diagram-desc">
+  <title id="component-diagram-title">AutoVision Studio コンポーネント図</title>
+  <desc id="component-diagram-desc">Renderer UI、Preload APIs、Shared Contracts、Main Services、Local Persistence、Python Commands、ML Domain、Packaging / Resources の責務と許可された依存方向を示す。青の実線は実装済み、紫の破線は設計確定・未実装、灰色の点線は検証待ち、緑の二重枠は外部入力または OS 資源を表す。Renderer から Main、filesystem、Python への直接依存はなく、Shared Contracts は business logic を持たない。</desc>
+
+  <defs>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1457B8"/>
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#6F2DA8"/>
+    </marker>
+    <marker id="arrow-dark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#344054"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="760" fill="#FFFFFF"/>
+  <text x="30" y="31" font-family="sans-serif" font-size="24" font-weight="700" fill="#17202A">AutoVision Studio — 論理コンポーネントと依存方向</text>
+  <text x="30" y="55" font-family="sans-serif" font-size="13" fill="#344054">2026-09-04 現在。ラベルと枠線で現行実装、目標設計、検証待ち、外部資源を区別する。</text>
+
+  <!-- Status legend -->
+  <g aria-label="状態凡例">
+    <rect x="30" y="72" width="252" height="40" rx="6" fill="#EAF2FF" stroke="#1457B8" stroke-width="2"/>
+    <text x="44" y="97" font-family="sans-serif" font-size="13" font-weight="700" fill="#123A70">実装済み（青・実線）</text>
+
+    <rect x="298" y="72" width="270" height="40" rx="6" fill="#F5EDFF" stroke="#6F2DA8" stroke-width="2" stroke-dasharray="8 5"/>
+    <text x="312" y="97" font-family="sans-serif" font-size="13" font-weight="700" fill="#4D1F75">設計確定・未実装（紫・破線）</text>
+
+    <rect x="584" y="72" width="270" height="40" rx="6" fill="#F2F4F7" stroke="#59636E" stroke-width="2" stroke-dasharray="2 5"/>
+    <text x="598" y="97" font-family="sans-serif" font-size="13" font-weight="700" fill="#343A40">検証待ち／Gate 待ち（灰・点線）</text>
+
+    <rect x="870" y="72" width="300" height="40" rx="6" fill="#EAF7EE" stroke="#1F7A3E" stroke-width="2"/>
+    <rect x="875" y="77" width="290" height="30" rx="3" fill="none" stroke="#1F7A3E" stroke-width="1.5"/>
+    <text x="888" y="97" font-family="sans-serif" font-size="13" font-weight="700" fill="#14532D">外部入力／OS 資源（緑・二重枠）</text>
+  </g>
+
+  <!-- Dependency arrows are behind component cards. -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 277 216 L 333 216" stroke="#1457B8" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+    <path d="M 277 305 L 333 305" stroke="#6F2DA8" stroke-width="2.5" stroke-dasharray="8 5" marker-end="url(#arrow-purple)"/>
+    <path d="M 567 216 L 623 216" stroke="#1457B8" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+    <path d="M 567 305 L 623 278" stroke="#6F2DA8" stroke-width="2.5" stroke-dasharray="8 5" marker-end="url(#arrow-purple)"/>
+    <path d="M 857 278 L 913 278" stroke="#6F2DA8" stroke-width="2.5" stroke-dasharray="8 5" marker-end="url(#arrow-purple)"/>
+    <path d="M 857 340 L 885 340 L 885 300 L 913 300" stroke="#6F2DA8" stroke-width="2.5" stroke-dasharray="8 5" marker-end="url(#arrow-purple)"/>
+    <path d="M 450 270 L 450 123 L 1008 123 L 1008 257" stroke="#6F2DA8" stroke-width="2" stroke-dasharray="8 5" marker-end="url(#arrow-purple)"/>
+    <path d="M 1030 361 L 1030 475" stroke="#6F2DA8" stroke-width="2.5" stroke-dasharray="8 5" marker-end="url(#arrow-purple)"/>
+    <path d="M 913 350 L 876 350 L 876 542 L 857 542" stroke="#6F2DA8" stroke-width="2.5" stroke-dasharray="8 5" marker-end="url(#arrow-purple)"/>
+    <path d="M 623 584 L 567 534" stroke="#6F2DA8" stroke-width="2.5" stroke-dasharray="8 5" marker-end="url(#arrow-purple)"/>
+    <path d="M 277 491 L 333 491" stroke="#1457B8" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+    <path d="M 1147 560 L 1178 560 L 1178 350 L 1147 350" stroke="#344054" stroke-width="2" marker-end="url(#arrow-dark)"/>
+  </g>
+
+  <text x="697" y="120" font-family="sans-serif" font-size="11" font-weight="700" fill="#4D1F75">validated IPC（計画）</text>
+  <text x="282" y="207" font-family="sans-serif" font-size="10" fill="#123A70">限定 API</text>
+  <text x="573" y="207" font-family="sans-serif" font-size="10" fill="#123A70">型</text>
+  <text x="862" y="270" font-family="sans-serif" font-size="10" fill="#4D1F75">schema</text>
+  <text x="1040" y="414" font-family="sans-serif" font-size="10" fill="#4D1F75">検証済み操作</text>
+  <text x="864" y="531" font-family="sans-serif" font-size="10" fill="#4D1F75">spawn / protocol</text>
+  <text x="570" y="563" font-family="sans-serif" font-size="10" fill="#4D1F75">domain 呼出し</text>
+  <text x="282" y="483" font-family="sans-serif" font-size="10" fill="#123A70">承認 manifest</text>
+  <text x="1138" y="454" text-anchor="end" font-family="sans-serif" font-size="10" fill="#344054">OS I/O</text>
+
+  <!-- Renderer UI -->
+  <g aria-label="Renderer UI グループ">
+    <rect x="25" y="135" width="270" height="250" rx="10" fill="#FFFFFF" stroke="#7A8699" stroke-width="1.5"/>
+    <path d="M 25 169 L 295 169" stroke="#7A8699" stroke-width="1.5"/>
+    <text x="43" y="158" font-family="sans-serif" font-size="17" font-weight="700" fill="#17202A">Renderer UI</text>
+
+    <rect x="43" y="185" width="234" height="64" rx="7" fill="#EAF2FF" stroke="#1457B8" stroke-width="2"/>
+    <text x="55" y="207" font-family="sans-serif" font-size="12" font-weight="700" fill="#123A70">[実装済み] AppShell / routes</text>
+    <text x="55" y="226" font-family="sans-serif" font-size="11" fill="#344054">navigation shell + 11 見出し route</text>
+    <text x="55" y="241" font-family="sans-serif" font-size="10" fill="#344054">表示・入力・画面内 draft state</text>
+
+    <rect x="43" y="270" width="234" height="72" rx="7" fill="#F5EDFF" stroke="#6F2DA8" stroke-width="2" stroke-dasharray="8 5"/>
+    <text x="55" y="292" font-family="sans-serif" font-size="12" font-weight="700" fill="#4D1F75">[設計確定・未実装] features</text>
+    <text x="55" y="311" font-family="sans-serif" font-size="11" fill="#344054">Project / annotation / jobs / reports</text>
+    <text x="55" y="328" font-family="sans-serif" font-size="11" fill="#344054">camera inference UI</text>
+  </g>
+
+  <!-- Preload APIs -->
+  <g aria-label="Preload APIs グループ">
+    <rect x="315" y="135" width="270" height="250" rx="10" fill="#FFFFFF" stroke="#7A8699" stroke-width="1.5"/>
+    <path d="M 315 169 L 585 169" stroke="#7A8699" stroke-width="1.5"/>
+    <text x="333" y="158" font-family="sans-serif" font-size="17" font-weight="700" fill="#17202A">Preload APIs</text>
+
+    <rect x="333" y="185" width="234" height="64" rx="7" fill="#EAF2FF" stroke="#1457B8" stroke-width="2"/>
+    <text x="345" y="207" font-family="sans-serif" font-size="12" font-weight="700" fill="#123A70">[実装済み] AppApi</text>
+    <text x="345" y="226" font-family="sans-serif" font-size="11" fill="#344054">frozen contractVersion capability のみ</text>
+    <text x="345" y="241" font-family="sans-serif" font-size="10" fill="#344054">raw IPC / Node API は非公開</text>
+
+    <rect x="333" y="270" width="234" height="72" rx="7" fill="#F5EDFF" stroke="#6F2DA8" stroke-width="2" stroke-dasharray="8 5"/>
+    <text x="345" y="292" font-family="sans-serif" font-size="12" font-weight="700" fill="#4D1F75">[設計確定・未実装] narrow APIs</text>
+    <text x="345" y="311" font-family="sans-serif" font-size="11" fill="#344054">project / annotation / job APIs</text>
+    <text x="345" y="328" font-family="sans-serif" font-size="10" fill="#344054">固定 channel + 型付き capability</text>
+  </g>
+
+  <!-- Shared Contracts -->
+  <g aria-label="Shared Contracts グループ">
+    <rect x="605" y="135" width="270" height="250" rx="10" fill="#FFFFFF" stroke="#7A8699" stroke-width="1.5"/>
+    <path d="M 605 169 L 875 169" stroke="#7A8699" stroke-width="1.5"/>
+    <text x="623" y="158" font-family="sans-serif" font-size="17" font-weight="700" fill="#17202A">Shared Contracts</text>
+
+    <rect x="623" y="185" width="234" height="55" rx="7" fill="#EAF2FF" stroke="#1457B8" stroke-width="2"/>
+    <text x="635" y="207" font-family="sans-serif" font-size="12" font-weight="700" fill="#123A70">[実装済み] app contract</text>
+    <text x="635" y="226" font-family="sans-serif" font-size="11" fill="#344054">AppApi / contract version</text>
+
+    <rect x="623" y="250" width="234" height="55" rx="7" fill="#F5EDFF" stroke="#6F2DA8" stroke-width="2" stroke-dasharray="8 5"/>
+    <text x="635" y="272" font-family="sans-serif" font-size="12" font-weight="700" fill="#4D1F75">[設計確定・未実装] contracts</text>
+    <text x="635" y="291" font-family="sans-serif" font-size="11" fill="#344054">project / annotation / job schemas</text>
+
+    <rect x="623" y="315" width="234" height="47" rx="7" fill="#F5EDFF" stroke="#6F2DA8" stroke-width="2" stroke-dasharray="8 5"/>
+    <text x="635" y="336" font-family="sans-serif" font-size="12" font-weight="700" fill="#4D1F75">[設計確定・未実装] worker protocol</text>
+    <text x="635" y="353" font-family="sans-serif" font-size="10" fill="#344054">versioned JSON / NDJSON envelope</text>
+  </g>
+
+  <!-- Main Services -->
+  <g aria-label="Main Services グループ">
+    <rect x="895" y="135" width="280" height="250" rx="10" fill="#FFFFFF" stroke="#7A8699" stroke-width="1.5"/>
+    <path d="M 895 169 L 1175 169" stroke="#7A8699" stroke-width="1.5"/>
+    <text x="913" y="158" font-family="sans-serif" font-size="17" font-weight="700" fill="#17202A">Main Services</text>
+
+    <rect x="913" y="185" width="234" height="58" rx="7" fill="#EAF2FF" stroke="#1457B8" stroke-width="2"/>
+    <text x="925" y="207" font-family="sans-serif" font-size="12" font-weight="700" fill="#123A70">[実装済み] lifecycle / security</text>
+    <text x="925" y="226" font-family="sans-serif" font-size="11" fill="#344054">single instance / secure window policy</text>
+
+    <rect x="913" y="257" width="234" height="52" rx="7" fill="#F5EDFF" stroke="#6F2DA8" stroke-width="2" stroke-dasharray="8 5"/>
+    <text x="925" y="279" font-family="sans-serif" font-size="12" font-weight="700" fill="#4D1F75">[設計確定・未実装] IPC handlers</text>
+    <text x="925" y="297" font-family="sans-serif" font-size="10" fill="#344054">origin / schema / scope validation</text>
+
+    <rect x="913" y="319" width="234" height="52" rx="7" fill="#F5EDFF" stroke="#6F2DA8" stroke-width="2" stroke-dasharray="8 5"/>
+    <text x="925" y="341" font-family="sans-serif" font-size="12" font-weight="700" fill="#4D1F75">[設計確定・未実装] services</text>
+    <text x="925" y="359" font-family="sans-serif" font-size="10" fill="#344054">Project / Data / Job / Model</text>
+  </g>
+
+  <!-- Packaging / Resources -->
+  <g aria-label="Packaging / Resources グループ">
+    <rect x="25" y="425" width="270" height="250" rx="10" fill="#FFFFFF" stroke="#7A8699" stroke-width="1.5"/>
+    <path d="M 25 459 L 295 459" stroke="#7A8699" stroke-width="1.5"/>
+    <text x="43" y="448" font-family="sans-serif" font-size="17" font-weight="700" fill="#17202A">Packaging / Resources</text>
+
+    <rect x="43" y="475" width="234" height="56" rx="7" fill="#EAF2FF" stroke="#1457B8" stroke-width="2"/>
+    <text x="55" y="497" font-family="sans-serif" font-size="12" font-weight="700" fill="#123A70">[実装済み] model manifest / schema</text>
+    <text x="55" y="516" font-family="sans-serif" font-size="10" fill="#344054">ready=false / models=[]（fail-closed）</text>
+
+    <rect x="43" y="542" width="234" height="52" rx="7" fill="#F2F4F7" stroke="#59636E" stroke-width="2" stroke-dasharray="2 5"/>
+    <text x="55" y="564" font-family="sans-serif" font-size="12" font-weight="700" fill="#343A40">[検証待ち] Windows PoC spec</text>
+    <text x="55" y="582" font-family="sans-serif" font-size="10" fill="#344054">production freeze / package ではない</text>
+
+    <rect x="43" y="605" width="234" height="52" rx="7" fill="#F5EDFF" stroke="#6F2DA8" stroke-width="2" stroke-dasharray="8 5"/>
+    <text x="55" y="627" font-family="sans-serif" font-size="12" font-weight="700" fill="#4D1F75">[設計確定・未実装] installer resources</text>
+    <text x="55" y="645" font-family="sans-serif" font-size="10" fill="#344054">runtime / model / notice / SBOM</text>
+  </g>
+
+  <!-- ML Domain -->
+  <g aria-label="ML Domain グループ">
+    <rect x="315" y="425" width="270" height="250" rx="10" fill="#FFFFFF" stroke="#7A8699" stroke-width="1.5"/>
+    <path d="M 315 459 L 585 459" stroke="#7A8699" stroke-width="1.5"/>
+    <text x="333" y="448" font-family="sans-serif" font-size="17" font-weight="700" fill="#17202A">ML Domain</text>
+
+    <rect x="333" y="475" width="234" height="63" rx="7" fill="#F5EDFF" stroke="#6F2DA8" stroke-width="2" stroke-dasharray="8 5"/>
+    <text x="345" y="497" font-family="sans-serif" font-size="12" font-weight="700" fill="#4D1F75">[設計確定・未実装] ML logic</text>
+    <text x="345" y="516" font-family="sans-serif" font-size="11" fill="#344054">scan / assist / training / export</text>
+    <text x="345" y="531" font-family="sans-serif" font-size="10" fill="#344054">immutable Revision / approved model</text>
+
+    <rect x="333" y="550" width="234" height="52" rx="7" fill="#F5EDFF" stroke="#6F2DA8" stroke-width="2" stroke-dasharray="8 5"/>
+    <text x="345" y="572" font-family="sans-serif" font-size="12" font-weight="700" fill="#4D1F75">[設計確定・未実装] inference</text>
+    <text x="345" y="590" font-family="sans-serif" font-size="10" fill="#344054">ONNX Runtime session / result</text>
+
+    <rect x="333" y="614" width="234" height="43" rx="7" fill="#F2F4F7" stroke="#59636E" stroke-width="2" stroke-dasharray="2 5"/>
+    <text x="345" y="636" font-family="sans-serif" font-size="12" font-weight="700" fill="#343A40">[検証待ち] provider PoC</text>
+    <text x="345" y="651" font-family="sans-serif" font-size="9" fill="#344054">Windows PARTIAL / macOS NOT_RUN</text>
+  </g>
+
+  <!-- Python Commands -->
+  <g aria-label="Python Commands グループ">
+    <rect x="605" y="425" width="270" height="250" rx="10" fill="#FFFFFF" stroke="#7A8699" stroke-width="1.5"/>
+    <path d="M 605 459 L 875 459" stroke="#7A8699" stroke-width="1.5"/>
+    <text x="623" y="448" font-family="sans-serif" font-size="17" font-weight="700" fill="#17202A">Python Commands</text>
+
+    <rect x="623" y="475" width="234" height="55" rx="7" fill="#EAF2FF" stroke="#1457B8" stroke-width="2"/>
+    <text x="635" y="497" font-family="sans-serif" font-size="12" font-weight="700" fill="#123A70">[実装済み] health command</text>
+    <text x="635" y="516" font-family="sans-serif" font-size="10" fill="#344054">version + OS を JSON で返す</text>
+
+    <rect x="623" y="542" width="234" height="55" rx="7" fill="#F5EDFF" stroke="#6F2DA8" stroke-width="2" stroke-dasharray="8 5"/>
+    <text x="635" y="564" font-family="sans-serif" font-size="12" font-weight="700" fill="#4D1F75">[設計確定・未実装] job commands</text>
+    <text x="635" y="583" font-family="sans-serif" font-size="10" fill="#344054">scan / assist / train / export</text>
+
+    <rect x="623" y="609" width="234" height="48" rx="7" fill="#F5EDFF" stroke="#6F2DA8" stroke-width="2" stroke-dasharray="8 5"/>
+    <text x="635" y="631" font-family="sans-serif" font-size="12" font-weight="700" fill="#4D1F75">[設計確定・未実装] inference command</text>
+    <text x="635" y="648" font-family="sans-serif" font-size="10" fill="#344054">短命 worker / allowlist</text>
+  </g>
+
+  <!-- Local Persistence -->
+  <g aria-label="Local Persistence グループ">
+    <rect x="895" y="425" width="280" height="250" rx="10" fill="#FFFFFF" stroke="#7A8699" stroke-width="1.5"/>
+    <path d="M 895 459 L 1175 459" stroke="#7A8699" stroke-width="1.5"/>
+    <text x="913" y="448" font-family="sans-serif" font-size="17" font-weight="700" fill="#17202A">Local Persistence</text>
+
+    <rect x="913" y="475" width="234" height="55" rx="7" fill="#F5EDFF" stroke="#6F2DA8" stroke-width="2" stroke-dasharray="8 5"/>
+    <text x="925" y="497" font-family="sans-serif" font-size="12" font-weight="700" fill="#4D1F75">[設計確定・未実装] repositories</text>
+    <text x="925" y="516" font-family="sans-serif" font-size="10" fill="#344054">SQLite metadata / migration</text>
+
+    <rect x="913" y="542" width="234" height="52" rx="7" fill="#F5EDFF" stroke="#6F2DA8" stroke-width="2" stroke-dasharray="8 5"/>
+    <text x="925" y="564" font-family="sans-serif" font-size="12" font-weight="700" fill="#4D1F75">[設計確定・未実装] Project files</text>
+    <text x="925" y="582" font-family="sans-serif" font-size="10" fill="#344054">Main-owned atomic commit</text>
+
+    <rect x="913" y="607" width="234" height="50" rx="7" fill="#EAF7EE" stroke="#1F7A3E" stroke-width="2"/>
+    <rect x="918" y="612" width="224" height="40" rx="4" fill="none" stroke="#1F7A3E" stroke-width="1.5"/>
+    <text x="928" y="630" font-family="sans-serif" font-size="12" font-weight="700" fill="#14532D">[外部入力／OS 資源]</text>
+    <text x="928" y="647" font-family="sans-serif" font-size="10" fill="#344054">filesystem / source images / camera</text>
+  </g>
+
+  <!-- Foreground connector segments keep arrowheads visible above group backgrounds. -->
+  <g aria-label="許可された依存方向" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 295 216 L 315 216" stroke="#1457B8" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+    <path d="M 295 305 L 315 305" stroke="#6F2DA8" stroke-width="2.5" stroke-dasharray="8 5" marker-end="url(#arrow-purple)"/>
+    <path d="M 585 216 L 605 216" stroke="#1457B8" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+    <path d="M 585 296 L 605 286" stroke="#6F2DA8" stroke-width="2.5" stroke-dasharray="8 5" marker-end="url(#arrow-purple)"/>
+    <path d="M 875 278 L 895 278" stroke="#6F2DA8" stroke-width="2.5" stroke-dasharray="8 5" marker-end="url(#arrow-purple)"/>
+    <path d="M 875 340 L 895 300" stroke="#6F2DA8" stroke-width="2.5" stroke-dasharray="8 5" marker-end="url(#arrow-purple)"/>
+    <path d="M 1008 123 L 1008 135" stroke="#6F2DA8" stroke-width="2" stroke-dasharray="8 5" marker-end="url(#arrow-purple)"/>
+    <path d="M 1030 385 L 1030 425" stroke="#6F2DA8" stroke-width="2.5" stroke-dasharray="8 5" marker-end="url(#arrow-purple)"/>
+    <path d="M 895 350 L 885 350 L 885 542 L 875 542" stroke="#6F2DA8" stroke-width="2.5" stroke-dasharray="8 5" marker-end="url(#arrow-purple)"/>
+    <path d="M 605 568 L 585 550" stroke="#6F2DA8" stroke-width="2.5" stroke-dasharray="8 5" marker-end="url(#arrow-purple)"/>
+    <path d="M 295 491 L 315 491" stroke="#1457B8" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+    <path d="M 1175 632 L 1190 632 L 1190 350 L 1175 350" stroke="#344054" stroke-width="2" marker-end="url(#arrow-dark)"/>
+  </g>
+
+  <!-- Boundary rules -->
+  <rect x="25" y="692" width="1150" height="51" rx="8" fill="#FFF8E8" stroke="#8A5A00" stroke-width="1.5"/>
+  <text x="42" y="713" font-family="sans-serif" font-size="12" font-weight="700" fill="#5D3A00">境界ルール</text>
+  <text x="132" y="713" font-family="sans-serif" font-size="12" fill="#3E3526">Renderer → Main / filesystem / Python の直接依存は禁止。Main が DB と Project files の唯一の writer。</text>
+  <text x="42" y="733" font-family="sans-serif" font-size="12" fill="#3E3526">Shared Contracts は型・runtime schema・versioned envelope の境界であり、business logic、filesystem access、UI state を持たない。</text>
+</svg>

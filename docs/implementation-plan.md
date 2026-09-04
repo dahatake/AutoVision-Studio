@@ -2,15 +2,15 @@
 
 | 項目 | 内容 |
 |---|---|
-| 文書バージョン | 0.3 Draft |
+| 文書バージョン | 0.4 Draft |
 | 作成日 | 2026-09-02 |
 | 最終更新日 | 2026-09-04 |
 | 対象 | Version 1（MVP） |
 | 状態 | **デフォルト決定承認済み・実装中** |
-| 要求基準 | `docs/requirement-definition.md` v0.3、914 行。SHA-256: Windows作業ツリーCRLF `2f1c57da192710ffb2fd764c7e342cf2e9106fa7387be7393133873cc815052f` / canonical Git blob LF `7a6e08e7e046a3ced59644a73bde44c4d7b279f55ba809bd78af60fdaa5b175c` |
+| 要求基準 | `docs/requirement-definition.md` v0.4 Draft。SHA-256: raw `38e79907b8b5620fffd50dd73a79322d1d97e606b90e81b0b9b06140958e5ce5` / LF canonical `8c8dcdffc6049b6fc0503079ffb1edf3c2464d9e24150155530b82fa5df44f6b` |
 | 実装開始条件 | 2026-09-02 にユーザーが全デフォルト案の採用と全タスク実行を指示（充足済み） |
 
-> D-01〜D-19 はデフォルト案を採用する。検証できない事項は成功扱いにせず、該当 Gate を停止する。
+> D-01〜D-19 と V-D01〜V-D15 はデフォルト案を採用する。Version 1 は Windows 11 24H2 以降 x64 のみを対象とし、macOS は将来対応とする。検証できない事項は成功扱いにせず、該当 Gate を停止する。
 
 ## 1. 調査結果と計画の前提
 
@@ -18,8 +18,10 @@
 
 2026-09-02 時点で確認できた実在ファイルは `.gitignore`、`LICENSE`、`README.md`、未追跡の `docs/requirement-definition.md` である。アプリケーションコード、テスト、ビルド設定は存在しない。
 
+本節は計画作成時のスナップショットであり、現在の実装状態を示すものではない。現在の開発手順は [`developer-guide.md`](developer-guide.md)、実装済み範囲と目標設計の対応は [`architecture.md`](architecture.md) を参照する。
+
 - 指定された `hve-dev/requirement-definition.md` は存在しない。
-- 実在する要求定義は `docs/requirement-definition.md` v0.3 のみである。
+- 実在する要求定義は `docs/requirement-definition.md` v0.4 Draft のみである。
 - `users-guide` を名前に含む文書は存在しない。
 - `copilot-instructions.md` および `.github/copilot-instructions.md` は存在しない。したがって、現時点で無視対象となる `## §0 最優先ルール（認知プライミング）` も存在しない。
 - `docs/` は Git 上で未追跡である。
@@ -32,7 +34,7 @@
 
 理由は、利用者が操作する次のフローが要求されているためである。
 
-- OS 別インストール、初回診断、アップグレード、アンインストール（FR-INS-001〜020）
+- Version 1のWindowsインストール、初回診断、アップグレード、アンインストール、および将来macOS導入（FR-INS-001〜020）
 - Project CRUD（FR-PRJ-001〜010）
 - Copy/Reference 取り込み（FR-DAT-001〜016）
 - 分類ラベルと検出矩形の作成（FR-ANN-001〜014、FR-ANN-101〜107、FR-ANN-201〜209）
@@ -57,7 +59,7 @@
 
 ### 1.4 現在の実行環境による制約
 
-現在確認できる作業環境は Windows だけである。macOS arm64 の build、MPS/CoreML、camera permission、Developer ID署名、notarization、PKG/Gatekeeper試験は Windows 上で合格扱いにしない。SPI-04/06/08/09/19、macOS側のPKG task、Gate 1/4/5には、別途 native Apple Silicon Mac と正式なApple署名identityが必要である。
+現在の Version 1 対象と確認済み作業環境は Windows 11 24H2 以降 x64 だけである。Gate 1〜5 は Windows の実機・package・署名証拠だけを要求する。macOS arm64 の build、MPS/CoreML、camera permission、Developer ID署名、notarization、PKG/Gatekeeper試験は将来 backlog であり、Version 1 の Gate を停止しない。既に保存した macOS 調査結果と `NOT_RUN` は履歴として保持し、Windows 結果で macOS 合格を主張しない。
 
 ## 2. 不明点・選択肢・デフォルト
 
@@ -65,25 +67,47 @@
 
 | ID | 不明点 | 選択肢 | デフォルトの選択肢 | デフォルトを選ぶ理由 | 決定期限 |
 |---|---|---|---|---|---|
-| D-01 | 要求定義の正しいパス | A. 実在する `docs/requirement-definition.md` / B. `hve-dev/` へ移動 / C. 別ファイルを提示 | **A** | 現在実在し、v0.3・229要求・出典S1〜S55を持つ唯一の文書だから。存在しない文書を参照したとは扱えない。 | 実装開始前・必須決定 |
+| D-01 | 要求定義の正しいパス | A. 実在する `docs/requirement-definition.md` / B. `hve-dev/` へ移動 / C. 別ファイルを提示 | **A** | 現在実在し、v0.4 Draft・229要求・出典S1〜S55を持つ唯一の文書だから。存在しない文書を参照したとは扱えない。 | 実装開始前・必須決定 |
 | D-02 | Desktop stack | A. Electron+React+TypeScript / B. Tauri / C. OS native 2実装 | **A** | 要求定義 §13 の参考構成と整合し、camera/file/desktop packaging を単一 UI codebase で扱える。Electron security checklist は公式に公開されている [P01]。 | Gate 0 |
 | D-03 | SQLite の所有 process | A. Electron main の `better-sqlite3` / B. 常駐 Python `sqlite3` service / C. Electron 同梱 Node の `node:sqlite` | **A** | 単一利用者・小規模 metadata に対して、常駐 service と追加 IPC を避けられる。native addon の packaging 可否は先に SPI-01 で検証する [P10]。 | Gate 1 |
 | D-04 | Annotation editor | A. React-Konva で task-specific 実装 / B. Label Studio 組込み / C. CVAT 組込み | **A** | MVP は classification choices と axis-aligned rectangles に限定される。Konva は選択、drag、resize、境界制約、zoom/pan の公式例を持ち [P06]、server/認証/不要機能を同梱しない。 | Gate 1 |
-| D-05 | Installer build tool | A. `electron-builder` / B. Electron Forge / C. WiX+個別macOS scripts | **A** | NSIS EXE、macOS PKG、`extraResources`、署名/notarization を同じ設定系で扱える [P02][P03][P04]。 | Gate 1 |
+| D-05 | Installer build tool | A. `electron-builder` / B. Electron Forge / C. WiX+個別macOS scripts | **A** | Version 1 は electron-builder の NSIS EXE、`extraResources`、Windows署名を使う [P02][P03]。macOS PKG・署名/notarization設定は将来 lane で同じ設定系へ追加する [P04]。 | Gate 1 |
 | D-06 | Python bundle 形式 | A. PyInstaller `onedir` を installer へ内包 / B. PyInstaller `onefile` / C. Python runtime をそのまま同梱 | **A** | top-level installer は1ファイルのまま、worker 起動ごとの展開を避けられる。PyInstaller は `onedir` を既定とし、`onefile` は起動時展開を行う [P05]。 | Gate 1 |
-| D-07 | Camera frame → inference process | A. 固定サイズRGB binary pipe / B. localhost HTTP / C. custom-built `onnxruntime-node` | **A** | network listener を作らず、macOS CoreML を公式 Python package で検証できる。Node binding の公開 matrix は macOS CoreML を明示保証していない [P08]。10 Hz 可否は SPI-07〜09 で測定する。 | Gate 1 |
+| D-07 | Camera frame → inference process | A. 固定サイズRGB binary pipe / B. localhost HTTP / C. custom-built `onnxruntime-node` | **A** | network listener を作らず、Version 1 は Windows の DirectML/CPUを公式 Python packageで検証する [P07]。CoreML検証は将来macOS laneへ残す [P08]。10 Hz可否はWindowsでSPI-07〜09を測定する。 | Gate 1 |
 | D-08 | Curated/Assist model | A. 要求定義候補から法務・PoC 合格モデルを選定 / B. 未監査モデルで先行実装 | **A（fail closed）** | 要求定義 §13.3 は承認済み Assist Model がないと明記する。モデル固有実装は checkpoint、学習データ由来、再配布、品質の承認後にのみ開始する。 | Gate 2・必須決定 |
 | D-09 | 承認済み model binary の保管 | A. build machine の `vendor/models/` に手動配置し hash 検証 / B. Git LFS / C. build 時自動 download | **A** | runtime/build の暗黙通信を避け、大容量 binary を通常 Git 履歴へ入れない。manifest の `sourcePath` は検証元 `vendor/models/`、`payloadPath` は同一bytesの同梱先 `resources/models/` として分離し、追跡対象はmanifestと証拠文書だけにする。 | Gate 2 |
-| D-10 | Product identity | A. `io.github.dahatake.autovisionstudio` / B. 所有 domain ベース / C. 別 ID | **A（暫定）** | repository owner を基に衝突しにくい。署名、macOS TCC、upgrade identity に影響するため正式 build 前に確定が必要。 | Gate 3・必須決定 |
-| D-11 | CI/release 実行場所 | A. local/self-hosted Windows+Mac / B. GitHub-hosted CI / C. hybrid | **A** | Cloud 不使用を最も厳格に守り、model/signing key を外部 runner へ置かない。Apple notarization だけは要求定義 §3.3 の配布工程例外とする。 | Gate 1 |
+| D-10 | Product identity | A. `io.github.dahatake.autovisionstudio` / B. 所有 domain ベース / C. 別 ID | **A（暫定）** | repository owner を基に衝突しにくい。Version 1のWindows署名・servicing identityに影響するため正式build前に確定する。macOS TCC identityへの適用は将来laneで再確認する。 | Gate 3・必須決定 |
+| D-11 | CI/release 実行場所 | A. local/self-hosted Windows（将来Macを追加） / B. GitHub-hosted CI / C. hybrid | **A** | Version 1はlocal/self-hosted Windowsに限定し、model/signing keyを外部runnerへ置かない。将来macOS対応時はnative Mac laneとApple notarization例外を別途有効化する。 | Gate 1 |
 | D-12 | Update | A. 新しい署名済み installer を手動実行 / B. online auto-updater | **A** | MVP は更新確認と runtime 通信を禁止する。in-place upgrade は新 installer の実行で満たす。 | Gate 0 |
 | D-13 | Chart UI | A. 小さな React chart dependency / B. 自前 SVG | **A** | loss/PR curve、混同行列、tooltip、accessibility を自作する範囲を抑える。採用 package は依存監査タスクで1つに固定する。 | REP phase 前 |
 | D-14 | User guide path | A. `docs/users-guide.md` / B. `users-guide/` directory | **A** | 現在の文書が `docs/` にあり、単一日本語 MVP guide で十分だから。 | Gate 0 |
 | D-15 | AutoML の最大 Trial/時間 | A. 実機 mini-run 後に versioned policy を確定 / B. 根拠なく固定値を置く | **A** | 要求定義 TBD-03 が未決であり、測定前の数値を捏造しないため。Gate 2 の実測後まで model training 実装を固定しない。 | Gate 2・必須決定 |
-| D-16 | Windows/macOS release signing identity | A. 組織の正式証明書 / B. test/ad-hoc のまま出荷 | **A** | FR-INS-008/010 が正式署名を必須とする。証明書名・保管方法はユーザー提示が必要。 | Gate 5・必須決定 |
-| D-17 | Node/Electron/Python の版 | A. 実装開始時に全採用依存が公式対応する安定版を調べ、exact lock / B. 現時点で未検証の版番号を固定 | **A** | 実装前の空 repository で互換性未確認の版を捏造しない。B-01/B-11 で基盤を固定し、Phase C で初めて必要になる依存と B-13 品質ツールの所有権不足は C0 で是正する。C0 後の変更は各採用 task に明記された場合だけ許可する。 | B-01/B-11、Phase C 前の C0 |
+| D-16 | Windows release signing identity | A. 組織の正式Windowsコード署名証明書 / B. test署名のまま出荷 | **A** | Version 1のFR-INS-008が正式署名を必須とする。証明書名・保管方法はユーザー提示が必要。Apple signing identityは将来macOS laneの決定事項とする。 | Gate 5・必須決定 |
+| D-17 | Node/Electron/Python の版 | A. Windows 11 24H2+ x64で全採用依存が公式対応する安定版を調べ、exact lock / B. 現時点で未検証の版番号を固定 | **A** | B-01/B-11で基盤を固定し、Phase C依存とB-13品質ツールの所有権不足はC0で是正済み。C0のmacOS調査と`NOT_RUN`は履歴として保持するがVersion 1 lock/Gateの要件ではなく、将来laneで再検証する。 | B-01/B-11、Phase C 前の C0 |
 | D-18 | UI component | A. semantic HTML/native control を先に使い、不足する操作だけ1つの headless libraryを追加 / B. UI kit 全体を先行導入 | **A** | 現在必要と判明しているのは dialog/table/tab 等に限られ、全 UI kit の先行導入は YAGNI になる。追加時は対象操作、accessibility、licenseを個別に検証する。 | 各 UI task 前 |
-| D-19 | Reference モードの永続アクセス | A. absolute path+file identity+hashを保存し、起動後に再検証・必要時relink / B. macOS App Sandbox/bookmarkを前提化 / C. Copyだけに制限 | **A（PoC 条件）** | direct-distribution の非 sandbox app を前提とし、要求された非破壊参照を最小構成で満たす。ただし Windows/macOS の再起動後アクセスを SPI-19 で実証できなければ再決定する。 | Gate 1 |
+| D-19 | Reference モードの永続アクセス | A. absolute path+file identity+hashを保存し、起動後に再検証・必要時relink / B. macOS App Sandbox/bookmarkを前提化 / C. Copyだけに制限 | **A（PoC 条件）** | Version 1のWindows direct-distribution appで非破壊参照を最小構成で満たす。Windowsの再起動後アクセスをSPI-19で実証できなければ再決定する。macOS bookmark/access検証は将来laneとする。 | Gate 1 |
+
+### 2.1 アプリケーション製品バージョン
+
+2026-09-04 にユーザーが次のデフォルト案を全て採用した。ここでいう製品バージョンは配布する AutoVision Studio 自体の版であり、ML worker package、Preload API contract、model manifest schema、Project の Model Version、DB migration sequenceとは別の名前空間として扱う。
+
+| ID | 不明点 | 選択肢 | 採用 | 理由 | 決定期限 |
+|---|---|---|---|---|---|
+| V-D01 | 要求定義の正本 | A. 実在する `docs/requirement-definition.md` / B. `hve-dev/`へ移動 / C. 別文書 | **A** | D-01と同じ。指定された`hve-dev/requirement-definition.md`は存在しないため。 | 決定済み |
+| V-D02 | 製品バージョンの正本 | A. root `package.json` / B. `ml/pyproject.toml` / C. 専用version file | **A** | Electron `app.getVersion()`とelectron-builderがpackage metadataのversionを使用でき、重複した正本を追加しないため [P17][P18]。 | 決定済み |
+| V-D03 | 製品バージョン形式 | A. 数値3要素`MAJOR.MINOR.PATCH` / B. prerelease/build metadataを含むSemVer / C. CalVer | **A** | 現行model manifestの`productVersion`制約と同じ形式に限定し、必要のない形式を先行追加しない。 | 決定済み |
+| V-D04 | prerelease/build metadata | A. 許可 / B. 不許可 | **B** | 現行manifest schemaで表現できず、release channel要件もない。 | 決定済み |
+| V-D05 | `0.x`の特別な互換規則 | A. 独自規則を設ける / B. 通常の数値比較だけ行う | **B** | FR-INS-007/016が必要とする同一・新・旧だけを判定し、互換性を版番号から推測しない。 | 決定済み |
+| V-D06 | ML worker package version | A. 製品版へ強制同期 / B. 独立component版 | **B** | 同期要求はなく、worker内は`pyproject.toml`と`__version__`の既存testで整合を検査する。 | 決定済み |
+| V-D07 | 利用者向け製品版表示 | A. 新About画面 / B. 既存header / C. 表示しない | **B** | 新route/dialogを増やさず、既存AppShellで確認可能にする。 | 決定済み |
+| V-D08 | Rendererへの版供給 | A. build時のroot package metadata / B. 新規IPC / C. 専用設定file | **A** | 製品版はbuild中不変であり、新しいIPC境界を設ける必要がない。packaged appでは`app.getVersion()`との一致を別途検証する [P17]。 | 決定済み |
+| V-D09 | 版比較実装 | A. 数値3要素専用関数 / B. 外部SemVer package | **A** | 必要な入力形式と比較が限定され、新規依存を追加する必要がない。 | 決定済み |
+| V-D10 | 更新方式 | A. 新しい署名済みinstallerを手動実行 / B. online updater | **A** | D-12と同じ。更新確認通信を実装せず、installerによるin-place upgradeを行う。 | 決定済み |
+| V-D11 | DB schema versionとの関係 | A. migration連番を独立管理 / B. 製品版と1対1対応 | **A** | schema変更のない製品releaseを許し、CORE-03の順序付きmigrationを正本とする。 | 決定済み |
+| V-D12 | Git tag | A. annotated `vMAJOR.MINOR.PATCH` / B. lightweight / C. tagなし | **A** | release gate通過済みcommitだけを識別する。版変更時の自動tagは行わない [P19]。 | Gate 5 |
+| V-D13 | Product CHANGELOG | A. 今回追加 / B. 初回公開releaseまで保留 | **B** | 現在は配布物がなく、FR/NFRにも独立CHANGELOG要件がない。 | Gate 5で再確認 |
+| V-D14 | build number | A. 製品版へ含める / B. 使用しない | **B** | 現行release環境にbuild番号要件がなく、要求された成果物名はproduct versionだけで成立する [P18]。 | 決定済み |
+| V-D15 | release automation場所 | A. local/self-hosted / B. GitHub-hosted workflow | **A** | D-11と同じ。version検査scriptはlocal/self-hostedの双方から同一に呼び出す。 | 決定済み |
 
 ## 3. デフォルト実装アーキテクチャ
 
@@ -100,7 +124,7 @@ flowchart LR
     J --> FS
     J --> PT[PyTorch / Optuna / ONNX]
     I --> ORT[ONNX Runtime]
-    ORT --> EP[DirectML / CoreML / CPU]
+    ORT --> EP[DirectML / CPU]
 ```
 
 - Renderer は filesystem、Node、Electron raw API、Python process へ直接アクセスしない。
@@ -109,20 +133,21 @@ flowchart LR
 - Python worker は DB を直接変更しない。入力 JSON と immutable Dataset Revision を読み、成果物 JSON/file を作る。Main が成功後に DB transaction で commit する。
 - 長時間処理は job ごとに別 process とし、常駐 local server を作らない。
 - Camera inference だけは session warm-up のため専用 process を推論画面の間だけ維持する。
+- Version 1の実行providerはWindowsのDirectML/CPUである。CoreML/MPSとmacOS固有permission/package境界は将来laneであり、現行Gateには含めない。
 
 ### 3.2 最小 dependency 方針
 
 | 領域 | デフォルト | 導入理由 | 導入しないもの |
 |---|---|---|---|
 | UI | Electron, React, TypeScript, Vite | Desktop UI と build | Next.js、SSR、web server |
-| Desktop package | electron-builder | NSIS EXE、PKG、resources、signing [P02]〜[P04] | 複数 installer framework |
+| Desktop package | electron-builder | Version 1のNSIS EXE、resources、Windows signing [P02][P03]。PKG/notarizationは将来macOS lane [P04] | 複数 installer framework |
 | UI components | semantic HTML/native control。必要性を test で示した操作だけ1つの headless library | 依存を先行追加せず accessibility を満たす | UI kit 全体、複数 UI kit |
 | Rectangle editor | Konva + react-konva | pointer hit-test、drag/resize、zoom [P06] | generic design canvas |
 | Renderer state | React hooks | 画面単位 state で足りる | Redux、MobX、global event bus |
 | IPC validation | Zod | untrusted inputのruntime parseとTypeScript型推論を1 schemaで行い、依存0・MIT [P14] | schema code generator |
 | Metadata | better-sqlite3 + hand-written SQL | server 不要、transaction、少量 metadata [P10] | ORM、remote DB |
 | Python env | uv + `uv.lock` | cross-platform lock と exact sync [P11] | 複数 Python manager |
-| Python bundle | PyInstaller onedir | Python 不要の配布、OS別 build [P05] | runtime pip install |
+| Python bundle | PyInstaller onedir | Python不要のWindows x64配布 [P05]。macOS arm64 buildは将来lane | runtime pip install |
 | ML | PyTorch, Optuna, ONNX Runtime | 要求定義で調査済み [RD §13] | ML framework の複数併用 |
 | TS test | Vitest + React Testing Library + Playwright Electron | Vite/TS単体testとrole中心のuser操作test [P15][P16]、desktop E2E。Electron automationはexperimentalなのでpackage testを併用 [P09] | browser-only E2E への依存 |
 | Python test | pytest | worker/domain unit test | notebook を test runner に使用 |
@@ -181,6 +206,10 @@ flowchart LR
 - **並列性:** 依存が完了し、出力 file が重ならない task だけを並列実行できる。表中の範囲依存（例: `SPI-01〜17`）は全 task 完了を意味する。
 - **要求対応:** §9 の計画時 traceability map を入力とする。実装完了を意味する最終 traceability は FIN-01 で test evidence と共に確定する。
 
+本書の `DOC-01`〜`DOC-10` は、各製品機能の完成・実測後に `users-guide.md` を更新する feature-completion task である。文書体系、横断導線、図、自動検証などの `DOCS-*` task は [`../work/20260904-1140-DocumentationTaskExecutionPlan.md`](../work/20260904-1140-DocumentationTaskExecutionPlan.md) が所有し、既存の `DOC-*` task を置き換えたり完了扱いにしたりしない。
+
+Version 1に対する`DOC-01`〜`DOC-10`と関連`DOCS-*`の完了証拠はWindows 11 24H2以降x64の実装・実測だけを対象とする。将来macOSの章・手順・スクリーンショットlaneは埋込みbacklogとして残せるが、Version 1のDOC taskやGateの完了条件には数えない。
+
 ## 5. 依存関係と並列実行設計
 
 ```mermaid
@@ -189,6 +218,7 @@ flowchart TD
     A --> B[Phase B: 最小scaffold]
     B --> C0[C0: Dependency ownership / exact locks]
     C0 --> C[Phase C: Risk Spikes]
+    C0 --> V0[V0: Product version foundation]
     C --> G1[Gate 1: Architecture Feasible]
     C --> G2[Gate 2: Model / Budget Approved]
     G1 --> D[Phase D: Core / Project]
@@ -208,6 +238,7 @@ flowchart TD
     RP --> H[Phase L: Hardening]
     IN --> H
     H --> PK[Phase M: Installers]
+    V0 --> PK
     PK --> FIN[Phase N: Final acceptance]
     FIN --> G5[Gate 5: Release decision]
     DOC[Users guide updates] -.各縦スライス後.-> D
@@ -227,8 +258,10 @@ flowchart TD
 - **Lane Core:** Main process、SQLite、IPC、job supervisor。
 - **Lane ML-Class:** classification import/assist/train/export/evaluate。
 - **Lane ML-Detect:** COCO/rectangle assist/train/export/evaluate。
-- **Lane Release-Windows / Release-macOS:** OS 別 freeze/sign/package/test。
+- **Lane Release-Windows:** Version 1のfreeze/sign/package/test。
+- **Future Release-macOS:** 将来版のfreeze/sign/notarize/package/test。Version 1の依存・Gateには接続しない。
 - **Lane Docs:** user guide と ADR。実装より先走らず、完成済み挙動だけ記載。
+- **Lane Version:** product version正本、整合検査、既存header表示。Installer servicingはRelease laneへ合流する。
 
 同じ migration、shared contract、model manifest を編集するタスクは並列にしない。分類・検出は shared contract が固定された後のみ並列化する。
 
@@ -237,11 +270,11 @@ flowchart TD
 | Gate | 合格条件 | 不合格時 |
 |---|---|---|
 | Gate 0 | D-01〜D-19 のレビュー完了。特に要求パス、stack、Cloud境界を承認。 | 実装開始しない。 |
-| Gate 1 | Windows/macOS で Electron+SQLite、Python onedir、installer resource 同梱、Reference永続アクセス、RGB pipe、ORT provider、Konva PoC が成立。 | native Macがない間は未判定。失敗 component だけ代替案を再評価し、feature 実装へ進まない。 |
-| Gate 2 | 分類/検出の Curated Base Weight と Assist checkpoint が法務・hash・実機品質 gate を通過し、AutoML budget を実測決定。 | 未承認モデルを同梱しない。manual annotation/core のみ継続可。 |
-| Gate 3 | Project→Import→Annotation→Dataset Revision→Queued Run の縦スライスが両OSで成立。 | Training/assist の機能実装を開始しない。 |
-| Gate 4 | Initial/Project model assist、Train→ONNX parity→Model Version→Report→Camera inference が分類・検出の両方で成立。 | package release を開始しない。 |
-| Gate 5 | 署名 installer、offline clean install、upgrade/rollback、全受入条件、SBOM、users guide が合格。 | release 不可。 |
+| Gate 1 | Windows 11 24H2+ x64でElectron+SQLite、Python onedir、NSIS resource同梱、Reference永続アクセス、RGB pipe、DirectML/CPU、Konva PoCが成立。macOS証拠は要求しない。 | Windows証拠が不足または失敗したcomponentだけ代替案を再評価し、feature実装へ進まない。 |
+| Gate 2 | Windowsで分類/検出のCurated Base WeightとAssist checkpointが法務・hash・実機品質gateを通過し、Windows CPU/acceleratorのAutoML budgetを実測決定。 | 未承認モデルを同梱しない。manual annotation/core のみ継続可。 |
+| Gate 3 | Project→Import→Annotation→Dataset Revision→Queued Runの縦スライスがWindowsで成立。 | Training/assist の機能実装を開始しない。 |
+| Gate 4 | WindowsでInitial/Project model assist、Train→ONNX parity→Model Version→Report→Camera inferenceが分類・検出の両方で成立。 | package release を開始しない。 |
+| Gate 5 | Windows署名済みEXE、offline clean install、upgrade/rollback、Windows向け全受入条件、SBOM、users guideが合格。macOS証拠は要求しない。 | release 不可。 |
 
 ## 7. 詳細タスク
 
@@ -254,12 +287,12 @@ flowchart TD
 | A-01 | 要求パスを確定し、要求基準 hash を固定 | `README.md`, `docs/implementation-plan.md` | Gate 0 | D-01 の決定を記録。存在しない path を参照しない。 |
 | A-02 | Process architecture ADR | `docs/adr/0001-process-architecture.md` | A-01 | Renderer/Main/Python job/inference の責務と非採用案を記録。RD §13。 |
 | A-03 | Data lifecycle ADR | `docs/adr/0002-data-lifecycle.md` | A-01 | Workspace→Ground Truth→Revision→Run→Model の不変性を固定。RD §5, §9。 |
-| A-04 | Packaging ADR | `docs/adr/0003-packaging.md` | A-01 | electron-builder、PyInstaller onedir、OS別build、manual update を固定 [P02]〜[P05]。 |
+| A-04 | Packaging ADR | `docs/adr/0003-packaging.md` | A-01 | Version 1のWindows electron-builder/PyInstaller onedir buildとmanual updateを固定し、macOS buildは将来laneとして分離する [P02]〜[P05]。 |
 | A-05 | Dependency/license policy | `docs/dependency-policy.md` | A-01 | 許可/禁止 license、追加手順、unknown fail を記録。FR-LIC。 |
 | A-06 | Model adoption template | `docs/model-governance/adoption-template.md` | A-05 | code/checkpoint/data/terms/hash/quality の証拠欄を定義。FR-LIC-004/014。 |
 | A-07 | Model manifest schema | `resources/models/manifest.schema.json`, `resources/models/manifest.json` | A-06 | 空の承認済み一覧から開始。未承認 model を登録せず、`vendor/models/`検証元と`resources/models/`同梱先を別fieldで保持する。 |
 | A-08 | User guide skeleton | `docs/users-guide.md` | A-01, D-14 | Install/Project/Data/Annotation/Training/Report/Camera/Troubleshooting 見出しだけ作成。 |
-| A-09 | 開発・検証方針 | `CONTRIBUTING.md` | A-02, A-04 | 小タスク規約、Windowsはpwsh 7+、OS別test方針を記録。 |
+| A-09 | 開発・検証方針 | `CONTRIBUTING.md` | A-02, A-04 | 小タスク規約、Version 1のWindows pwsh 7+ test方針、将来macOS test laneを記録。 |
 | A-10 | 生成物と秘密情報の ignore 規則 | `.gitignore` | A-04 | `node_modules/`、Electron/Python出力、local Project/cache、`vendor/models/`、署名秘密を除外し、`package-lock.json`、`uv.lock`、`ml/packaging/*.spec` は追跡対象にする。既存の `build/` と `*.spec` 除外を確認してから例外を追加する。 |
 
 ### Phase B — 最小 scaffold
@@ -282,7 +315,9 @@ flowchart TD
 
 ### Checkpoint C0 — Phase C 依存lock所有権の是正
 
-C0 は完了済み B-01/B-11/B-13 の履歴を上書きせず、Phase C で初めて必要になる依存と、設定だけ存在して実行packageが未固定の品質ツールに所有者を与えるための**管理チェックポイント**である。下表の項目は §7 の正本253 taskには数えない。C0を `CLOSED` とするまでは SPI-01〜19を開始しない。
+C0 は完了済み B-01/B-11/B-13 の履歴を上書きせず、Phase C で初めて必要になる依存と、設定だけ存在して実行packageが未固定の品質ツールに所有者を与えるための**管理チェックポイント**である。下表の項目は §7 の正本260 taskには数えない。C0を `CLOSED` とするまでは SPI-01〜19を開始しない。正本はVER-00でV0の6件を追加し、PKG-09を2件へ分割したため、従来の253件から7件純増した。
+
+C0の完了記録、当時の両OS依存調査、および保存済みmacOS `NOT_RUN` factsは監査履歴として変更しない。WIN-SCOPE-02以後、それらはmacOS合格を意味せず、Version 1の現在依存・GateはWindows対象だけを参照する。将来macOS laneはC0相当の依存・wheel・license・脆弱性・実機検証を再実行する。
 
 | 項目 | 作成・編集 file | 依存 | 完了条件 |
 |---|---|---|---|
@@ -297,6 +332,21 @@ C0-NODE と C0-PYTHON は出力fileが重ならないため C0-PLAN のレビュ
 
 Python minorはOS別の公式wheel可用性に合わせてmarkerで分離し、共有worker codeとPyright/Ruffの言語targetは低い側のPython 3.13に合わせる。同一minorを根拠なく強制すること、macOS 14以上のwheelをmacOS 13対応として扱うこと、wheel tagを書き換えること、未計画のsource buildで回避することは禁止する。将来両OSで同一minorへ更新する場合も、C0と同じ依存・license・脆弱性・実機Gateを再実行する。
 
+### Checkpoint V0 — Application product version foundation
+
+V0はC0 CLOSED後に開始でき、残りのPhase Cと編集fileが重ならない範囲で並列実行できる。製品版の基盤だけを実装し、installer、DB migration、online update、release channelを先行実装しない。
+
+| ID | タスク | 作成・編集 file | 依存 | 完了条件 |
+|---|---|---|---|---|
+| VER-00 | 承認済みversion planを正本へ登録 | `docs/implementation-plan.md` | C0-REVIEW、ユーザー承認 | V-D01〜15、task DAG、要求対応、非対象、正本task 253件から260件への差分を記録。登録自体を後続実装の合格とは扱わない。 |
+| VER-01 | 開発者向けproduct version policy | `CONTRIBUTING.md` | VER-00 | root `package.json`を唯一の製品版正本とし、許容形式、component版との分離、更新・検証・tag順を記録。 |
+| VER-02 | Product version整合checker | `scripts/release/verify-product-version.mjs`, `scripts/release/verify-product-version.test.mjs` | VER-01 | root package/lockとrelease model manifestのversion関係だけをfail-closed検査。実repositoryを変更しないfixture testを持ち、新規依存を追加しない。 |
+| VER-03 | Version checkerを既存gateへ接続 | `package.json` | VER-02 | `verify:version`とNode標準`test:version`を追加し、aggregate `npm test`/`npm run build`から実行する。個別`build:*`はrelease gateとせず、既存Vitestの`src/**`境界、dependency、lockを変更しない。 |
+| VER-04 | Existing header product version表示 | `tsconfig.renderer.json`, `src/renderer/product-version.ts`, `src/renderer/product-version.test.ts`, `src/renderer/layout/AppShell.tsx`, `src/renderer/layout/AppShell.test.tsx` | VER-01 | root package metadata由来の版だけを既存headerへ表示。新route、About dialog、IPC、設定optionを追加しない。 |
+| VER-GATE-01 | Version foundation gate | task commit/review記録 | VER-01〜04 | version検査、全Node test、typecheck、Main/Preload/Renderer build、lock不変性が合格。各taskの敵対的レビュー所見を全て閉じる。このGateが合格するまでV0を完了扱いにしない。 |
+
+VER-02とVER-04はVER-01後、出力fileが重ならないため並列実行できる。VER-03はVER-02後に直列、VER-GATE-01は両lane完了後に実行する。`resources/models/manifest.json`が`releaseStatus.ready=false`かつ`productVersion`省略の場合は有効とし、release対象版を未決定のまま書き込まない。`ready=true`または`productVersion`が存在する場合だけroot product versionとの一致を要求する。
+
 ### Phase C — 高リスク PoC（本実装前）
 
 **開始条件:** C0-REVIEW後のB-GATEがPASSし、C0がCLOSEDしていること。
@@ -308,12 +358,12 @@ PoC code は `spikes/` に隔離し、Gate 1/2 後に採用部分だけ producti
 | SPI-01 | Electron SQLite package smoke | `spikes/sqlite/main.ts`, `spikes/sqlite/smoke.test.ts`, `spikes/sqlite/README.md` | B-05 | better-sqlite3 が dev/package で CRUD。D-03 判定 [P10]。 |
 | SPI-02 | Electron→Python spawn smoke | `spikes/worker/main.ts`, `spikes/worker/worker.py`, `spikes/worker/README.md` | B-12 | JSON input、NDJSON progress、exit/cancel を確認。 |
 | SPI-03 | Windows Python onedir | `ml/packaging/worker-windows.spec`, `spikes/packaging/windows-result.md` | SPI-02, A-10 | clean Windows で Python 未導入でも PyTorch/Optuna/ORT の import、health、CPU実行が成功する。CUDA/DirectML は利用可能な実機で確認し、サイズ・cold start・PE一覧も実測 [P05]。 |
-| SPI-04 | macOS Python onedir | `ml/packaging/worker-macos.spec`, `spikes/packaging/macos-result.md` | SPI-02, A-10 | clean Apple Silicon Mac で PyTorch/Optuna/ORT の import、health、CPU/MPS/CoreML probe が成功し、サイズ・cold start・nested code一覧を実測 [P05]。 |
+| SPI-04 | **FUTURE — macOS** Python onedir | `ml/packaging/worker-macos.spec`, `spikes/packaging/macos-result.md` | SPI-02, A-10 | 将来、clean Apple Silicon MacでPyTorch/Optuna/ORTのimport、health、CPU/MPS/CoreML probe、サイズ・cold start・nested codeを実測する [P05]。Version 1 Gateから除外。既存`NOT_RUN`は履歴として保持する。 |
 | SPI-05 | Windows EXE resource smoke | `spikes/packaging/electron-builder.windows.yml`, `spikes/packaging/windows-installer-result.md` | SPI-03 | NSIS EXE が worker directory を同梱・起動 [P02][P03]。production config はまだ作らない。 |
-| SPI-06 | macOS PKG resource smoke | `spikes/packaging/electron-builder.macos.yml`, `spikes/packaging/entitlements.mac.plist`, `spikes/packaging/macos-pkg-result.md` | SPI-04 | PKG が worker を同梱し、nested code 構造を検証 [P04]。production config はまだ作らない。 |
+| SPI-06 | **FUTURE — macOS** PKG resource smoke | `spikes/packaging/electron-builder.macos.yml`, `spikes/packaging/entitlements.mac.plist`, `spikes/packaging/macos-pkg-result.md` | SPI-04 | 将来、PKGがworkerを同梱しnested code構造を検証する [P04]。Version 1 Gateから除外。既存`NOT_RUN`は履歴として保持する。 |
 | SPI-07 | Binary frame protocol throughput | `spikes/inference/pipe.ts`, `spikes/inference/pipe.py`, `spikes/inference/pipe-result.md` | SPI-02 | 320/640固定RGBを10Hz送受信し latency/CPU/memory を実測。 |
-| SPI-08 | ORT provider smoke | `spikes/inference/provider_probe.py`, `spikes/inference/provider-result.md` | B-11 | Windows DirectML/CPU、macOS CoreML/CPU の利用可否を実測 [P07][P08]。 |
-| SPI-09 | Camera→pipe→dummy output | `spikes/inference/camera.tsx`, `spikes/inference/camera-result.md` | SPI-07, SPI-08 | queue=1、drop、30分の基礎測定。数値は実測のみ記録。 |
+| SPI-08 | ORT provider smoke | `spikes/inference/provider_probe.py`, `spikes/inference/provider-result.md` | B-11 | Version 1はWindows DirectML/CPUの利用可否を実測 [P07]。CoreML/CPUのmacOS laneは将来で、現在の完了条件に含めない [P08]。 |
+| SPI-09 | Camera→pipe→dummy output | `spikes/inference/camera.tsx`, `spikes/inference/camera-result.md` | SPI-07, SPI-08 | Windowsでqueue=1、drop、30分の基礎測定。将来macOS測定はVersion 1完了条件に含めない。 |
 | SPI-10 | Rectangle canvas | `spikes/annotation/CanvasSpike.tsx`, `spikes/annotation/CanvasSpike.test.tsx`, `spikes/annotation/result.md`, `build/spi10/run.mjs`, `build/spi10/benchmark-entry.ts`, `build/spi10/index.html`, `build/spi10/main.mjs`, `build/spi10/vite.config.ts`, `build/spi10/vitest.config.ts`, `build/spi10/benchmark-result.json` | B-07, B-10 | 4K+100 box で create/select/move/resize/zoom/pan を実入力から画面 capture 完了まで実測 [P06]。 |
 | SPI-11 | Classification base weight 監査 | `docs/model-governance/classification-base.md` | A-06 | license/data/intended use/re-distribution が全て known。RD TBD-02。 |
 | SPI-12 | Detection base weight 監査 | `docs/model-governance/detection-base.md` | A-06 | 同上。 |
@@ -322,12 +372,12 @@ PoC code は `spikes/` に隔離し、Gate 1/2 後に採用部分だけ producti
 | SPI-15 | Classification train/export parity | `spikes/models/classification.py`, `spikes/models/classification-result.md` | SPI-11, SPI-08 | 小さな権利確認済み fixture で train→ONNX→CPU parity。 |
 | SPI-16 | Detection train/export parity | `spikes/models/detection.py`, `spikes/models/detection-result.md` | SPI-12, SPI-08 | 同上、box/score/label と mAP差を実測。 |
 | SPI-17 | Assist quality baseline | `spikes/models/assist_benchmark.py`, `spikes/models/assist-result.md` | SPI-13, SPI-14 | gold set で coverage/accept/edit/reject/time を manual-only と比較。 |
-| SPI-18 | Gate 1/2 判定 | `docs/adr/0004-spike-decisions.md`, `resources/models/manifest.json` | A-07, SPI-01〜17, SPI-19 | 採用/不採用と実測値を記録。未承認 model は manifest に追加しない。 |
-| SPI-19 | Reference 永続アクセス | `spikes/reference/reference-access.ts`, `spikes/reference/windows-result.md`, `spikes/reference/macos-result.md` | B-05, D-19 | 両OSで選択→再起動→read/hash検証、変更・消失・relinkを実測し、参照元を変更しない。 |
+| SPI-18 | Gate 1/2 判定 | `docs/adr/0004-spike-decisions.md`, `resources/models/manifest.json` | A-07, SPI-01〜03, SPI-05, SPI-07〜17, SPI-19 | Windows architecture証拠と全model前提の採用/不採用・実測値を記録。SPI-04/06は依存せず、未承認modelはmanifestに追加しない。 |
+| SPI-19 | Reference 永続アクセス | `spikes/reference/reference-access.ts`, `spikes/reference/windows-result.md`, `spikes/reference/macos-result.md` | B-05, D-19 | Version 1はWindowsで選択→再起動→read/hash検証、変更・消失・relinkを実測し、参照元を変更しない。macOS result/`NOT_RUN`は履歴・将来laneとして保持し、現在の完了条件に含めない。 |
 
 SPI-10は§4.1のfile数上限に対する明示例外とする。PoC実装は`CanvasSpike.tsx`の1 fileだけであり、`build/spi10/`の6 source/config fileはElectron/Chromiumの実入力・paint・画面capture手順と、unit/type/build/benchmark/終了確認を直列実行するtask専用test harnessで、製品bundleには含めない。成功時のraw sample、source/build hash、環境、各command/exit、Electron終了後の残process確認は`benchmark-result.json`へ保存する。失敗診断JSON、Vite bundle、runtime profileは`build/spi10/dist/`の一時生成物とし、Gitへ追跡しない。測定結果だけを手作業で転記してharness/raw sampleを失う方が検証再現性を損なうため、この例外を認める。この計画変更自体はSPI-10の合格を意味せず、旧測定値を新しい完了条件へ転用しない。現行sourceからbuildしたharnessがexit 0となり、raw evidenceと`result.md`が一致し、敵対的レビュー後の再検証が完了した場合だけVERIFIEDとする。
 
-**並列:** SPI-01、SPI-02、SPI-10、SPI-11〜14 は B 完了後に並列可能。SPI-03/04、SPI-05/06、SPI-15/16 は OS/タスク別に並列可能。
+**並列:** SPI-01、SPI-02、SPI-10、SPI-11〜14 は B 完了後に並列可能。Version 1ではSPI-03、SPI-05、SPI-15/16をWindows/model laneで実行する。SPI-04/06は将来macOS laneであり、現在のDAGには接続しない。
 
 ### Phase D — App core / Project / 診断
 
@@ -343,7 +393,7 @@ SPI-10は§4.1のfile数上限に対する明示例外とする。PoC実装は`C
 | CORE-08 | Project list UI | `src/renderer/features/projects/ProjectListPage.tsx`, `src/renderer/features/projects/ProjectListPage.test.tsx` | CORE-07 | UI-02 list/search/status。 |
 | CORE-09 | Project form UI | `src/renderer/features/projects/ProjectForm.tsx`, `src/renderer/features/projects/ProjectForm.test.tsx` | CORE-07 | create/edit validation。 |
 | CORE-10 | Delete preview | `src/main/projects/delete-preview.ts`, `src/renderer/features/projects/DeleteProjectDialog.tsx`, `src/main/projects/delete-preview.test.ts` | CORE-06 | owned/reference data を区別して表示。 |
-| CORE-11 | Hardware probe | `ml/src/autovision_ml/commands/probe_hardware.py`, `ml/src/autovision_ml/cli.py`, `ml/tests/test_probe_hardware.py` | B-12, SPI-08 | 明示allowlistへ`probe-hardware`を登録し、OS/CPU/RAM/disk/CUDA/MPS/ORT providerをJSON。cameraは開かない。 |
+| CORE-11 | Hardware probe | `ml/src/autovision_ml/commands/probe_hardware.py`, `ml/src/autovision_ml/cli.py`, `ml/tests/test_probe_hardware.py` | B-12, SPI-08 | Version 1はWindows/CPU/RAM/disk/CUDA/DirectML/ORT providerをJSON化し、cameraは開かない。MPS/CoreML fieldsは将来macOS laneで、現在の完了条件に含めない。 |
 | CORE-12 | Diagnostics integration/UI | `src/main/diagnostics/diagnostics-service.ts`, `src/main/ipc/diagnostics-handlers.ts`, `src/renderer/features/diagnostics/DiagnosticsPage.tsx`, `src/main/diagnostics/diagnostics-service.test.ts` | CORE-11, SPI-02 | UI-01 に非対応/CPU可/推奨を表示。 |
 | CORE-13 | Project E2E | `tests/e2e/project-crud.spec.ts`, `tests/fixtures/project.ts` | CORE-08〜10 | 再起動後保持、他project非干渉。 |
 | CORE-14 | Power/thermal warning | `src/main/diagnostics/power-thermal.ts`, `src/renderer/features/diagnostics/PowerWarning.tsx`, `src/main/diagnostics/power-thermal.test.ts` | CORE-12 | OSが取得可能なbattery/thermal状態だけを表示し、長時間学習前に警告。取得不能時に状態を推測しない。 |
@@ -380,7 +430,7 @@ SPI-10は§4.1のfile数上限に対する明示例外とする。PoC実装は`C
 | DAT-12 | Reference 保存・再リンク | `src/main/data/reference-source.ts`, `src/main/data/reference-source.test.ts` | SPI-19, CORE-01 | absolute path、file identity、size、mtime、SHA-256を保存し、再起動後検証とrelink。参照元は変更・削除しない。 |
 | DAT-13 | 入力データ権利確認 | `src/main/data/rights-acknowledgement.ts`, `src/renderer/features/import/RightsConfirmation.tsx`, `src/main/data/rights-acknowledgement.test.ts` | CORE-06 | Project初回取り込み時に確認し、確認日時を保存。法的権利を自動保証しない。 |
 | DAT-14 | Safe local image protocol | `src/main/data/image-protocol.ts`, `src/main/security/safe-path.ts`, `src/main/data/image-protocol.test.ts` | DAT-06, DAT-12 | Project allowlist内の検証済み画像だけをread-only配信し、traversal/symlink越境/任意pathを拒否。 |
-| DAT-15 | Native picker/package確認 | `tests/manual/windows-file-picker.md`, `tests/manual/macos-file-picker.md` | DAT-08, SPI-19 | 署名前packageでOS標準picker、複数選択、folder、cancel、再起動後Reference access/relinkを両OS確認。 |
+| DAT-15 | Native picker/package確認 | `tests/manual/windows-file-picker.md`, `tests/manual/macos-file-picker.md` | DAT-08, SPI-19 | Version 1はWindows署名前packageでOS標準picker、複数選択、folder、cancel、再起動後Reference access/relinkを確認。macOS manualは将来laneで、現在の完了条件に含めない。 |
 | DOC-02 | Data import guide | `docs/users-guide.md` | DOC-01, DAT-10, DAT-15 | Copy/Reference、容量、権利確認、format、修正/relink方法。 |
 
 **並列:** DAT-04 と DAT-05、classification/detection E2E は shared scan 固定後に並列可能。
@@ -459,7 +509,7 @@ AST-08 は表の位置にかかわらず TRN-21 後まで開始しない。初�
 | ID | タスク | 作成・編集 file | 依存 | 完了条件 |
 |---|---|---|---|---|
 | TRN-01 | Revision materializer / Reference再検証 | `ml/src/autovision_ml/data/materialize_revision.py`, `ml/tests/test_materialize_revision.py` | ANN-19, DAT-12 | confirmed Ground Truthをmaterializeし、開始直前とepoch/trial境界でReference hashを再検証。変更・消失時は安全停止。 |
-| TRN-02 | Device/repro setup | `ml/src/autovision_ml/training/runtime.py`, `ml/tests/test_training_runtime.py` | CORE-11 | CPU/CUDA/MPS、seed、version記録。 |
+| TRN-02 | Device/repro setup | `ml/src/autovision_ml/training/runtime.py`, `ml/tests/test_training_runtime.py` | CORE-11 | Version 1はWindows CPU/CUDA、seed、versionを記録。MPSは将来macOS laneで、現在の完了条件に含めない。 |
 | TRN-03 | Classification dataset | `ml/src/autovision_ml/training/classification_dataset.py`, `ml/tests/test_classification_dataset.py` | TRN-01 | preprocess/augmentation、single class。 |
 | TRN-04 | Classification single trial | `ml/src/autovision_ml/training/classification_trial.py`, `ml/tests/test_classification_trial.py` | TRN-02, TRN-03, Gate 2 | selected modelだけで1 trial。 |
 | TRN-05 | Classification metrics | `ml/src/autovision_ml/evaluation/classification_metrics.py`, `ml/tests/test_classification_metrics.py` | TRN-03 | accuracy/balanced/macro/micro/class-wise/confusion。 |
@@ -522,14 +572,14 @@ AST-08 は表の位置にかかわらず TRN-21 後まで開始しない。初�
 
 | ID | タスク | 作成・編集 file | 依存 | 完了条件 |
 |---|---|---|---|---|
-| INF-01 | Camera permission boundary | `src/main/camera/permissions.ts`, `src/main/ipc/camera-handlers.ts`, `src/main/camera/permissions.test.ts` | B-05 | user gesture後のみ、Windows/macOS状態、拒否時のOS設定導線と再試行。video origin以外は拒否。 |
+| INF-01 | Camera permission boundary | `src/main/camera/permissions.ts`, `src/main/ipc/camera-handlers.ts`, `src/main/camera/permissions.test.ts` | B-05 | Version 1はuser gesture後のみWindows camera状態を扱い、拒否時のWindows設定導線と再試行を提供する。video origin以外は拒否。macOS TCCは将来lane。 |
 | INF-02 | Camera selection UI | `src/renderer/features/inference/CameraSelector.tsx`, `src/renderer/features/inference/CameraSelector.test.tsx` | INF-01 | device list、permission前は不明表示可。 |
 | INF-16 | Inference Profile persistence | `src/main/db/migrations/007_inference.sql`, `src/main/inference/inference-profile.ts`, `src/main/inference/inference-profile.test.ts` | CORE-03, TRN-21 | Projectごとに成功モデル版、camera ID、threshold、表示設定をvalidateして保存。 |
 | INF-17 | 推論同意・モデル選択 UI | `src/renderer/features/inference/InferenceSetup.tsx`, `src/renderer/features/inference/InferenceSetup.test.tsx` | INF-02, INF-16 | 成功版を選択し、OS prompt前に用途・非保存・停止方法を説明して明示同意。 |
 | INF-03 | Stream lifecycle | `src/renderer/features/inference/useCameraStream.ts`, `src/renderer/features/inference/useCameraStream.test.ts` | INF-17 | `audio:false`、start/stop/disconnect、2秒内release。frame/resultをdisk/logへ保存しない。 |
 | INF-04 | 100ms capture | `src/renderer/features/inference/useFrameSampler.ts`, `src/renderer/features/inference/useFrameSampler.test.ts` | INF-03 | monotonic 10Hz、fixed input RGB。 |
 | INF-05 | Binary protocol production | `src/main/inference/frame-protocol.ts`, `ml/src/autovision_ml/inference/frame_protocol.py`, `ml/tests/test_frame_protocol.py` | SPI-07, INF-04 | framing、size validation、no base64。 |
-| INF-06 | Inference worker/session | `ml/src/autovision_ml/inference/stream.py`, `ml/tests/test_inference_stream.py` | INF-05, AST-01 | one ORT session、provider→CPU fallback、warm-up。CoreML compile cacheはmodel hashごとに分離。 |
+| INF-06 | Inference worker/session | `ml/src/autovision_ml/inference/stream.py`, `ml/tests/test_inference_stream.py` | INF-05, AST-01 | Version 1はWindowsでone ORT session、DirectML→CPU fallback、warm-up。CoreML compile cacheは将来macOS laneでmodel hashごとに分離し、現在の完了条件に含めない。 |
 | INF-19 | Frame/result bridge | `src/main/ipc/inference-handlers.ts`, `src/preload/inference-api.ts`, `src/shared/contracts/inference-ipc.ts`, `src/main/ipc/inference-handlers.test.ts` | INF-04〜05 | app origin・active session・固定shapeを検証したframeだけをMainへ渡し、result/metricsだけをRendererへ返す。raw child process APIは公開しない。 |
 | INF-07 | Main inference supervisor | `src/main/inference/inference-supervisor.ts`, `src/main/inference/inference-supervisor.test.ts` | INF-06, INF-19 | spawn/write/read/kill、model hash。 |
 | INF-08 | Classification postprocess | `ml/src/autovision_ml/inference/classification.py`, `ml/tests/test_inference_classification.py` | INF-06, TRN-16 | top-3/class/score。 |
@@ -539,7 +589,7 @@ AST-08 は表の位置にかかわらず TRN-21 後まで開始しない。初�
 | INF-12 | Runtime metrics/error UI | `src/renderer/features/inference/InferenceMetrics.tsx`, `src/renderer/features/inference/InferenceError.tsx`, `src/renderer/features/inference/InferenceMetrics.test.tsx` | INF-11 | actual FPS/p95/drop/provider、偽10FPS禁止。 |
 | INF-18 | 学習・推論の資源競合選択 | `src/main/inference/resource-contention.ts`, `src/renderer/features/inference/ResourceConflictDialog.tsx`, `src/main/inference/resource-contention.test.ts` | INF-17, JOB-05 | 同じacceleratorで学習中なら開始前に警告し、学習中断またはCPU推論をユーザーが選択。 |
 | INF-13 | Fake camera E2E | `tests/e2e/camera-inference.spec.ts`, `tests/fixtures/fake-camera.y4m` | INF-12, INF-16〜19 | model/camera/profile保存、同意、lifecycle、bridge、queue、overlay、競合選択。Playwright制約を考慮 [P09]。 |
-| INF-14 | Packaged OS permission test | `tests/manual/windows-camera.md`, `tests/manual/macos-camera.md` | INF-13 | notDetermined/granted/denied/restricted/disconnect。 |
+| INF-14 | Packaged OS permission test | `tests/manual/windows-camera.md`, `tests/manual/macos-camera.md` | INF-13 | Version 1はpackaged Windowsで未許可/granted/denied/disconnectと設定導線を確認。macOSのnotDetermined/restricted/TCC manualは将来laneで、現在の完了条件に含めない。 |
 | INF-15 | 30-minute performance | `tests/performance/camera-10hz.md`, `tests/performance/camera-result-template.json` | INF-13 | recommended hardwareでFR-INF-010を実測し、その結果をGate 4の入力にする。 |
 | DOC-07 | Camera guide | `docs/users-guide.md` | DOC-06, INF-14, INF-15, INF-18 | permission、非保存、model/camera/profile、競合、性能警告、停止。 |
 
@@ -574,44 +624,51 @@ AST-08 は表の位置にかかわらず TRN-21 後まで開始しない。初�
 
 ### Phase M — Self-contained installer / servicing
 
-`electron-builder.yml` を共有する PKG-04→05→06 だけは直列とする。設定固定後、Windows と macOS の freeze/sign/package/test lane は、同一fileを編集しない範囲で並列実行する。
+Version 1はPKG-04→05でcommon/Windowsの`electron-builder.yml`を固定し、その後はWindows freeze/sign/package/test laneだけを実行する。将来macOS laneはVersion 1完了後に別変更として設定へ追加し、現在のtask依存やGateをブロックしない。
 
 | ID | タスク | 作成・編集 file | 依存 | 完了条件 |
 |---|---|---|---|---|
 | PKG-01 | Model payload verifier | `scripts/models/verify.py`, `scripts/models/verify.test.py`, `resources/models/manifest.json` | AST-01, Gate 2 | manifestの`sourcePath`にある`vendor/models/`のapproved hash/sizeだけを通し、同一bytesを`payloadPath`へ対応付ける。downloadしない。 |
 | PKG-02 | Windows worker freeze | `ml/packaging/worker-windows.spec`, `scripts/build-python-worker.ps1` | SPI-03, LIC-03, Gate 4 | production commands/torch/ORTをonedir。採用した場合だけ承認済みCUDA/cuDNN runtimeを含める。 |
-| PKG-03 | macOS worker freeze | `ml/packaging/worker-macos.spec`, `scripts/build-python-worker.sh` | SPI-04, Gate 4 | arm64 onedir、nested binaries列挙。 |
-| PKG-04 | Common Electron package | `electron-builder.yml`, `scripts/verify-package-resources.mjs`, `scripts/verify-package-resources.test.mjs` | PKG-01 | app、worker、models、noticesをextraResourcesへ置く共通規則。OS固有設定は含めない。 |
-| PKG-05 | Windows NSIS config | `electron-builder.yml`, `packaging/electron/installer.nsh` | PKG-02, PKG-04 | per-user one-file EXE、offline、restartなし。stock configで足りれば `.nsh` は作らない。 |
-| PKG-06 | macOS PKG config | `electron-builder.yml`, `packaging/electron/entitlements.mac.plist`, `packaging/electron/entitlements.mac.inherit.plist` | PKG-03, PKG-05 | `/Applications`、arm64、最小entitlement。共有configをこのtaskで固定する。 |
-| PKG-07 | Windows signing | `scripts/sign-windows.ps1`, `tests/packaging/verify-windows-signature.ps1` | PKG-09, PKG-10, PKG-19, D-16 | 最終installerと全PEをCA chain+timestamp検証。 |
-| PKG-08 | macOS signing/notarization | `scripts/sign-notarize-macos.sh`, `tests/packaging/verify-macos-signature.sh` | PKG-09, PKG-10, PKG-20, D-16 | 最終nested code、Hardened Runtime、PKG sign、notarize、staple。 |
-| PKG-09 | Version/upgrade compatibility | `src/main/update/version-compatibility.ts`, `src/main/update/version-compatibility.test.ts` | REL-02 | same version repair、newer拒否、backup後migration、失敗rollback判定。OS固有installer設定はPKG-19/20で行う。 |
-| PKG-10 | Uninstall project preservation | `src/main/update/project-retention.ts`, `src/main/update/project-retention.test.ts` | PKG-05, PKG-06, REL-04 | app/runtime削除、Project既定保持。 |
+| PKG-03 | **FUTURE — macOS** worker freeze | `ml/packaging/worker-macos.spec`, `scripts/build-python-worker.sh` | SPI-04, Gate 4 | 将来版でarm64 onedirとnested binariesを列挙する。Version 1 Gateから除外。 |
+| PKG-04 | Common Electron package | `electron-builder.yml`, `scripts/verify-package-resources.mjs`, `scripts/verify-package-resources.test.mjs` | PKG-01, VER-GATE-01 | app、worker、models、noticesをextraResourcesへ置く共通規則。製品版を重複定義せずroot package metadataを使用し、packaged `app.getVersion()`との一致を検証する。OS固有設定は含めない。 |
+| PKG-05 | Windows NSIS config | `electron-builder.yml`, `packaging/electron/installer.nsh` | PKG-02, PKG-04 | common/Windows production configをここで固定する。per-user one-file EXE、offline、restartなし。`${version}`をroot package versionへ展開し、`AutoVision-Studio-${version}-windows-x64.exe`とする。 |
+| PKG-06 | **FUTURE — macOS** PKG config | `electron-builder.yml`, `packaging/electron/entitlements.mac.plist`, `packaging/electron/entitlements.mac.inherit.plist` | PKG-03, PKG-05 | 将来版で`/Applications`、arm64、最小entitlement、macOS成果物名を追加する。Version 1 Gateから除外し、現在のcommon/Windows configを再定義しない。 |
+| PKG-07 | Windows signing | `scripts/sign-windows.ps1`, `tests/packaging/verify-windows-signature.ps1` | PKG-09B, PKG-10, PKG-19, D-16 | 最終installerと全PEをCA chain+timestamp検証。 |
+| PKG-08 | **FUTURE — macOS** signing/notarization | `scripts/sign-notarize-macos.sh`, `tests/packaging/verify-macos-signature.sh` | PKG-09B, PKG-10, PKG-20, future Apple signing identity | 将来版でnested code、Hardened Runtime、PKG sign、notarize、stapleを検証する。Version 1 Gateから除外。 |
+| PKG-09A | Product version parse/compare | `src/main/update/product-version.ts`, `src/main/update/product-version.test.ts` | REL-02, VER-GATE-01 | 数値3要素だけを受理し、major/minor/patchを数値順で比較する。外部SemVer依存は追加しない。 |
+| PKG-09B | Version/upgrade compatibility | `src/main/update/version-compatibility.ts`, `src/main/update/version-compatibility.test.ts` | PKG-09A | same version repair、newer upgrade、older/invalid拒否、backup後migration、失敗rollback判定。OS固有installer設定はPKG-19/20で行う。 |
+| PKG-10 | Uninstall project preservation | `src/main/update/project-retention.ts`, `src/main/update/project-retention.test.ts` | PKG-05 | Windows app/runtime削除、Project既定保持。将来macOS servicingは別laneで同じ保持契約を検証する。 |
 | PKG-16 | Payload size manifest generator | `scripts/release/calculate-install-size.mjs`, `packaging/payload-size.schema.json`, `scripts/release/calculate-install-size.test.mjs` | PKG-04 | 各OS buildで圧縮/展開/一時領域+10%を実測し、installer preflight用manifestを生成できる。 |
-| PKG-17 | Windows preflight | `packaging/electron/installer.nsh`, `tests/packaging/windows-preflight.ps1` | PKG-06, PKG-16 | OS/arch/容量/書込権限/同一・旧・新版を変更前に検査し、日本語理由で停止。 |
-| PKG-18 | macOS preflight | `packaging/macos/preinstall`, `tests/packaging/macos-preflight.sh` | PKG-06, PKG-16 | OS/arm64/容量/書込権限/版をinstall前に検査し、日本語理由で停止。 |
-| PKG-19 | Windows installer UX/servicing/log | `packaging/electron/messages-ja.nsh`, `tests/packaging/windows-installer-ux.ps1` | PKG-09, PKG-17 | 日本語progress/error/completion、Start menu、任意起動、個人/Project内容を含まないlog、repair/upgrade/rollback/uninstall導線。 |
-| PKG-20 | macOS installer UX/servicing/log | `packaging/macos/postinstall`, `tests/packaging/macos-installer-ux.sh` | PKG-09, PKG-18 | Installer.app日本語説明、Applications配置/起動場所、個人/Project内容を含まないlog、upgrade/rollback、Terminal操作なし。 |
+| PKG-17 | Windows preflight | `packaging/electron/installer.nsh`, `tests/packaging/windows-preflight.ps1` | PKG-05, PKG-16 | OS/arch/容量/書込権限/同一・旧・新版を変更前に検査し、日本語理由で停止。 |
+| PKG-18 | **FUTURE — macOS** preflight | `packaging/macos/preinstall`, `tests/packaging/macos-preflight.sh` | PKG-06, PKG-16 | 将来版でOS/arm64/容量/書込権限/版をinstall前に検査する。Version 1 Gateから除外。 |
+| PKG-19 | Windows installer UX/servicing/log | `packaging/electron/messages-ja.nsh`, `tests/packaging/windows-installer-ux.ps1` | PKG-09B, PKG-17 | 日本語progress/error/completion、Start menu、任意起動、個人/Project内容を含まないlog、repair/upgrade/downgrade拒否/rollback/uninstall導線。 |
+| PKG-20 | **FUTURE — macOS** installer UX/servicing/log | `packaging/macos/postinstall`, `tests/packaging/macos-installer-ux.sh` | PKG-09B, PKG-18 | 将来版でInstaller.app日本語説明、Applications配置、privacy-safe log、servicing、Terminal不要を検証する。Version 1 Gateから除外。 |
 | PKG-11 | Windows clean install | `tests/packaging/windows-clean-install.ps1`, `tests/packaging/windows-result-template.json` | PKG-07, PKG-19 | offline、標準user、no Python/Node/CUDA、再起動なし、15秒基準、Project作成。 |
-| PKG-12 | macOS clean install | `tests/packaging/macos-clean-install.sh`, `tests/packaging/macos-result-template.json` | PKG-08, PKG-20 | offline、no Rosetta/Homebrew/Xcode、Gatekeeper、15秒基準、Project作成。 |
-| PKG-13 | Servicing tests | `tests/packaging/windows-servicing.ps1`, `tests/packaging/macos-servicing.sh` | PKG-09〜12 | upgrade/repair/forced failure rollback/uninstall。 |
-| PKG-21 | Cross-platform payload parity | `tests/packaging/compare-payloads.mjs`, `tests/packaging/payload-parity-result.json` | PKG-11, PKG-12 | 同一version/schema/model/feature/license通知であることを比較し、OS固有binary差だけを許可。 |
-| PKG-22 | Installer accessibility test | `tests/manual/windows-installer-accessibility.md`, `tests/manual/macos-installer-accessibility.md` | PKG-19, PKG-20 | keyboardとscreen readerでpreflight、error、progress、completion、uninstall案内を確認。 |
-| PKG-14 | Installer offline/network audit | `tests/packaging/offline-install.md`, `tests/packaging/payload-inventory.json` | PKG-11〜13, PKG-21, PKG-22 | stub/downloadなし、全payloadとSBOM/hash一致、余剰0。 |
-| PKG-15 | Artifact naming/checksum | `scripts/release/create-checksums.mjs`, `scripts/release/create-checksums.test.mjs`, `docs/release-artifacts.md` | PKG-14 | 要求されたEXE/PKG名、SHA-256。 |
-| DOC-09 | Install/upgrade/uninstall guide | `docs/users-guide.md` | DOC-08, PKG-11〜22 | OS別の実測済みinstall/repair/upgrade/rollback/uninstall手順だけ記載。 |
+| PKG-12 | **FUTURE — macOS** clean install | `tests/packaging/macos-clean-install.sh`, `tests/packaging/macos-result-template.json` | PKG-08, PKG-20 | 将来版でoffline、no Rosetta/Homebrew/Xcode、Gatekeeper、15秒基準、Project作成を検証する。Version 1 Gateから除外。 |
+| PKG-13 | Servicing tests | `tests/packaging/windows-servicing.ps1`, `tests/packaging/macos-servicing.sh` | PKG-09B, PKG-10, PKG-11 | Version 1はWindowsでrepair、upgrade、旧版拒否、forced failure rollback、uninstallを検証する。macOS scriptは将来lane。 |
+| PKG-21 | **FUTURE — macOS** cross-platform payload parity | `tests/packaging/compare-payloads.mjs`, `tests/packaging/payload-parity-result.json` | PKG-11, PKG-12 | 将来macOS追加時にversion/schema/model/feature/license通知を比較する。Version 1 Gateから除外。 |
+| PKG-22 | Installer accessibility test | `tests/manual/windows-installer-accessibility.md`, `tests/manual/macos-installer-accessibility.md` | PKG-19 | Version 1はWindows installerをkeyboardとscreen readerで確認する。macOS manualは将来lane。 |
+| PKG-14 | Installer offline/network audit | `tests/packaging/offline-install.md`, `tests/packaging/payload-inventory.json` | PKG-11, PKG-13, PKG-22 | Windows clean install・servicing・accessibility証拠でstub/downloadなし、payloadとSBOM/hash一致、余剰0を確認する。PKG-12/21には依存しない。 |
+| PKG-15 | Artifact naming/checksum | `scripts/release/create-checksums.mjs`, `scripts/release/create-checksums.test.mjs`, `docs/release-artifacts.md` | PKG-14 | Windows EXE名、内部product versionとの一致、SHA-256。将来macOS PKG名は現在の完了条件に含めない。 |
+| DOC-09 | Install/upgrade/uninstall guide | `docs/users-guide.md` | DOC-08, PKG-11, PKG-13〜15, PKG-22 | Windowsで実測済みのversion確認、manual update、repair/upgrade/downgrade拒否/rollback/uninstall手順だけ記載。将来macOS手順はVersion 1完了条件に含めない。 |
+
+#### Future macOS backlog
+
+正本260 task IDのうち、`SPI-04`、`SPI-06`、`PKG-03`、`PKG-06`、`PKG-08`、`PKG-12`、`PKG-18`、`PKG-20`、`PKG-21`は**FUTURE — macOS**として延期する。IDは削除・改番せず260件の中に保持するが、Version 1のGate 1〜5、依存完了率、release判定には数えない。
+
+共有taskに埋め込まれた将来macOS laneは`SPI-08`、`SPI-09`、`SPI-19`、`CORE-11`、`DAT-15`、`TRN-02`、`INF-01`、`INF-06`、`INF-14`、`PKG-22`、および関連`DOC-01`〜`DOC-10` / `DOCS-*`のmacOS手順・実測である。これらのWindows部分だけがVersion 1完了条件であり、macOS部分は将来別証拠で完了させる。保存済みmacOS `NOT_RUN` factsと調査文書は履歴として残し、合格へ読み替えない。
 
 ### Phase N — Final acceptance
 
 | ID | タスク | 作成・編集 file | 依存 | 完了条件 |
 |---|---|---|---|---|
 | FIN-01 | Requirement-test traceability | `docs/traceability.md` | 全feature test | 229 requirement→task→test→status。根拠なしの「対応済み」を書かない。 |
-| FIN-02 | Full test matrix | `docs/test-matrix.md` | FIN-01 | Windows/macOS、CPU/accelerator、manual/automatedを整理。 |
+| FIN-02 | Full test matrix | `docs/test-matrix.md` | FIN-01 | Version 1のWindows CPU/accelerator、manual/automatedを整理。macOSは将来/NOT_RUN履歴として分離する。 |
 | FIN-03 | PoC/acceptance evidence | `docs/acceptance-report.md` | POC-01〜17相当test | 実測値、hardware、失敗、waiverを記録。 |
 | FIN-04 | User guide final review | `docs/users-guide.md` | DOC-01〜10 | UIとの一致、リンク、screenshotは実画面のみ。 |
 | FIN-05 | README update | `README.md` | FIN-03/04 | 概要、対応OS、docs link、license caveat。 |
-| FIN-06 | Release checklist | `docs/release-checklist.md` | LIC-01〜03, SEC-08, PKG-15, FIN-03 | signing、SBOM、vulnerability、model/CUDA approvals、offline、rollback。 |
+| FIN-06 | Release checklist | `docs/release-checklist.md` | LIC-01〜03, SEC-08, PKG-15, FIN-03 | product version、annotated tag、artifact名/hash、signing、SBOM、vulnerability、model/CUDA approvals、offline、rollback。 |
 | FIN-07 | Gate 5 判定 | `docs/acceptance-report.md`, `docs/release-checklist.md` | FIN-01〜06 | 全必須passまたは明示的にrelease停止。 |
 
 ## 8. 主要 file の責務
@@ -622,6 +679,7 @@ AST-08 は表の位置にかかわらず TRN-21 後まで開始しない。初�
 | `src/preload/` | Narrow typed bridge | raw `ipcRenderer`、filesystem、child process公開 |
 | `src/renderer/` | UI と一時draft state | DB、任意path、Python直接呼出し |
 | `src/shared/contracts/` | Main/Preload/Renderer runtime schema | business logic、model-specific code |
+| `package.json` `version` | AutoVision Studio product versionの唯一の正本 | worker/API/schema/model/DB migration版との混同、prerelease/build metadata |
 | `ml/src/autovision_ml/commands/` | Job entry point | DB更新、network download |
 | `ml/src/autovision_ml/assist/` | 承認済み分類/検出候補生成 | generic plugin、remote code |
 | `ml/src/autovision_ml/training/` | 明示的 classification/detection training | 未採用model adapter |
@@ -638,7 +696,7 @@ AST-08 は表の位置にかかわらず TRN-21 後まで開始しない。初�
 
 | Requirement ID | 主 task | 予定する検証 |
 |---|---|---|
-| FR-SYS-001〜002 | CORE-11〜12 | hardware fixture、両OS実機診断 |
+| FR-SYS-001〜002 | CORE-11〜12 | hardware fixture、Windows実機診断 |
 | FR-SYS-003〜004 | CORE-11〜12, TRN-02, TRN-28, INF-06 | device選択、非対応演算/OOM、CPU fallback |
 | FR-SYS-005 | SEC-06 | offline E2E、network capture |
 | FR-PRJ-001〜003 | CORE-05〜09, CORE-13 | CRUD、UUID、空白名、再起動 |
@@ -654,7 +712,7 @@ AST-08 は表の位置にかかわらず TRN-21 後まで開始しない。初�
 | FR-DAT-007〜008 | DAT-02〜05, DAT-09〜10, ANN-15 | Error/Warning分類と自動学習block |
 | FR-DAT-009〜010 | ANN-17, ANN-21 | 70/15/15、少数調整、hash leakage |
 | FR-DAT-011 | DAT-06〜07, ANN-18〜19 | source/revision SHA-256 manifest |
-| FR-DAT-012 | SPI-19, DAT-12, DAT-15 | 両OS再起動、変更/消失/relink |
+| FR-DAT-012 | SPI-19, DAT-12, DAT-15 | Windows再起動、変更/消失/relink |
 | FR-DAT-013 | TRN-01, TRN-32〜33 | 開始前/実行中Reference hash変化で停止 |
 | FR-DAT-014 | DAT-11, DAT-14, STO-01〜03, REL-04 | 安全な画像/派生cache表示・削除、参照元保持 |
 | FR-DAT-015 | DAT-07〜08, ANN-05, ANN-18〜19 | workspace更新とimmutable revision |
@@ -704,7 +762,7 @@ AST-08 は表の位置にかかわらず TRN-21 後まで開始しない。初�
 | FR-REP-010 | REP-09 | explicit local JSON/CSV/image export |
 | FR-REP-011〜012 | AST-16, REP-08 | provenance、assist coverage/decision内訳 |
 | FR-INF-001〜002 | INF-02, INF-16〜17 | 成功版とcamera選択 |
-| FR-INF-003〜006 | INF-01, INF-14, INF-17 | user gesture、説明、Windows/macOS状態/導線 |
+| FR-INF-003〜006 | INF-01, INF-14, INF-17 | user gesture、説明、Windows状態/設定導線。macOS TCCは将来 |
 | FR-INF-007〜009 | INF-03〜05, INF-10, INF-19 | audioなし、monotonic 10Hz、限定bridge、queue=1 |
 | FR-INF-010〜011 | INF-10〜12, INF-15 | 30分performance、低速時の実値/drop表示 |
 | FR-INF-012〜013 | INF-08〜09, INF-11 | classification/detection overlay |
@@ -722,15 +780,15 @@ AST-08 は表の位置にかかわらず TRN-21 後まで開始しない。初�
 | FR-SEC-004〜006 | B-05〜06, DAT-14, INF-01, INF-19, SEC-01〜03 | sandbox/CSP/permission/IPC/path validation |
 | FR-SEC-007〜008 | DAT-03, DAT-14, SEC-03〜05 | safe weights、malicious image/path/symlink |
 | FR-SEC-009〜010 | CORE-02〜03, REL-01, SEC-07 | transaction/atomic/hash/redaction |
-| FR-SEC-011〜013 | REL-04, SEC-06, PKG-07〜08 | signing、Project owned deletion、URL audit |
-| FR-INS-001〜002 | PKG-05〜08, PKG-15 | OS別one-file artifactと命名 |
-| FR-INS-003〜006 | PKG-01〜06, PKG-11〜14 | offline全payload、runtime不要、driver非変更/CPU |
-| FR-INS-007 | PKG-16〜18 | OS/arch/disk/write/version preflight |
-| FR-INS-008〜011 | PKG-05〜08, PKG-11〜12 | per-user/signature、PKG/Application/notarization |
-| FR-INS-012〜014 | INF-01, PKG-11〜12, PKG-19〜20 | 起動場所、初回Project、camera非要求 |
-| FR-INS-015〜016 | REL-02, PKG-09, PKG-13, PKG-19〜20 | upgrade/backup/rollback/repair/downgrade拒否 |
-| FR-INS-017〜019 | PKG-11〜13, PKG-19〜20 | privacy-safe log、partial rollback、restartなし |
-| FR-INS-020 | PKG-10, PKG-19〜20, DOC-09 | uninstall導線、runtime削除、Project既定保持 |
+| FR-SEC-011〜013 | REL-04, SEC-06, PKG-07 | Windows signing、Project owned deletion、URL audit。macOS signingは将来 |
+| FR-INS-001〜002 | VER-02〜04, PKG-05, PKG-07, PKG-15 | product version整合、表示、Windows one-file EXEと命名 |
+| FR-INS-003〜006 | PKG-01〜05, PKG-11, PKG-13〜14 | Windows offline全payload、runtime不要、driver非変更/CPU |
+| FR-INS-007 | PKG-16〜17 | Windows OS/arch/disk/write/version preflight |
+| FR-INS-008〜011 | PKG-05, PKG-07, PKG-11 | Windows per-user/signature。macOS PKG/Application/notarizationは将来 |
+| FR-INS-012〜014 | INF-01, PKG-11, PKG-19 | Windows起動場所、初回Project、camera非要求 |
+| FR-INS-015〜016 | REL-02, PKG-09A〜09B, PKG-13, PKG-19 | Windows upgrade/backup/rollback/repair/downgrade拒否 |
+| FR-INS-017〜019 | PKG-11, PKG-13, PKG-19 | Windows privacy-safe log、partial rollback、restartなし |
+| FR-INS-020 | PKG-10, PKG-19, DOC-09 | Windows uninstall導線、runtime削除、Project既定保持 |
 
 ### 9.2 非機能要求
 
@@ -739,7 +797,7 @@ AST-08 は表の位置にかかわらず TRN-21 後まで開始しない。初�
 | NFR-PERF-001 | PERF-03 | metadata/UI response p95 500ms |
 | NFR-PERF-002 | ANN-22 | revision commit後queue 5秒 |
 | NFR-PERF-003〜005 | INF-04〜06, INF-10, INF-15 | jitter/service/latency/drop、fixed batch=1、sequential run |
-| NFR-PERF-006 | INF-06 | CoreML cacheをmodel hashで分離 |
+| NFR-PERF-006 | INF-06 | Version 1のWindows ORT session分離。CoreML cacheは将来macOS lane |
 | NFR-PERF-007 | TRN-12 | mini-run estimate更新、固定SLAなし |
 | NFR-REL-001〜003 | CORE-02〜03, JOB-06, REL-01〜03 | crash、backup/rollback、atomic commit |
 | NFR-REL-004 | B-04, CORE-02, JOB-02 | single instance/DB writer/Project lock |
@@ -750,16 +808,16 @@ AST-08 は表の位置にかかわらず TRN-21 後まで開始しない。初�
 | NFR-UX-001〜002 | UX-01 | 日本語、色以外の状態/overlay区別 |
 | NFR-UX-003 | ACC-01, PKG-22 | keyboard/focus/screen reader/200% |
 | NFR-UX-004 | JOB-08, AST-10, REP-01 | progress/current/cancel常時表示 |
-| NFR-MNT-001 | A-05, B-01, B-11, PKG-21 | exact locksとOS別payload parity |
+| NFR-MNT-001 | A-05, B-01, B-11, VER-02〜03, PKG-14 | exact locks、product version整合、Windows payload inventory |
 | NFR-MNT-002 | ANN-18〜19, TRN-20〜21, REP-08 | data/code/env/parameter/parent trace |
-| NFR-MNT-003〜004 | SPI-15〜16, TRN-18〜19, FIN-02〜03 | 両OS実機、EP compatibility、parity/latency regression |
+| NFR-MNT-003〜004 | SPI-15〜16, TRN-18〜19, FIN-02〜03 | Windows実機、DirectML/CPU compatibility、parity/latency regression |
 | NFR-STO-001 | DAT-11 | source+derived+temp+20% preflight |
 | NFR-STO-002〜003 | STO-01〜03 | entity別容量、安全なcache/checkpoint削除 |
-| NFR-INS-001〜002 | PKG-11〜12 | clean offline/no runtime、15秒startup |
-| NFR-INS-003 | PKG-16〜18 | build算出+10%と開始前検査 |
-| NFR-INS-004 | PKG-19〜20, PKG-22 | 日本語、keyboard、screen reader |
-| NFR-INS-005〜006 | PKG-07〜08, PKG-11〜13 | servicing、signature/codesign/notary/Gatekeeper |
-| NFR-INS-007〜008 | PKG-14, PKG-21 | payload/SBOM/hash/unknownとOS間parity |
+| NFR-INS-001〜002 | PKG-11 | Windows clean offline/no runtime、15秒startup |
+| NFR-INS-003 | PKG-16〜17 | Windows build算出+10%と開始前検査 |
+| NFR-INS-004 | PKG-19, PKG-22 | Windows日本語、keyboard、screen reader |
+| NFR-INS-005〜006 | PKG-07, PKG-11, PKG-13 | Windows servicing/signature。codesign/notary/Gatekeeperは将来 |
+| NFR-INS-007〜008 | PKG-14 | Windows payload/SBOM/hash/unknown検査。OS間parityは将来 |
 | NFR-ANN-001 | ANN-08, ANN-26 | 1秒内保存開始と状態表示 |
 | NFR-ANN-002 | SPI-10, PERF-01 | 4K/100 rectangle p95 100ms |
 | NFR-ANN-003 | AST-09〜10, AST-22 | worker failure中もmanual UI継続 |
@@ -778,8 +836,8 @@ AST-08 は表の位置にかかわらず TRN-21 後まで開始しない。初�
 | UI-09〜11 | ANN-03〜28, AST-09〜24 |
 | POC-01〜02 | TRN-32〜33, REP-10, INF-13〜15, FIN-03 |
 | POC-03〜04 | INF-15, CORE-11〜12, TRN-32〜33 |
-| POC-05〜10 | REL-03〜04, SEC-06, INF-14, TRN-18〜19, LIC-01 |
-| POC-11〜13 | PKG-07〜22 |
+| POC-05〜10 | REL-03〜04, SEC-06, INF-14, TRN-18〜19, LIC-01（Windows証拠） |
+| POC-11〜13 | PKG-07, PKG-09A〜11, PKG-13〜17, PKG-19, PKG-22（Windows。POC-12のmacOS部分は将来） |
 | POC-14〜15 | ANN-27〜28 |
 | POC-16 | SPI-17〜18, AST-22 |
 | POC-17 | AST-23〜24 |
@@ -793,6 +851,9 @@ AST-08 は表の位置にかかわらず TRN-21 後まで開始しない。初�
 - distributed training、複数GPU scheduler
 - rotated box、polygon、mask
 - online update、telemetry、crash upload
+- prerelease channel、nightly product version、build metadata
+- product versionとworker/API/schema/model/DB migration版の強制同期
+- product version専用registry、version Strategy/Factory、追加のversion設定file
 - model marketplace/download manager
 - generic event sourcing、CQRS、microservice
 - design system package、component library wrapper
@@ -808,17 +869,17 @@ AST-08 は表の位置にかかわらず TRN-21 後まで開始しない。初�
 5. D-07: Camera frame の binary pipe PoC を採用判定に使ってよいか。
 6. D-08/D-15: model と AutoML 数値は実測・法務 gate まで固定しない方針でよいか。
 7. D-09: model binary は Git に置かず、release machine の local cache + hash 検証でよいか。
-8. D-10/D-16: provisional app ID と正式署名 identity。
-9. D-11: release build を local/self-hosted に限定してよいか。
+8. D-10/D-16: provisional app ID と正式Windows署名 identity。
+9. D-11: Version 1 release buildをlocal/self-hosted Windowsに限定してよいか。
 10. D-17/D-18: versionを実装時にexact lockし、UI dependencyは必要性を示してから追加する方針でよいか。
-11. D-19: Reference永続アクセスを両OS PoCで採否判定してよいか。
+11. D-19: Reference永続アクセスをWindows PoCでVersion 1の採否判定としてよいか。macOS PoCは将来laneとする。
 12. `docs/users-guide.md` を段階更新する方針でよいか。
 
 ## 12. 出典
 
 ### 内部要求
 
-- **[RD]** `docs/requirement-definition.md` v0.3（SHA-256 は文書冒頭に記載）。機能、非機能、PoC、受入、ライセンス調査 S1〜S55 の一次根拠。
+- **[RD]** `docs/requirement-definition.md` v0.4 Draft（SHA-256は文書冒頭に記載）。Windows 11 24H2以降x64のVersion 1機能、非機能、PoC、受入、および将来macOS調査を含むS1〜S55の一次根拠。
 
 ### 実装技術の一次資料
 
@@ -838,6 +899,9 @@ AST-08 は表の位置にかかわらず TRN-21 後まで開始しない。初�
 - **[P14]** Zod, [Documentation](https://zod.dev/) / [LICENSE](https://github.com/colinhacks/zod/blob/main/LICENSE) — untrusted inputのparse、static type inference、zero dependencies、MIT。
 - **[P15]** Vitest, [Documentation](https://vitest.dev/) / [LICENSE](https://github.com/vitest-dev/vitest/blob/main/LICENSE) — Vite設定・transformの共有、TypeScript/JSX test、MIT。
 - **[P16]** Testing Library, [React Testing Library introduction](https://testing-library.com/docs/react-testing-library/intro/) / [LICENSE](https://github.com/testing-library/react-testing-library/blob/main/LICENSE) — user操作に近いDOM/role/label query、MIT。
+- **[P17]** Electron, [app.getVersion](https://github.com/electron/electron/blob/main/docs/api/app.md#appgetversion) — Electron runtime APIはloaded applicationのversionを返し、`package.json`にversionがない場合だけbundle/executable versionへfallbackする。electron-builderがbuild時にmetadataを設定する挙動とは別のAPI契約である。
+- **[P18]** electron-builder, [AppInfo](https://github.com/electron-userland/electron-builder/blob/master/packages/app-builder-lib/src/appInfo.ts) / [artifact name expansion](https://github.com/electron-userland/electron-builder/blob/master/packages/app-builder-lib/src/platformPackager.ts) — build時にapp package metadataのversionを読み、`${version}` artifact macroへ展開する。
+- **[P19]** npm CLI, [`npm version`](https://github.com/npm/cli/blob/latest/docs/lib/content/commands/npm-version.md) — `package.json`/lock更新、Git commit/tag、`--no-git-tag-version`の境界。
 
 ## 13. 承認後の開始方法
 

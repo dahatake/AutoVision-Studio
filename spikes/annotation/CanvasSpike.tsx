@@ -515,9 +515,6 @@ export const CanvasSpike = forwardRef<CanvasSpikeHandle>(function CanvasSpike(
       if (node.isDragging()) node.stopDrag();
     }
     restoreGeometryFromState();
-    queueMicrotask(() => {
-      suppressGeometryCommitRef.current = false;
-    });
   };
 
   const beginCreate = (event: Konva.KonvaEventObject<MouseEvent | TouchEvent>): void => {
@@ -539,6 +536,7 @@ export const CanvasSpike = forwardRef<CanvasSpikeHandle>(function CanvasSpike(
       rejectInteraction('create', 'create gesture requires the primary mouse button');
       return;
     }
+    suppressGeometryCommitRef.current = false;
     if (event.target !== stage && event.target.name() !== 'image-background') {
       rejectInteraction('create', 'create gesture must begin on the image background');
       return;
@@ -588,6 +586,7 @@ export const CanvasSpike = forwardRef<CanvasSpikeHandle>(function CanvasSpike(
         const delta = { x: pointer.x - previous.x, y: pointer.y - previous.y };
         if (delta.x !== 0 || delta.y !== 0) dispatch({ type: 'pan', delta });
       }
+      stopGeometryInteractionForPan();
       commitInteraction('pan');
       panPointerRef.current = null;
       setIsPanning(false);
@@ -613,6 +612,7 @@ export const CanvasSpike = forwardRef<CanvasSpikeHandle>(function CanvasSpike(
 
   const cancelPointerGesture = (): void => {
     if (panPointerRef.current !== null) {
+      stopGeometryInteractionForPan();
       commitInteraction('pan');
       panPointerRef.current = null;
       setIsPanning(false);
@@ -696,6 +696,9 @@ export const CanvasSpike = forwardRef<CanvasSpikeHandle>(function CanvasSpike(
             dragBoundFunc={(position) => {
               return clampDragPosition(position, box, state.viewport);
             }}
+            onDragStart={() => {
+              suppressGeometryCommitRef.current = false;
+            }}
             onDragEnd={(event) => {
               if (suppressGeometryCommitRef.current || panPointerRef.current !== null) {
                 event.target.position({ x: box.x, y: box.y });
@@ -742,6 +745,9 @@ export const CanvasSpike = forwardRef<CanvasSpikeHandle>(function CanvasSpike(
           keepRatio={false}
           flipEnabled={false}
           ignoreStroke
+          onTransformStart={() => {
+            suppressGeometryCommitRef.current = false;
+          }}
           boundBoxFunc={(oldBox, newBox) => clampTransformBox(oldBox, newBox, state.viewport)}
         />
       </Layer>

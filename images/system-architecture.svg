@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="system-architecture-title system-architecture-desc">
+  <title id="system-architecture-title">AutoVision Studio 実行時システムアーキテクチャと信頼境界</title>
+  <desc id="system-architecture-desc">非信頼の React Renderer から限定 Preload API と検証済み IPC を経て Electron Main に至る制御経路、Main だけが SQLite を更新する目標設計、Project Files、OS API、短命な Job Worker と一時的な Inference Worker、機械学習基盤を示す。青実線は実装済み、紫破線は設計確定・未実装、灰点線は検証待ち、緑二重枠は利用者または OS 資源である。Python はデータベースを直接更新せず、カメラフレームは既定で保存しない。</desc>
+
+  <defs>
+    <marker id="arrow-blue" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#075985"/>
+    </marker>
+    <marker id="arrow-purple" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#6b21a8"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#166534"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="760" fill="#ffffff"/>
+  <text x="32" y="38" font-size="25" font-weight="700" fill="#111827">AutoVision Studio 実行時アーキテクチャ</text>
+  <text x="32" y="62" font-size="14" fill="#374151">現行 production source と目標設計を分離表示（2026-09-04）</text>
+
+  <g aria-label="状態凡例">
+    <rect x="430" y="17" width="738" height="70" rx="8" fill="#f9fafb" stroke="#374151" stroke-width="1.5"/>
+    <text x="446" y="40" font-size="14" font-weight="700" fill="#111827">凡例</text>
+    <rect x="500" y="26" width="34" height="22" fill="#eff6ff" stroke="#075985" stroke-width="3"/>
+    <text x="542" y="42" font-size="13" fill="#111827">実装済み（青・実線）</text>
+    <rect x="700" y="26" width="34" height="22" fill="#faf5ff" stroke="#6b21a8" stroke-width="3" stroke-dasharray="9 6"/>
+    <text x="742" y="42" font-size="13" fill="#111827">設計確定・未実装（紫・破線）</text>
+    <rect x="965" y="26" width="34" height="22" fill="#f3f4f6" stroke="#4b5563" stroke-width="3" stroke-dasharray="2 6"/>
+    <text x="1007" y="42" font-size="13" fill="#111827">検証待ち</text>
+    <rect x="500" y="55" width="34" height="22" fill="#f0fdf4" stroke="#166534" stroke-width="2.5"/>
+    <rect x="504" y="59" width="26" height="14" fill="none" stroke="#166534" stroke-width="1.5"/>
+    <text x="542" y="71" font-size="13" fill="#111827">外部入力／OS 資源（緑・二重枠）</text>
+    <line x1="840" y1="66" x2="875" y2="66" stroke="#374151" stroke-width="3"/>
+    <text x="884" y="71" font-size="13" fill="#111827">矢印＝データ／制御方向</text>
+  </g>
+
+  <g aria-label="利用者">
+    <rect x="28" y="218" width="132" height="86" rx="10" fill="#f0fdf4" stroke="#166534" stroke-width="3"/>
+    <rect x="34" y="224" width="120" height="74" rx="7" fill="none" stroke="#166534" stroke-width="1.5"/>
+    <circle cx="94" cy="246" r="10" fill="none" stroke="#111827" stroke-width="2"/>
+    <path d="M72 282 Q94 256 116 282" fill="none" stroke="#111827" stroke-width="2"/>
+    <text x="94" y="295" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">利用者</text>
+  </g>
+
+  <g aria-label="React Renderer 非信頼領域">
+    <rect x="190" y="176" width="184" height="170" rx="9" fill="#eff6ff" stroke="#075985" stroke-width="3"/>
+    <text x="282" y="203" text-anchor="middle" font-size="17" font-weight="700" fill="#111827">React Renderer</text>
+    <rect x="208" y="214" width="148" height="24" rx="12" fill="#111827"/>
+    <text x="282" y="231" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">非信頼領域</text>
+    <text x="282" y="258" text-anchor="middle" font-size="13" fill="#111827">現行: shell / 11 見出し</text>
+    <text x="282" y="277" text-anchor="middle" font-size="13" font-weight="700" fill="#075985">実装済み</text>
+    <rect x="208" y="291" width="148" height="39" rx="5" fill="#faf5ff" stroke="#6b21a8" stroke-width="2" stroke-dasharray="8 5"/>
+    <text x="282" y="307" text-anchor="middle" font-size="12" fill="#111827">機能 UI / draft state</text>
+    <text x="282" y="323" text-anchor="middle" font-size="12" font-weight="700" fill="#6b21a8">設計済み・未実装</text>
+  </g>
+
+  <g aria-label="Electron Preload">
+    <rect x="410" y="176" width="154" height="170" rx="9" fill="#eff6ff" stroke="#075985" stroke-width="3"/>
+    <text x="487" y="203" text-anchor="middle" font-size="17" font-weight="700" fill="#111827">Electron Preload</text>
+    <text x="487" y="233" text-anchor="middle" font-size="13" fill="#111827">frozen narrow API</text>
+    <text x="487" y="254" text-anchor="middle" font-size="12" fill="#111827">現行: contractVersion</text>
+    <text x="487" y="273" text-anchor="middle" font-size="13" font-weight="700" fill="#075985">のみ実装済み</text>
+    <rect x="425" y="291" width="124" height="39" rx="5" fill="#faf5ff" stroke="#6b21a8" stroke-width="2" stroke-dasharray="8 5"/>
+    <text x="487" y="307" text-anchor="middle" font-size="12" fill="#111827">feature APIs</text>
+    <text x="487" y="323" text-anchor="middle" font-size="12" font-weight="700" fill="#6b21a8">未実装</text>
+  </g>
+
+  <g aria-label="Electron Main 信頼領域">
+    <rect x="606" y="142" width="224" height="238" rx="10" fill="#eff6ff" stroke="#075985" stroke-width="3"/>
+    <text x="718" y="171" text-anchor="middle" font-size="19" font-weight="700" fill="#111827">Electron Main</text>
+    <rect x="631" y="183" width="174" height="25" rx="12" fill="#075985"/>
+    <text x="718" y="200" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">信頼領域</text>
+    <text x="718" y="231" text-anchor="middle" font-size="13" fill="#111827">lifecycle / secure window</text>
+    <text x="718" y="251" text-anchor="middle" font-size="13" font-weight="700" fill="#075985">実装済み</text>
+    <rect x="626" y="270" width="184" height="90" rx="6" fill="#faf5ff" stroke="#6b21a8" stroke-width="2.5" stroke-dasharray="9 6"/>
+    <text x="718" y="291" text-anchor="middle" font-size="13" fill="#111827">feature services / 検証</text>
+    <text x="718" y="313" text-anchor="middle" font-size="14" font-weight="700" fill="#6b21a8">唯一の DB writer</text>
+    <text x="718" y="334" text-anchor="middle" font-size="12" fill="#111827">commit / worker supervision</text>
+    <text x="718" y="351" text-anchor="middle" font-size="12" font-weight="700" fill="#6b21a8">設計済み・未実装</text>
+  </g>
+
+  <g aria-label="SQLite">
+    <rect x="928" y="112" width="202" height="83" rx="8" fill="#faf5ff" stroke="#6b21a8" stroke-width="3" stroke-dasharray="10 6"/>
+    <ellipse cx="1029" cy="133" rx="42" ry="10" fill="#ffffff" stroke="#6b21a8" stroke-width="2"/>
+    <path d="M987 133 V164 C987 177 1071 177 1071 164 V133" fill="#ffffff" stroke="#6b21a8" stroke-width="2"/>
+    <text x="1029" y="157" text-anchor="middle" font-size="16" font-weight="700" fill="#111827">SQLite</text>
+    <text x="1029" y="184" text-anchor="middle" font-size="12" font-weight="700" fill="#6b21a8">未実装</text>
+  </g>
+
+  <g aria-label="Project Files">
+    <rect x="928" y="231" width="202" height="83" rx="8" fill="#faf5ff" stroke="#6b21a8" stroke-width="3" stroke-dasharray="10 6"/>
+    <path d="M958 256 H992 L1002 266 H1098 V294 H958 Z" fill="#ffffff" stroke="#6b21a8" stroke-width="2"/>
+    <text x="1029" y="278" text-anchor="middle" font-size="16" font-weight="700" fill="#111827">Project Files</text>
+    <text x="1029" y="305" text-anchor="middle" font-size="12" font-weight="700" fill="#6b21a8">正規領域は Main が commit</text>
+  </g>
+
+  <g aria-label="OS API とカメラ入力">
+    <rect x="928" y="350" width="202" height="92" rx="9" fill="#f0fdf4" stroke="#166534" stroke-width="3"/>
+    <rect x="934" y="356" width="190" height="80" rx="6" fill="none" stroke="#166534" stroke-width="1.5"/>
+    <text x="1029" y="381" text-anchor="middle" font-size="17" font-weight="700" fill="#111827">OS APIs</text>
+    <text x="1029" y="403" text-anchor="middle" font-size="13" fill="#111827">filesystem / process / camera</text>
+    <text x="1029" y="424" text-anchor="middle" font-size="12" font-weight="700" fill="#166534">外部入力・OS 資源</text>
+  </g>
+
+  <g aria-label="Python Job Worker">
+    <rect x="477" y="486" width="250" height="111" rx="9" fill="#faf5ff" stroke="#6b21a8" stroke-width="3" stroke-dasharray="10 6"/>
+    <text x="602" y="514" text-anchor="middle" font-size="17" font-weight="700" fill="#111827">Python Job Worker</text>
+    <text x="602" y="536" text-anchor="middle" font-size="13" fill="#111827">job ごとの短命 process</text>
+    <text x="602" y="557" text-anchor="middle" font-size="12" fill="#111827">scan / assist / train / export</text>
+    <rect x="516" y="570" width="172" height="19" rx="9" fill="#eff6ff" stroke="#075985" stroke-width="1.5"/>
+    <text x="602" y="584" text-anchor="middle" font-size="11" font-weight="700" fill="#075985">現行は health CLI のみ実装</text>
+  </g>
+
+  <g aria-label="Python Inference Worker">
+    <rect x="797" y="486" width="250" height="111" rx="9" fill="#faf5ff" stroke="#6b21a8" stroke-width="3" stroke-dasharray="10 6"/>
+    <text x="922" y="514" text-anchor="middle" font-size="17" font-weight="700" fill="#111827">Python Inference Worker</text>
+    <text x="922" y="536" text-anchor="middle" font-size="13" font-weight="700" fill="#6b21a8">一時的: 推論画面の間だけ</text>
+    <text x="922" y="557" text-anchor="middle" font-size="12" fill="#111827">最新 frame 優先 / session 1 個</text>
+    <rect x="842" y="570" width="160" height="19" rx="9" fill="#f3f4f6" stroke="#4b5563" stroke-width="1.5" stroke-dasharray="2 5"/>
+    <text x="922" y="584" text-anchor="middle" font-size="11" font-weight="700" fill="#374151">provider PoC のみ検証待ち</text>
+  </g>
+
+  <g aria-label="学習とエクスポート基盤">
+    <rect x="477" y="654" width="250" height="70" rx="8" fill="#faf5ff" stroke="#6b21a8" stroke-width="3" stroke-dasharray="10 6"/>
+    <text x="602" y="682" text-anchor="middle" font-size="16" font-weight="700" fill="#111827">PyTorch / Optuna / ONNX</text>
+    <text x="602" y="705" text-anchor="middle" font-size="12" font-weight="700" fill="#6b21a8">製品機能は未実装</text>
+  </g>
+
+  <g aria-label="推論ランタイムと実行プロバイダー">
+    <rect x="797" y="654" width="250" height="70" rx="8" fill="#faf5ff" stroke="#6b21a8" stroke-width="3" stroke-dasharray="10 6"/>
+    <text x="922" y="682" text-anchor="middle" font-size="16" font-weight="700" fill="#111827">ONNX Runtime / EP</text>
+    <rect x="836" y="694" width="172" height="20" rx="9" fill="#f3f4f6" stroke="#4b5563" stroke-width="2" stroke-dasharray="2 5"/>
+    <text x="922" y="708" text-anchor="middle" font-size="11" font-weight="700" fill="#374151">DirectML / CoreML は検証待ち</text>
+  </g>
+
+  <!-- 実装済みの利用者操作と現行 narrow bridge -->
+  <line x1="160" y1="261" x2="190" y2="261" stroke="#075985" stroke-width="3" marker-end="url(#arrow-blue)"/>
+  <text x="175" y="249" text-anchor="middle" font-size="12" font-weight="700" fill="#111827">操作・表示</text>
+  <line x1="374" y1="246" x2="410" y2="246" stroke="#075985" stroke-width="3" marker-end="url(#arrow-blue)"/>
+  <text x="392" y="232" text-anchor="middle" font-size="11" font-weight="700" fill="#111827">限定 API</text>
+  <text x="392" y="272" text-anchor="middle" font-size="10" fill="#374151">現行: version</text>
+
+  <!-- 設計確定・未実装の feature IPC と永続化 -->
+  <line x1="564" y1="261" x2="606" y2="261" stroke="#6b21a8" stroke-width="3" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+  <text x="585" y="239" text-anchor="middle" font-size="11" font-weight="700" fill="#6b21a8">validated</text>
+  <text x="585" y="254" text-anchor="middle" font-size="11" font-weight="700" fill="#6b21a8">IPC</text>
+
+  <path d="M830 186 H884 V153 H928" fill="none" stroke="#6b21a8" stroke-width="3" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+  <path d="M928 174 H892 V207 H830" fill="none" stroke="#6b21a8" stroke-width="3" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+  <rect x="842" y="135" width="82" height="22" fill="#ffffff"/>
+  <text x="883" y="151" text-anchor="middle" font-size="11" font-weight="700" fill="#6b21a8">read / write</text>
+
+  <path d="M830 287 H928" fill="none" stroke="#6b21a8" stroke-width="3" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+  <path d="M928 304 H830" fill="none" stroke="#6b21a8" stroke-width="3" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+  <rect x="846" y="271" width="70" height="22" fill="#ffffff"/>
+  <text x="881" y="287" text-anchor="middle" font-size="11" font-weight="700" fill="#6b21a8">read / commit</text>
+
+  <line x1="830" y1="347" x2="928" y2="389" stroke="#6b21a8" stroke-width="3" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+  <rect x="845" y="356" width="77" height="22" fill="#ffffff"/>
+  <text x="883" y="372" text-anchor="middle" font-size="11" font-weight="700" fill="#166534">OS 操作</text>
+
+  <!-- Worker spawn と protocol -->
+  <path d="M660 380 V432 H602 V486" fill="none" stroke="#6b21a8" stroke-width="3" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+  <rect x="582" y="410" width="73" height="22" fill="#ffffff"/>
+  <text x="618" y="426" text-anchor="middle" font-size="11" font-weight="700" fill="#6b21a8">spawn / job</text>
+
+  <path d="M772 380 V424 H922 V486" fill="none" stroke="#6b21a8" stroke-width="3" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+  <rect x="788" y="408" width="110" height="22" fill="#ffffff"/>
+  <text x="843" y="424" text-anchor="middle" font-size="11" font-weight="700" fill="#6b21a8">spawn + binary RGB</text>
+
+  <path d="M797 532 H759 V397 H744" fill="none" stroke="#6b21a8" stroke-width="3" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+  <rect x="735" y="462" width="105" height="22" fill="#ffffff"/>
+  <text x="787" y="478" text-anchor="middle" font-size="11" font-weight="700" fill="#6b21a8">NDJSON result</text>
+
+  <path d="M727 552 H757 V458 H890 V314 H928" fill="none" stroke="#6b21a8" stroke-width="3" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+  <rect x="744" y="438" width="137" height="22" fill="#ffffff"/>
+  <text x="812" y="454" text-anchor="middle" font-size="11" font-weight="700" fill="#6b21a8">一時 job 成果物</text>
+
+  <line x1="602" y1="597" x2="602" y2="654" stroke="#6b21a8" stroke-width="3" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+  <text x="614" y="630" font-size="11" font-weight="700" fill="#6b21a8">使用</text>
+  <line x1="922" y1="597" x2="922" y2="654" stroke="#6b21a8" stroke-width="3" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+  <text x="934" y="630" font-size="11" font-weight="700" fill="#6b21a8">使用</text>
+
+  <!-- 不変条件 -->
+  <g aria-label="Python とデータベースの禁止依存">
+    <rect x="30" y="397" width="398" height="92" rx="8" fill="#faf5ff" stroke="#6b21a8" stroke-width="2.5" stroke-dasharray="9 6"/>
+    <text x="48" y="424" font-size="14" font-weight="700" fill="#6b21a8">目標設計の不変条件</text>
+    <text x="48" y="450" font-size="14" font-weight="700" fill="#111827">Python worker は SQLite を直接更新しない</text>
+    <text x="48" y="475" font-size="13" fill="#111827">一時成果物を Main が検証し、正規領域へ commit する</text>
+  </g>
+
+  <g aria-label="カメラフレーム非永続化">
+    <rect x="30" y="516" width="398" height="81" rx="8" fill="#faf5ff" stroke="#6b21a8" stroke-width="2.5" stroke-dasharray="9 6"/>
+    <text x="48" y="543" font-size="14" font-weight="700" fill="#6b21a8">カメラ frame（目標）</text>
+    <text x="48" y="568" font-size="14" font-weight="700" fill="#111827">memory 上だけで処理し、既定では保存しない</text>
+    <text x="48" y="588" font-size="12" fill="#111827">SQLite / Project Files / log へ frame を永続化しない</text>
+  </g>
+
+  <text x="30" y="741" font-size="12" fill="#374151">禁止依存: Renderer → filesystem / SQLite / Python、Python worker → SQLite / 正規 Project path の直接更新</text>
+</svg>

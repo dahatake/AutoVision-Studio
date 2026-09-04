@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
+import { PRODUCT_VERSION } from '../product-version';
 import { appRoutes } from '../routes';
 import { AppShell } from './AppShell';
 
@@ -33,6 +34,9 @@ describe('AppShell', () => {
 
     expect(links).toHaveLength(11);
     expect(screen.getByRole('main')).toHaveAttribute('id', 'main-content');
+    expect(
+      screen.getByLabelText(`製品バージョン ${PRODUCT_VERSION}`),
+    ).toHaveTextContent(`バージョン ${PRODUCT_VERSION}`);
     expect(
       screen.getByRole('heading', { level: 1, name: '初回診断' }),
     ).toBeInTheDocument();

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { PRODUCT_VERSION } from '../product-version';
 import { appRoutes, EmptyRoute, type AppRoute } from '../routes';
 
 export function AppShell() {
@@ -13,6 +14,10 @@ export function AppShell() {
 
       <header className="app-shell__header">
         <span className="app-shell__brand">AutoVision Studio</span>
+        {' — '}
+        <span aria-label={`製品バージョン ${PRODUCT_VERSION}`}>
+          バージョン {PRODUCT_VERSION}
+        </span>
       </header>
 
       <div className="app-shell__body">

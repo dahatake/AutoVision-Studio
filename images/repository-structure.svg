@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="repository-structure-title repository-structure-desc">
+  <title id="repository-structure-title">AutoVision Studio リポジトリ構造</title>
+  <desc id="repository-structure-desc">AutoVision Studio の現行リポジトリ直下と主要な第二階層を三列で示す。実在する配置は青の実線、計画済みで未実装の scripts/docs は紫の破線、PoC や Gate 待ちの配置は灰色の点線で区別する。images は DOCS-206 による文書出力である。spikes は PoC、build は検証ハーネスまたは生成物、work は時点スナップショットである。resources/models/manifest.json は承認済みモデルだけを許可する fail-closed の正本で、現在は ready false である。</desc>
+
+  <rect x="0" y="0" width="1200" height="760" fill="#ffffff"/>
+  <text x="40" y="38" font-size="26" font-weight="700" fill="#0f172a">AutoVision Studio — リポジトリ構造</text>
+  <text x="40" y="62" font-size="14" fill="#334155">現行の物理配置と責務。破線・点線の項目は、現在利用可能な製品機能を意味しない。</text>
+
+  <rect x="430" y="78" width="340" height="46" rx="8" fill="#e0f2fe" stroke="#075985" stroke-width="2"/>
+  <text x="600" y="107" text-anchor="middle" font-size="18" font-weight="700" fill="#0f172a">AutoVision-Studio/　[実装済み]</text>
+  <text x="40" y="145" font-size="13" font-weight="700" fill="#475569">第一階層（すべて repository root 配下）</text>
+
+  <!-- Column 1: production source, ML, resources -->
+  <g aria-label="src ディレクトリ">
+    <rect x="40" y="160" width="350" height="188" rx="8" fill="#f0f9ff" stroke="#075985" stroke-width="2"/>
+    <text x="58" y="187" font-size="18" font-weight="700" fill="#0f172a">src/　[実装済み]</text>
+    <text x="58" y="209" font-size="13" fill="#334155">Electron / React の production source</text>
+    <line x1="60" y1="222" x2="60" y2="326" stroke="#075985" stroke-width="2"/>
+    <text x="78" y="243" font-size="14" fill="#0f172a">├─ main/　lifecycle・window・security</text>
+    <text x="78" y="266" font-size="14" fill="#0f172a">├─ preload/　限定 bridge</text>
+    <text x="78" y="289" font-size="14" fill="#0f172a">├─ renderer/　React shell / routes</text>
+    <text x="78" y="312" font-size="14" fill="#0f172a">└─ shared/</text>
+    <text x="104" y="334" font-size="14" fill="#0f172a">└─ contracts/　境界 contract</text>
+  </g>
+
+  <g aria-label="ml ディレクトリ">
+    <rect x="40" y="366" width="350" height="124" rx="8" fill="#f0f9ff" stroke="#075985" stroke-width="2"/>
+    <text x="58" y="393" font-size="18" font-weight="700" fill="#0f172a">ml/　[実装済み]</text>
+    <text x="58" y="415" font-size="13" fill="#334155">Python worker package・freeze 定義・tests</text>
+    <text x="68" y="443" font-size="14" fill="#0f172a">├─ src/autovision_ml/　health CLI</text>
+    <text x="68" y="468" font-size="14" fill="#0f172a">└─ tests/　Python tests</text>
+  </g>
+
+  <g aria-label="resources ディレクトリ">
+    <rect x="40" y="508" width="350" height="116" rx="8" fill="#f0f9ff" stroke="#075985" stroke-width="2"/>
+    <text x="58" y="535" font-size="18" font-weight="700" fill="#0f172a">resources/　[実装済み]</text>
+    <text x="58" y="558" font-size="14" fill="#0f172a">└─ models/</text>
+    <rect x="68" y="572" width="304" height="36" rx="5" fill="#f8fafc" stroke="#4b5563" stroke-width="2" stroke-dasharray="2 5"/>
+    <text x="80" y="587" font-size="12.5" font-weight="700" fill="#111827">manifest.json　[検証待ち / Gate 待ち]</text>
+    <text x="80" y="602" font-size="11.5" fill="#374151">実在する fail-closed 正本（ready: false、models: []）</text>
+  </g>
+
+  <!-- Column 2: documentation and engineering support -->
+  <g aria-label="docs ディレクトリ">
+    <rect x="425" y="160" width="350" height="140" rx="8" fill="#f0f9ff" stroke="#075985" stroke-width="2"/>
+    <text x="443" y="187" font-size="18" font-weight="700" fill="#0f172a">docs/　[実装済み]</text>
+    <text x="443" y="210" font-size="13" fill="#334155">要求・設計・開発／利用者向け文書</text>
+    <text x="453" y="238" font-size="14" fill="#0f172a">├─ adr/　設計判断の正本</text>
+    <text x="453" y="262" font-size="14" fill="#0f172a">├─ model-governance/　採用判断記録</text>
+    <text x="453" y="286" font-size="14" fill="#0f172a">└─ dependency-adoption/　依存審査記録</text>
+  </g>
+
+  <g aria-label="images ディレクトリ">
+    <rect x="425" y="318" width="350" height="76" rx="8" fill="#f0f9ff" stroke="#075985" stroke-width="2"/>
+    <text x="443" y="345" font-size="18" font-weight="700" fill="#0f172a">images/　[実装済み]</text>
+    <text x="443" y="370" font-size="13" fill="#334155">文書出力 — DOCS-206 で新設、この SVG を格納</text>
+  </g>
+
+  <g aria-label="scripts ディレクトリ">
+    <rect x="425" y="412" width="350" height="108" rx="8" fill="#f0f9ff" stroke="#075985" stroke-width="2"/>
+    <text x="443" y="439" font-size="18" font-weight="700" fill="#0f172a">scripts/　[実装済み]</text>
+    <text x="453" y="465" font-size="14" fill="#0f172a">├─ release/　version 検証</text>
+    <rect x="447" y="479" width="310" height="28" rx="4" fill="#faf5ff" stroke="#6b21a8" stroke-width="2" stroke-dasharray="8 5"/>
+    <text x="459" y="498" font-size="13" fill="#581c87">└─ docs/　[設計確定・未実装 / planned]</text>
+  </g>
+
+  <g aria-label="spikes ディレクトリ">
+    <rect x="425" y="538" width="350" height="86" rx="8" fill="#f8fafc" stroke="#4b5563" stroke-width="2" stroke-dasharray="2 5"/>
+    <text x="443" y="565" font-size="18" font-weight="700" fill="#111827">spikes/　[検証待ち / Gate 待ち]</text>
+    <text x="443" y="589" font-size="13" fill="#374151">PoC 専用。annotation / inference / packaging /</text>
+    <text x="443" y="608" font-size="13" fill="#374151">reference / sqlite / worker を production から隔離</text>
+  </g>
+
+  <!-- Column 3: tests, plans, build and configuration -->
+  <g aria-label="tests ディレクトリ">
+    <rect x="810" y="160" width="350" height="76" rx="8" fill="#f0f9ff" stroke="#075985" stroke-width="2"/>
+    <text x="828" y="187" font-size="18" font-weight="700" fill="#0f172a">tests/　[実装済み]</text>
+    <text x="828" y="212" font-size="13" fill="#334155">Node / renderer test の共通 setup</text>
+  </g>
+
+  <g aria-label="work ディレクトリ">
+    <rect x="810" y="254" width="350" height="88" rx="8" fill="#f0f9ff" stroke="#075985" stroke-width="2"/>
+    <text x="828" y="281" font-size="18" font-weight="700" fill="#0f172a">work/　[実装済み]</text>
+    <text x="828" y="305" font-size="13" fill="#334155">時点計画・実行記録・fact baseline の</text>
+    <text x="828" y="324" font-size="13" fill="#334155">スナップショット（production source ではない）</text>
+  </g>
+
+  <g aria-label="build と構成ファイル">
+    <rect x="810" y="360" width="350" height="164" rx="8" fill="#f8fafc" stroke="#4b5563" stroke-width="2" stroke-dasharray="2 5"/>
+    <text x="828" y="387" font-size="18" font-weight="700" fill="#111827">build/・構成ファイル　[検証待ち]</text>
+    <text x="828" y="410" font-size="13" fill="#374151">build/spi10/ は検証 harness / 生成物。</text>
+    <text x="828" y="429" font-size="13" fill="#374151">製品 source や配布済み artifact ではない。</text>
+    <text x="828" y="455" font-size="13" font-weight="700" fill="#111827">root の実在 config:</text>
+    <text x="838" y="477" font-size="12.5" fill="#374151">package.json / package-lock.json / tsconfig*.json</text>
+    <text x="838" y="498" font-size="12.5" fill="#374151">vite.*.config.ts / vitest.config.ts / .gitignore</text>
+  </g>
+
+  <g aria-label="manifest の安全規則">
+    <rect x="810" y="542" width="350" height="82" rx="8" fill="#f0fdf4" stroke="#166534" stroke-width="2"/>
+    <rect x="815" y="547" width="340" height="72" rx="5" fill="none" stroke="#166534" stroke-width="1.5"/>
+    <text x="828" y="570" font-size="14" font-weight="700" fill="#14532d">外部モデル入力の安全境界</text>
+    <text x="828" y="591" font-size="12.5" fill="#14532d">法務・hash・実機品質 Gate の承認前は</text>
+    <text x="828" y="610" font-size="12.5" fill="#14532d">manifest へ登録しない（fail-closed）。</text>
+  </g>
+
+  <!-- Legend -->
+  <line x1="40" y1="650" x2="1160" y2="650" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="40" y="681" font-size="16" font-weight="700" fill="#0f172a">状態凡例</text>
+
+  <rect x="132" y="665" width="34" height="22" rx="3" fill="#f0f9ff" stroke="#075985" stroke-width="2"/>
+  <text x="176" y="681" font-size="13" fill="#0f172a">実装済み（青・実線）</text>
+
+  <rect x="355" y="665" width="34" height="22" rx="3" fill="#faf5ff" stroke="#6b21a8" stroke-width="2" stroke-dasharray="8 5"/>
+  <text x="399" y="681" font-size="13" fill="#0f172a">設計確定・未実装（紫・破線）</text>
+
+  <rect x="650" y="665" width="34" height="22" rx="3" fill="#f8fafc" stroke="#4b5563" stroke-width="2" stroke-dasharray="2 5"/>
+  <text x="694" y="681" font-size="13" fill="#0f172a">検証待ち / Gate 待ち（灰・点線）</text>
+
+  <rect x="965" y="662" width="38" height="28" rx="3" fill="#f0fdf4" stroke="#166534" stroke-width="2"/>
+  <rect x="970" y="667" width="28" height="18" rx="2" fill="none" stroke="#166534" stroke-width="1.5"/>
+  <text x="1013" y="681" font-size="13" fill="#0f172a">外部入力 / OS 資源（緑・二重枠）</text>
+
+  <text x="40" y="716" font-size="12.5" fill="#475569">注: 枠の状態は配置または内容の成熟度を示す。実在パスは明記し、未実在パスは planned と表示する。</text>
+  <text x="40" y="738" font-size="12.5" fill="#475569">根拠: 現行 repository tree、.gitignore、CONTRIBUTING §11、work/20260904-1140-DocumentationTaskExecutionPlan.md §7.1 / §7.4。</text>
+</svg>

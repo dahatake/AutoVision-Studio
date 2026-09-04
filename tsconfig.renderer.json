@@ -4,6 +4,7 @@
     "lib": ["ES2024", "DOM", "DOM.Iterable"],
     "types": ["react", "react-dom", "vite/client"],
     "jsx": "react-jsx",
+    "resolveJsonModule": true,
     "tsBuildInfoFile": "./node_modules/.cache/typescript/tsconfig.renderer.tsbuildinfo"
   },
   "include": [

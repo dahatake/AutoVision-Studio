@@ -2,54 +2,73 @@
 
 | 項目 | 内容 |
 |---|---|
-| 文書バージョン | 0.1 Skeleton |
+| 文書バージョン | 0.3 Windows MVP 要求反映版 |
 | 作成日 | 2026-09-02 |
 | 最終更新日 | 2026-09-04 |
 | 対象リリース | Version 1（MVP）|
 | 対象リポジトリ | `dahatake/AutoVision-Studio` |
-| 要求定義基準 | [`docs/requirement-definition.md`](requirement-definition.md) v0.3 |
+| 要求定義基準 | [`docs/requirement-definition.md`](requirement-definition.md) v0.4 Draft |
 
 ---
 
-> ## ⚠️ 実装状況に関する重要な注意
+> ## ⚠️ 現在の利用可否
 >
-> **本ドキュメントは、現時点（2026-09-02）でアプリケーションの実装もインストーラーも存在しない段階に作成したスケルトンです。**
+> **本ドキュメントは開発中の Version 1（MVP）を説明します。利用可能な完成アプリケーションとインストーラーはまだありません。**
 >
-> - アプリケーションコード、テスト、ビルド設定はいずれも未作成です。
-> - インストーラー（Windows / macOS）は存在しません。
+> - Electron lifecycle、secure window、限定的な Preload API、navigation shell、Python `health` CLI の source と対象 test、および build 設定は存在します。
+> - 画面別の製品機能、学習、推論、製品 installer の大部分は未実装です。
+> - Version 1 用の Windows インストーラーは存在しません。macOS 向けアプリケーションとインストーラーは Version 1 の成果物ではありません。
 > - 各節の手順・ボタン名・パス・スクリーンショットは、**実装が完了し動作が検証されるまで記載しません。**
 > - 実装フェーズの完了に伴い、対応する節のみを実測した情報で更新します。
 >
 > **本書の内容に基づいた操作は現在行えません。** 実装進捗は [`docs/implementation-plan.md`](implementation-plan.md) を参照してください。
 
+### 状態凡例
+
+| 表示 | 意味 |
+|---|---|
+| 機能状態: `実装済み` | source と対象 test が存在する |
+| 機能状態: `設計確定・未実装` | 要求定義または承認済み ADR に定義されているが製品機能は未実装 |
+| 機能状態: `検証待ち` | 実装または PoC はあるが必要な OS、実機、Gate が未完了 |
+| 機能状態: `対象外` | Version 1（MVP）の scope 外 |
+| 文書成熟度: `構成のみ` | 検証項目だけがあり、操作手順として利用できない |
+| 文書成熟度: `要求反映済み` | 要求と設計を説明しているが UI 文言や手順は未検証 |
+| 文書成熟度: `実測済み` | 製品版、OS、実行証拠を記録し、手順を再現済み |
+
 ---
 
-## 目次
+### 目次
 
-1. [対応範囲](#1-対応範囲)
-2. [インストール](#2-インストール)
-   - [2.1 Windows](#21-windows)
-   - [2.2 macOS](#22-macos)
-3. [初回診断](#3-初回診断)
-4. [Project の管理](#4-project-の管理)
-5. [データ取り込み](#5-データ取り込み)
-   - [5.1 対応形式](#51-対応形式)
-   - [5.2 Copy モードと Reference モード](#52-copy-モードと-reference-モード)
-   - [5.3 入力データの権利確認](#53-入力データの権利確認)
-6. [Label Schema の設定](#6-label-schema-の設定)
-7. [画像分類のアノテーション](#7-画像分類のアノテーション)
-8. [物体検出のアノテーション（矩形）](#8-物体検出のアノテーション矩形)
-9. [補助候補と人による確認](#9-補助候補と人による確認)
-10. [学習・ジョブ・追加学習](#10-学習ジョブ追加学習)
-11. [結果・レポート](#11-結果レポート)
-12. [カメラ推論とプライバシー](#12-カメラ推論とプライバシー)
-13. [ストレージとライセンス](#13-ストレージとライセンス)
-14. [トラブルシューティング](#14-トラブルシューティング)
+1. [本書の対象と製品の利用可否](#1-本書の対象と製品の利用可否)
+2. [対応環境とインストール前の確認](#2-対応環境とインストール前の確認)
+3. [Windows のインストール](#3-windows-のインストール)
+4. [将来の macOS 対応情報](#4-将来の-macos-対応情報)
+5. [初回起動・診断・初期設定](#5-初回起動診断初期設定)
+6. [Project と保存場所の設定](#6-project-と保存場所の設定)
+7. [Copy / Reference、入力形式、データ権利](#7-copy--reference入力形式データ権利)
+8. [画像分類チュートリアル](#8-画像分類チュートリアル)
+9. [物体検出チュートリアル](#9-物体検出チュートリアル)
+10. [Label Schema と教師データ作成の詳細](#10-label-schema-と教師データ作成の詳細)
+11. [補助候補の確認・編集・却下](#11-補助候補の確認編集却下)
+12. [学習・追加学習・モデル版・レポート](#12-学習追加学習モデル版レポート)
+13. [カメラ推論・権限・プライバシー](#13-カメラ推論権限プライバシー)
+14. [ストレージ・ライセンス・診断・トラブルシューティング](#14-ストレージライセンス診断トラブルシューティング)
 15. [アップグレード・修復・アンインストール](#15-アップグレード修復アンインストール)
+16. [用語集と関連文書](#16-用語集と関連文書)
 
 ---
 
-## 1. 対応範囲
+## 1. 本書の対象と製品の利用可否
+
+> **機能状態:** 検証待ち
+>
+> **文書成熟度:** 要求反映済み
+>
+> **根拠:** 要求定義 §2〜§4、DOCS-102
+>
+> **最終化条件:** Gate 4 と Windows の DOCS-401、DOCS-403〜406 の実測 evidence
+
+この章の `検証待ち` は、診断を含む利用者向け初回フロー全体を指します。Electron lifecycle、secure window、Preload の `contractVersion`、navigation shell は実装済みですが、feature IPC と Project / data / annotation API は未実装です。
 
 > **この節は実装完了後に実測内容で更新します。現時点は要求定義からの抜粋です。**
 
@@ -69,9 +88,9 @@ AutoVision Studio は次の処理をローカル端末内で完結します。
 - バックグラウンド自動学習（AutoML・ハイパーパラメーター探索）
 - 学習履歴・モデル版管理・評価レポート
 - 既存モデル版を起点とした追加学習
-- PC / Mac カメラへのリアルタイム推論
+- Windows PC カメラへのリアルタイム推論
 - 完全オフライン動作
-- Windows x64 および macOS Apple Silicon (arm64) 用の自己完結型インストーラー
+- Windows 11 24H2 以降 x64 用の自己完結型インストーラー
 
 ### MVP に含まれないもの
 
@@ -83,16 +102,47 @@ AutoVision Studio は次の処理をローカル端末内で完結します。
 - 動画ファイル・ネットワークカメラ・RTSP ストリーム
 - セグメンテーション・姿勢推定・OCR・生成 AI
 - 分散学習・複数 PC をまたぐ学習
+- macOS 向けアプリケーション、MPS / CoreML 対応、カメラ権限試験、PKG、署名、notarization、servicing
 
 ---
 
-## 2. インストール
+## 2. 対応環境とインストール前の確認
+
+> **機能状態:** 設計確定・未実装
+>
+> **文書成熟度:** 要求反映済み
+>
+> **根拠:** 要求定義 §4、FR-INS-001〜020、NFR-INS-001〜008
+>
+> **最終化条件:** Gate 4、D-16、Windows の DOCS-401
 
 > **インストーラーは現時点で存在しません。以下の節は、実装・署名・動作検証が完了したときに実際の手順で更新します。**
 >
 > 要求の詳細は要求定義 §8.10（FR-INS-001〜020）および §11.7（NFR-INS-001〜008）を参照してください。
 
-### 2.1 Windows
+Version 1 の対象環境は **Windows 11 24H2 以降の x64 のみ**です。Windows on ARM、Windows 10、macOS は Version 1 の対象環境ではありません。
+
+要求定義で確定しているインストール前提は次のとおりです。製品インストーラーによる検査結果や画面文言としては未実装・未検証です。
+
+| 項目 | Version 1 の要求 |
+|---|---|
+| OS / architecture | Windows 11 24H2 以降、x64 |
+| メモリ | 最小 16 GB RAM、推奨 32 GB RAM 以上 |
+| ストレージ | アプリ領域 20 GB 以上に加え、データと成果物の計算値が必要 |
+| 導入形態 | オフラインで完結する Windows EXE 1 ファイル。Python、Node.js、CUDA Toolkit、開発者ツールの手動導入は不要 |
+| アクセラレーター | 専用 GPU は必須ではなく CPU fallback を提供する。GPU / NPU driver はインストーラーから導入・更新しない |
+
+必要容量の最終値、対応 driver、推奨構成の実測結果は package と性能 Gate の完了後に確定します。現時点でインストール可能であることを示す表ではありません。
+
+## 3. Windows のインストール
+
+> **機能状態:** 設計確定・未実装
+>
+> **文書成熟度:** 構成のみ
+>
+> **根拠:** FR-INS-001〜020、NFR-INS-001〜008、ADR-0003
+>
+> **最終化条件:** clean Windows 11 x64 の package evidence と DOCS-401
 
 *（実装完了後に記載予定）*
 
@@ -106,24 +156,40 @@ AutoVision Studio は次の処理をローカル端末内で完結します。
 
 **実装上の前提：** インストーラーは Windows 11 24H2 以降 x64 を対象とします。Python・Node.js・CUDA Toolkit・Visual C++ Redistributable 等の手動インストールは不要です。
 
-### 2.2 macOS
+## 4. 将来の macOS 対応情報
 
-*（実装完了後に記載予定）*
+> **機能状態:** 対象外
+>
+> **文書成熟度:** 構成のみ
+>
+> **根拠:** 要求定義 §3.2、§4、TBD-04、実装プラン Future macOS backlog
+>
+> **最終化条件:** 将来版で macOS の要求、PoC、Gate、対応環境を再決定し、独立した実機 evidence を取得すること
 
-実装後には次の内容を記載します。
+この章は、将来の要求策定で再確認する情報の参照先です。**macOS は Version 1 の実装・試験・配布・受入条件に含まれず、現在利用できる macOS アプリケーション、PKG、操作手順はありません。** Windows の結果を macOS の対応証拠として扱いません。
 
-- 動作要件（macOS バージョン、Apple Silicon 必須、最小メモリ・ストレージ）
-- PKG ファイルの入手先と署名・notarization の確認方法
-- Installer.app を使ったインストール手順（`/Applications` への配置）
-- Gatekeeper の対応（Terminal 操作・Rosetta・Homebrew は不要）
-- 起動方法（Launchpad / Applications フォルダー）
-- 失敗時の確認方法とログファイルの場所
+将来 macOS 対応を計画する場合は、要求定義 §4、FR-INF-006、FR-INS-010〜012、NFR-INS-005〜008、TBD-04 と、実装プランの `Future macOS backlog` を入力として、少なくとも次を新しい要求・PoC・Gateで再決定します。
 
-**実装上の前提：** macOS 13 以降の Apple Silicon (arm64) を対象とします。Intel Mac は Version 1 の対象外です。
+- 対応 architecture、OS 下限、最小・推奨ハードウェア
+- Python / ML wheel、MPS / CoreML、CPU fallback、カメラ権限
+- 配布形式、Developer ID 署名、Hardened Runtime、notarization、Gatekeeper
+- clean install、upgrade、repair、rollback、uninstall と Project 保持
+
+旧案の macOS 13、Apple Silicon、PKG、`/Applications`、Launchpad、Rosetta 不要などを、将来版の確定仕様または現在使える手順として案内しません。実装・実測前に installer 名、画面名、保存場所、権限回復手順を追加しないでください。
 
 ---
 
-## 3. 初回診断
+## 5. 初回起動・診断・初期設定
+
+> **機能状態:** 設計確定・未実装
+>
+> **文書成熟度:** 要求反映済み
+>
+> **根拠:** FR-SYS-001〜005、UI-01、CORE-12〜14
+>
+> **最終化条件:** Windows の実画面 evidence と DOCS-403
+
+ここでいう「初期設定」は一つの Settings 画面を意味しません。要求上は、端末診断、Project 作成時の保存場所、取り込み時の Copy / Reference 選択、Project ごとの Label Schema、推論時の Inference Profile が異なる時点で確定されます。実際の画面名と遷移は CORE-12〜14 と DOCS-403 の実測後に記載します。
 
 > **本節は、診断画面（UI-01）の実装・検証が完了したときに更新します。**
 >
@@ -138,8 +204,8 @@ AutoVision Studio は次の処理をローカル端末内で完結します。
 実装後には次の内容を記載します。
 
 - OS・CPU・論理コア数・物理メモリ・空きディスクの検出結果と意味
-- GPU または Apple Silicon MPS の検出結果
-- ONNX Execution Provider の利用可否（DirectML / CoreML / CPU）
+- GPU の検出結果
+- ONNX Execution Provider の利用可否（DirectML / 利用可能な Windows ML EP / CPU）
 - カメラの検出状態（推論開始時に確認するケースを含む）
 - 「非対応」「CPU 動作可」「推奨構成」の判定基準と表示
 - アクセラレーターが利用できない場合の CPU フォールバックの説明
@@ -148,7 +214,27 @@ AutoVision Studio は次の処理をローカル端末内で完結します。
 
 ---
 
-## 4. Project の管理
+## 6. Project と保存場所の設定
+
+> **機能状態:** 設計確定・未実装
+>
+> **文書成熟度:** 要求反映済み
+>
+> **根拠:** FR-PRJ-001〜010、UI-02、UI-03、CORE-13
+>
+> **最終化条件:** Project CRUD、削除 preview、保存場所の Windows evidence と DOCS-403
+
+### 設定項目と確定時期
+
+| 項目 | 要求上の時点 | 現在の案内 |
+|---|---|---|
+| 端末診断 | 初回起動時とユーザー要求時 | 本章ではなく[初回起動・診断](#5-初回起動診断初期設定)で説明 |
+| Project 名、説明、タスク種別、作業フォルダー | Project 作成時 | UI 文言と既定 path は未確定 |
+| Copy / Reference | データ取り込み時 | [データ取り込み](#7-copy--reference入力形式データ権利)で説明 |
+| Label Schema | 教師データ作成前 | [Label Schema](#10-label-schema-と教師データ作成の詳細)で説明 |
+| Inference Profile | 推論設定の保存時 | [カメラ推論](#13-カメラ推論権限プライバシー)で説明 |
+
+タスク種別は初回 Training Run 作成後に変更できません。作業フォルダーの変更、既定値、validation、既存データ移動の有無は実装・実測前に断定しません。
 
 > **本節は、Project 一覧画面（UI-02）および Project 作成・設定画面（UI-03）の実装・検証が完了したときに更新します。**
 >
@@ -171,13 +257,21 @@ Project は AutoVision Studio の最上位管理単位です。1 つの Project 
 
 ---
 
-## 5. データ取り込み
+## 7. Copy / Reference、入力形式、データ権利
+
+> **機能状態:** 設計確定・未実装
+>
+> **文書成熟度:** 要求反映済み
+>
+> **根拠:** FR-DAT-001〜016、FR-LIC-009、ADR-0002
+>
+> **最終化条件:** DAT-09〜10、DAT-15、Copy / Reference の Windows evidence と DOCS-403
 
 > **本節は、データ取り込み画面（UI-04）の実装・検証が完了したときに更新します。**
 >
 > 要求の詳細は要求定義 §8.3（FR-DAT-001〜016）を参照してください。
 
-### 5.1 対応形式
+### 7.1 対応形式
 
 *（実装完了後に実際の検証方法と制限を記載予定）*
 
@@ -194,9 +288,11 @@ Project は AutoVision Studio の最上位管理単位です。1 つの Project 
 
 取り込み時の検証エラーが 1 件でもある場合は、学習を自動開始しません（FR-DAT-008）。
 
-### 5.2 Copy モードと Reference モード
+### 7.2 Copy モードと Reference モード
 
 データ取り込み時に必ずどちらかを選択します（FR-DAT-002）。
+
+この選択は Project 作成時の保存場所とは別です。Copy / Reference は取り込む元データの保持方法を決め、Project 作業フォルダーはアプリが管理する database、artifact、cache の配置先を決めます。選択 UI の形式や既定値は未確定です。
 
 | モード | 概要 | 注意点 |
 |---|---|---|
@@ -210,7 +306,7 @@ Project は AutoVision Studio の最上位管理単位です。1 つの Project 
 - 参照元ファイルが継続してアクセスできない場合は再リンクを求めます。
 - Training Run 開始直前と学習中に全ファイルのハッシュ検証を行います。変更・消失が 1 件でもあれば Run を開始しないか安全に停止します。
 
-### 5.3 入力データの権利確認
+### 7.3 入力データの権利確認
 
 Project での初回データ取り込み時に、入力画像・ラベル・アノテーションを利用・学習する権利を有することを確認する画面が表示されます（FR-LIC-009）。
 
@@ -219,35 +315,42 @@ Project での初回データ取り込み時に、入力画像・ラベル・ア
 
 ---
 
-## 6. Label Schema の設定
+## 8. 画像分類チュートリアル
 
-> **本節は、Label Schema 画面（UI-09）の実装・検証が完了したときに更新します。**
+> **機能状態:** 設計確定・未実装
 >
-> 要求の詳細は要求定義 §8.3.1（FR-ANN-003〜004、FR-ANN-012）を参照してください。
+> **文書成熟度:** 構成のみ
+>
+> **根拠:** FR-PRJ、FR-DAT、FR-ANN-001〜014、FR-ANN-101〜107、FR-AST、FR-TRN、FR-REP、FR-INF
+>
+> **最終化条件:** Windows の分類 E2E evidence と DOCS-404
 
-Label Schema は、Project で使用するクラスの分類体系です。
+### 目標シナリオ（操作手順ではありません）
 
-### Schema に含まれる情報
+以下は要求定義上の完了フローを検証するためのテンプレートです。現在は実行できず、ボタン名、画面遷移、成功表示、所要時間を示しません。DOCS-404 で製品版の開始から終了までを実測した後にだけ操作手順へ置き換えます。
 
-- クラス ID（UUID）・表示名・色・説明
-- 補助モデル用の model alias（任意）
-- 正常例・境界例・反例（annotation instruction として常時参照可能）
-- 物体検出の場合は、occlusion・画像端の切れ・極小物体・曖昧な境界に関する Project 固有の方針（FR-ANN-207）
+**開始前提:** Image Classification の Project、利用権を確認できる JPEG / PNG / WebP / BMP / TIFF、十分な空き容量を用意します。Folder 構造または UTF-8 CSV を使用する場合も、実装済み validator で確認できるまでは sample path を固定しません。
 
-### 主な操作（実装完了後に手順を記載予定）
+| # | 目標状態 | Error / Warning 分岐 | 主な要求 | 製品版／Windows evidence |
+|---|---|---|---|---|
+| 1 | Image Classification Project が作成される | 入力 validation の表示を記録 | FR-PRJ-001〜006 | 未検証 |
+| 2 | 作業フォルダーと Copy / Reference が確定する | 容量不足、参照不可を記録 | FR-DAT-002、NFR-STO-001 | 未検証 |
+| 3 | 入力データの利用・学習権利の確認日時が記録される | 未確認時は取り込みを開始しない | FR-LIC-009 | 未検証 |
+| 4 | 画像または分類データの検証結果が表示される | 1 件でも Error があれば学習を開始しない | FR-DAT-001〜010 | 未検証 |
+| 5 | Project 固有の Label Schema が確定する | 空白名、正規化後重複を拒否 | FR-ANN-003〜004 | 未検証 |
+| 6 | 各画像に一つの class が設定される | 0 件／複数 class、schema 外 class を Error とする | FR-ANN-101〜107 | 未検証 |
+| 7 | Gate 2 後に assist が利用可能な場合だけ全 Model Suggestion が個別処理される | 未処理候補を残して確定しない | FR-AST-001〜015 | 未検証 |
+| 8 | Error 0、Warning 確認後に immutable Dataset Revision が確定する | 中断時は Annotation Workspace を保持 | FR-ANN-011〜014 | 未検証 |
+| 9 | Training Run の Queue、進捗、終了状態が確認される | cancel / failure / interrupted の状態と再実行可否を記録 | FR-TRN-001〜020 | 未検証 |
+| 10 | 分類指標、混同行列、画像別結果が確認される | 欠損画像、低品質 warning を記録 | FR-REP-001〜012 | 未検証 |
+| 11 | 成功 Run から immutable Model Version が選択できる | Succeeded 以外では生成しない | FR-MOD-001〜005 | 未検証 |
+| 12 | カメラ説明と権限同意後に分類推論を開始・停止する | denied、低速、camera unavailable を記録 | FR-INF-001〜019 | 未検証 |
 
-- クラスの作成・名前変更・色変更・説明編集
-- クラスの統合（複数クラスを 1 つに結合）
-- 未使用クラスの削除
+**データ境界:** Copy モード以外では元画像を複製せず、Reference 元を変更しません。Model Suggestion は draft へ反映しても Ground Truth へ自動確定されません。Dataset Revision と Model Version は確定後に上書きしません。
 
-### 制約事項
+**中断・やり直し:** Annotation Workspace の編集、Queued Run の削除、実行中 Run の cancel、Interrupted Run の再開条件は製品実測後に記載します。未検証の recovery 操作は案内しません。
 
-- クラス名は Unicode を許可しますが、空白のみの名前・同一 Project 内で正規化後に重複する名前は拒否されます（FR-ANN-004）。
-- **初回 Model Version の学習開始後は Label Schema がロックされます**（FR-ANN-012）。クラスの追加・削除・統合・意味変更が必要な場合は、新しい Project での初回学習が必要です。
-
----
-
-## 7. 画像分類のアノテーション
+**完了確認:** 未確認候補 0、Dataset Revision 確定、Training Run `Succeeded`、Model Version 作成、report 表示、camera 停止を同じ製品 version / OS の evidence で確認します。
 
 > **本節は、教師データ作成画面（UI-10）の分類機能の実装・検証が完了したときに更新します。**
 >
@@ -289,7 +392,40 @@ Dataset Revision 確定前に次の項目が検証されます（FR-ANN-011）�
 
 ---
 
-## 8. 物体検出のアノテーション（矩形）
+## 9. 物体検出チュートリアル
+
+> **機能状態:** 設計確定・未実装
+>
+> **文書成熟度:** 構成のみ
+>
+> **根拠:** FR-PRJ、FR-DAT、FR-ANN-001〜014、FR-ANN-201〜209、FR-AST、FR-TRN、FR-REP、FR-INF
+>
+> **最終化条件:** Windows の検出 E2E evidence と DOCS-405
+
+### 目標シナリオ（操作手順ではありません）
+
+以下は要求定義上の完了フローを検証するためのテンプレートです。現在は実行できず、矩形 UI、button、shortcut、overlay、成功表示を断定しません。DOCS-405 で製品版の開始から終了までを実測した後にだけ操作手順へ置き換えます。
+
+**開始前提:** Object Detection の Project、利用権を確認できる対応画像、または COCO JSON と対応画像 root を用意します。fixture、sample path、category mapping の具体値は validator と E2E の実測後に確定します。
+
+| # | 目標状態 | Error / Warning 分岐 | 主な要求 | 製品版／Windows evidence |
+|---|---|---|---|---|
+| 1 | Object Detection Project が作成される | 入力 validation の表示を記録 | FR-PRJ-001〜006 | 未検証 |
+| 2 | 未 annotation 画像、または COCO JSON と画像 root の import 検証結果が表示される | file 不在、JSON 構造、category ID の不整合時は取り込みを確定しない。bbox 意味論と provenance は確定前にも検証する | FR-DAT-001〜010、FR-ANN-209 | 未検証 |
+| 3 | non-negative 画像へ矩形を設定する前に、Project 固有の Label Schema と annotation instruction が確認される | 空白名、重複、schema 外 category を拒否。schema 初期化 UI は未確定 | FR-ANN-003〜004、FR-ANN-207 | 未検証 |
+| 4 | axis-aligned 矩形の作成、移動、resize、class 変更、削除の結果が保持される | 0 / NaN / 負値 / 画像外だけの矩形を拒否 | FR-ANN-201〜205 | 未検証 |
+| 5 | 対象物がない画像が未着手と区別され、negative sample として明示確認される | 未確認画像を Revision に含めない | FR-ANN-206 | 未検証 |
+| 6 | Gate 2 後に assist が利用可能な場合だけ各 Model Suggestion が確認される | accept / edit / reject 未処理候補を残して確定しない。open-vocabulary 出力の schema 外 label は `新しい class 候補` として分離する | FR-AST-001〜015 | 未検証 |
+| 7 | Error 0、Warning 確認後に immutable Dataset Revision が確定する | invalid bbox、未確認候補、未確認画像があれば確定しない | FR-ANN-011〜014、FR-ANN-208 | 未検証 |
+| 8 | Training Run の終了状態と成功時の Model Version が確認される | cancel / failure / interrupted と再実行可否を記録 | FR-TRN-001〜021、FR-MOD-001〜005 | 未検証 |
+| 9 | mAP、PR curve、ground truth / prediction、FP / FN が確認される | Reference 切れや画像欠損の表示を記録 | FR-REP-001、FR-REP-003〜008 | 未検証 |
+| 10 | カメラ説明と権限同意後に box、class、model score、実 FPS を確認して停止する | denied、低速、camera unavailable を記録 | FR-INF-001〜019 | 未検証 |
+
+**データ境界:** Copy / Reference の規範は[データ取り込み](#7-copy--reference入力形式データ権利)を参照してください。取り込んだ COCO の元 file と Reference 元を変更しません。Model Suggestion から Ground Truth への自動遷移はなく、negative sample も人が明示確認します。
+
+**中断・やり直し:** draft 矩形、COCO provenance、Queued / Running / Interrupted Run の扱いは製品実測後に記載します。未検証の recovery 操作や lossless round-trip を手順として保証しません。
+
+**完了確認:** invalid 矩形 0、未確認候補 0、negative sample の明示状態、Dataset Revision 確定、Training Run `Succeeded`、Model Version、report、camera 停止を同じ製品 version / OS の evidence で確認します。
 
 > **本節は、教師データ作成画面（UI-10）の検出機能の実装・検証が完了したときに更新します。**
 >
@@ -316,11 +452,57 @@ Dataset Revision 確定前に次の項目が検証されます（FR-ANN-011）�
 
 ### COCO フォーマットの取り込みと編集
 
-取り込んだ COCO の bounding box と category を同じエディターで修正できます（FR-ANN-209）。元の COCO フォーマット（`[x, y, width, height]`）への lossless な変換が行われ、provenance（`import-unmodified` / `import-edited`）が記録されます。
+取り込んだ COCO の bounding box と category を同じエディターで修正できます（FR-ANN-209）。確定 manifest の保存表現は COCO の `[x, y, width, height]` の意味論へ lossless に変換でき、provenance（`import-unmodified` / `import-edited`）が記録されます。元 JSON の byte-for-byte round-trip や再 export の UI を保証する記述ではありません。
 
 ---
 
-## 9. 補助候補と人による確認
+## 10. Label Schema と教師データ作成の詳細
+
+> **機能状態:** 設計確定・未実装
+>
+> **文書成熟度:** 要求反映済み
+>
+> **根拠:** FR-ANN-001〜014、FR-ANN-101〜107、FR-ANN-201〜209、UI-09、UI-10
+>
+> **最終化条件:** ANN-27、ANN-28 と Windows の DOCS-404 / 405 E2E evidence
+
+> **本節は、Label Schema 画面（UI-09）の実装・検証が完了したときに更新します。**
+>
+> 要求の詳細は要求定義 §8.3.1（FR-ANN-003〜004、FR-ANN-012）を参照してください。
+
+Label Schema は、Project で使用するクラスの分類体系です。
+
+Label Schema は端末共通設定ではなく Project 固有です。作成・編集 UI と Project 作成画面が同一か別かは未確定であり、本書は一つの Settings 画面があるとは説明しません。
+
+### Schema に含まれる情報
+
+- クラス ID（UUID）・表示名・色・説明
+- 補助モデル用の model alias（任意）
+- 正常例・境界例・反例（annotation instruction として常時参照可能）
+- 物体検出の場合は、occlusion・画像端の切れ・極小物体・曖昧な境界に関する Project 固有の方針（FR-ANN-207）
+
+### 主な操作（実装完了後に手順を記載予定）
+
+- クラスの作成・名前変更・色変更・説明編集
+- クラスの統合（複数クラスを 1 つに結合）
+- 未使用クラスの削除
+
+### 制約事項
+
+- クラス名は Unicode を許可しますが、空白のみの名前・同一 Project 内で正規化後に重複する名前は拒否されます（FR-ANN-004）。
+- **初回 Model Version の学習開始後は Label Schema がロックされます**（FR-ANN-012）。クラスの追加・削除・統合・意味変更が必要な場合は、新しい Project での初回学習が必要です。
+
+---
+
+## 11. 補助候補の確認・編集・却下
+
+> **機能状態:** 設計確定・未実装
+>
+> **文書成熟度:** 要求反映済み
+>
+> **根拠:** FR-AST-001〜020、UI-11、Gate 2
+>
+> **最終化条件:** 承認済み model、AST-22、未確認候補 0 の Windows evidence と DOCS-404 / 405
 
 > **本節は、補助ジョブ画面（UI-11）と補助候補機能（Phase H）の実装・検証が完了したときに更新します。**
 >
@@ -358,7 +540,15 @@ Dataset Revision 確定前に次の項目が検証されます（FR-ANN-011）�
 
 ---
 
-## 10. 学習・ジョブ・追加学習
+## 12. 学習・追加学習・モデル版・レポート
+
+> **機能状態:** 設計確定・未実装
+>
+> **文書成熟度:** 要求反映済み
+>
+> **根拠:** FR-TRN-001〜021、FR-MOD-001〜005、FR-REP-001〜012
+>
+> **最終化条件:** TRN-32 / 33、REP-10 と Windows の DOCS-404 / 405 E2E evidence
 
 > **本節は、Training Run 画面（UI-05）および学習機能（Phase I）の実装・検証が完了したときに更新します。**
 >
@@ -407,7 +597,7 @@ Model Version は `Succeeded` のときのみ作成されます。
 
 ---
 
-## 11. 結果・レポート
+### 結果・レポート
 
 > **本節は、結果・レポート画面（UI-06）の実装・検証が完了したときに更新します。**
 >
@@ -443,7 +633,17 @@ Training Run および Model Version ごとに、概要・データ・評価・T
 
 ---
 
-## 12. カメラ推論とプライバシー
+## 13. カメラ推論・権限・プライバシー
+
+> **機能状態:** 設計確定・未実装
+>
+> **文書成熟度:** 要求反映済み
+>
+> **根拠:** FR-INF-001〜019、FR-SEC-001、UI-07
+>
+> **最終化条件:** INF-13〜15 と Windows の権限・性能 evidence、DOCS-404 / 405
+
+本章をカメラ data と permission の規範的な説明とします。権限拒否時の対処は[トラブルシューティング](#トラブルシューティング)、端末内処理の全体境界は[`README.md`](../README.md#ローカル処理とプライバシー)を参照してください。
 
 > **本節は、推論画面（UI-07）の実装・検証が完了したときに更新します。**
 >
@@ -469,6 +669,8 @@ OS の権限要求の前に、利用目的・保存有無・停止方法をア�
 - 推論の開始・停止
 - 信頼度しきい値・表示設定の保存（Inference Profile、FR-INF-014）
 
+Inference Profile は Project ごとの推論設定です。端末診断、データ取り込み、Label Schema とは別の lifecycle を持ちます。保存場所、既定値、編集画面名は実装・実測後に確定します。
+
 ### 性能について
 
 - 推奨ハードウェアと承認済み軽量モデルでは、30 分連続試験で FR-INF-010 / NFR-PERF-004 の service time、capture-to-display p95、10 Hz 全フレーム処理、drop 0 を満たすことが**出荷条件**です。
@@ -480,7 +682,22 @@ OS の権限要求の前に、利用目的・保存有無・停止方法をア�
 
 ---
 
-## 13. ストレージとライセンス
+## 14. ストレージ・ライセンス・診断・トラブルシューティング
+
+> **機能状態:** 設計確定・未実装
+>
+> **文書成熟度:** 要求反映済み
+>
+> **根拠:** FR-LIC-001〜015、FR-SEC、NFR-STO-001〜003、UI-08
+>
+> **最終化条件:** SEC-01〜08、REL-03〜04、STO-03、PKG-11〜14 と DOCS-406
+
+### 情報の参照先
+
+- Project 作業フォルダーは[Project と保存場所](#6-project-と保存場所の設定)を参照してください。
+- Copy / Reference の定義と元データの扱いは[データ取り込み](#7-copy--reference入力形式データ権利)を正本とします。
+- カメラ frame、result、permission は[カメラ推論](#13-カメラ推論権限プライバシー)を正本とします。
+- 本章では容量管理、第三者 notice、診断 export、再現済みとなった障害対処だけを扱います。
 
 > **本節は、ストレージ・ライセンス画面（UI-08）の実装・検証が完了したときに更新します。**
 >
@@ -513,7 +730,7 @@ Project・Dataset Revision・Training Run・Model Version・キャッシュご�
 
 ---
 
-## 14. トラブルシューティング
+### トラブルシューティング
 
 > **本節は、各機能の実装・動作検証が完了したときに、実際に発生した事象をもとに更新します。現時点は構成のみです。**
 >
@@ -523,17 +740,16 @@ Project・Dataset Revision・Training Run・Model Version・キャッシュご�
 
 ### カメラ権限が拒否された場合
 
-- **Windows：** システム設定（Privacy & security > Camera）を開く導線と再試行が表示されます（FR-INF-005）。
-- **macOS：** `notDetermined / granted / denied / restricted` の各状態が処理されます（FR-INF-006）。
+- **Windows：** システム設定（Privacy & security > Camera）への導線と再試行を提供する設計です（FR-INF-005）。画面名と操作は未検証です。
 
 ### Reference モードでファイルが見つからない場合
 
-- 再リンクを求めるダイアログが表示されます（FR-DAT-012）。
-- Training Run 実行中にハッシュ不一致が検出された場合は、Run が安全に停止されます（FR-DAT-013）。
+- Reference のデータ所有権は[データ取り込み](#72-copy-モードと-reference-モード)を参照してください。製品版では再リンク要求を表示する設計です（FR-DAT-012）。画面名と操作は未検証です。
+- Training Run 実行中に hash 不一致が検出された場合は、Run を安全に停止する設計です（FR-DAT-013）。failure 表示と recovery は未検証です。
 
 ### 学習が失敗する場合
 
-考えられる原因と対処の案内が表示されます（FR-TRN-020）。
+考えられる原因と対処を案内する設計です（FR-TRN-020）。表示文言と実際の recovery は未検証です。
 
 - 対応していない演算：軽量な候補へのフォールバック
 - GPU メモリ不足（OOM）：batch size の縮小・CPU フォールバック
@@ -543,7 +759,7 @@ Project・Dataset Revision・Training Run・Model Version・キャッシュご�
 ### ディスク容量が不足している場合
 
 - データ取り込み前に、元データ・予測生成物・一時領域・安全余裕（20%）を含む必要容量を計算します（NFR-STO-001）。容量不足の場合は開始しません。
-- キャッシュや失敗 Run の一時チェックポイントを削除して容量を確保できます。
+- キャッシュや失敗 Run の一時 checkpoint を選択削除する設計です。操作と回復容量は未検証です。
 
 ### 診断ログの出力
 
@@ -553,13 +769,23 @@ Project・Dataset Revision・Training Run・Model Version・キャッシュご�
 
 ## 15. アップグレード・修復・アンインストール
 
+> **機能状態:** 設計確定・未実装
+>
+> **文書成熟度:** 構成のみ
+>
+> **根拠:** FR-INS-015〜020、ADR-0003
+>
+> **最終化条件:** Windows の upgrade / repair / uninstall evidence と DOCS-401
+
+本章を Version 1 の Windows servicing の規範的な説明とします。現在は installer がないため、以下は要求上の保持・rollback・削除境界であり、操作手順ではありません。Windows の実測手順は DOCS-401 で確定します。
+
 > **本節は、インストーラーの実装・動作検証が完了したときに更新します。**
 >
 > 要求の詳細は要求定義 §8.10（FR-INS-015〜020）を参照してください。
 
 ### アップグレード
 
-新版の同形式インストーラーを実行することで in-place アップグレードができます（FR-INS-015）。
+新版の Windows インストーラーを実行することで in-place アップグレードできる設計です（FR-INS-015）。現時点ではインストーラーがないため実行できません。
 
 - Project・Dataset Revision・Training Run・Model Version・Inference Profile・設定が保持されます。
 - 移行前に自動バックアップが作成されます。
@@ -573,10 +799,9 @@ Project・Dataset Revision・Training Run・Model Version・キャッシュご�
 
 ### アンインストール
 
-*（実装完了後に OS 別の手順を記載予定）*
+*（実装完了後に Windows の実測手順を記載予定）*
 
 - **Windows：** Windows の設定（アプリ）からアンインストール手順へ到達できます（FR-INS-020）。
-- **macOS：** アプリ内のヘルプからアンインストール手順へ到達できます（FR-INS-020）。
 
 **アンインストール時の動作：**
 
@@ -586,7 +811,17 @@ Project・Dataset Revision・Training Run・Model Version・キャッシュご�
 
 ---
 
-## 付録
+## 16. 用語集と関連文書
+
+> **機能状態:** 対象外
+>
+> **文書成熟度:** 要求反映済み
+>
+> **根拠:** 要求定義 §5、DOCS-003
+>
+> **最終化条件:** DOCS-306 の用語・link 横断レビュー
+
+用語集は product feature ではないため、機能状態を `対象外` とします。文書としては要求定義を反映済みです。
 
 ### 用語集
 

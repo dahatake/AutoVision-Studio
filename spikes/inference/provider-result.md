@@ -68,6 +68,26 @@ uv run --project ml --locked --system-certs python spikes/inference/provider_pro
 
 ## Windows 実測値
 
+### 2026-09-04 current-lock 再検証
+
+exact `uv 0.12.9` の `--frozen --offline` 環境で self-test と実 probe を再実行した。
+
+- self-test: 16 cases、exit 0
+- 実 probe: `verdict=PASS`、exit 0
+- CPU registered / profiled provider: `CPUExecutionProvider`
+- DirectML registered providers: `DmlExecutionProvider`, `CPUExecutionProvider`
+- DirectML profiled provider: `DmlExecutionProvider`
+- exact output: `[4.0, 3.0, 2.0, -4.0]`
+- temporary artifacts remaining: `0`
+- probe JSON: 1,448 bytes、SHA-256 `4f8b45e8c0ddc6b7eb79e75f389a470e447beecae95548ab9e5ee1f6052c5c73`（repository外の一時証拠）
+- Ruff check / format: exit 0。対象fileを明示した `--show-files` で `provider_probe.py` が解析対象であることを確認
+- Pyright: `ml/` から対象fileを明示して 0 errors / 0 warnings
+- current `provider_probe.py` SHA-256: `9d62bb3d9783ea465653d1d45442e107eccaec654a26eceded0b0bafd91e993f`
+- current `ml/pyproject.toml` SHA-256: `4631204ba6c1f632f92c5273462c92ec1caf15ba15491fd0c03382aaf288f6fe`
+- current `ml/uv.lock` SHA-256: `d14d188a0d1f92f34a9436ecc0b2c801bb0375b36619199f846924c112c7e5fc`
+
+2026-09-03節に記録した `ml/uv.lock` hash は当時の証拠値であり、current lock の同一性主張には使用しない。current lock を使用した実 probe が改めて合格したため、Windows CPU / DirectML lane の判定は維持する。macOS の `NOT_RUN` と SPI-08 全体の `PARTIAL` は変更しない。
+
 ### CPU session
 
 - requested providers: `CPUExecutionProvider`

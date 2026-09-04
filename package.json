@@ -29,13 +29,17 @@
     "esbuild@0.28.2": true
   },
   "scripts": {
-    "build": "npm run build:main && npm run build:preload && npm run build:renderer",
+    "build": "npm run verify:version && npm run build:main && npm run build:preload && npm run build:renderer",
     "build:main": "vite build --config vite.main.config.ts",
     "build:preload": "vite build --config vite.preload.config.ts",
     "build:renderer": "vite build --config vite.renderer.config.ts",
     "postinstall": "install-electron",
     "typecheck": "tsc -b tsconfig.main.json tsconfig.renderer.json",
-    "test": "vitest run",
+    "test": "npm run verify:version && npm run verify:docs && npm run test:version && npm run test:docs && vitest run",
+    "test:version": "node --test scripts/release/verify-product-version.test.mjs",
+    "test:docs": "node --test scripts/docs/verify-documentation.test.mjs",
+    "verify:docs": "node scripts/docs/verify-documentation.mjs",
+    "verify:version": "node scripts/release/verify-product-version.mjs",
     "verify:spi10": "node build/spi10/run.mjs"
   },
   "dependencies": {

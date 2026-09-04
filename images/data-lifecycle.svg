@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="data-lifecycle-title data-lifecycle-desc">
+  <title id="data-lifecycle-title">AutoVision Studio data lifecycle and human confirmation boundaries</title>
+  <desc id="data-lifecycle-desc">Source images enter an explicit Copy or Reference branch, then a mutable annotation workspace. Human-confirmed Ground Truth creates an immutable Dataset Revision used by a Training Run and immutable completed Trials. Only a successful run creates an immutable Model Version for reports or inference. Approved assist or project models create separate immutable suggestions; accept or edit copies a suggestion into a draft annotation, reject excludes it, and only a later explicit human confirmation can create Ground Truth. Unresolved suggestions are excluded from revisions, and Reference sources are never changed or deleted.</desc>
+
+  <defs>
+    <marker id="arrow-dark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#263238"/>
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5B2C83"/>
+    </marker>
+  </defs>
+
+  <rect x="1" y="1" width="1198" height="758" rx="12" fill="#FFFFFF" stroke="#263238" stroke-width="2"/>
+  <text x="40" y="42" fill="#172027" font-family="Arial, sans-serif" font-size="24" font-weight="700">Data lifecycle: mutable work becomes immutable evidence only after human confirmation</text>
+  <text x="40" y="66" fill="#37474F" font-family="Arial, sans-serif" font-size="14">Target design — lifecycle features are not yet implemented unless a node states otherwise.</text>
+
+  <g id="main-lifecycle" role="group" aria-label="Main data lifecycle">
+    <rect x="35" y="105" width="135" height="74" rx="8" fill="#E8F5E9" stroke="#1B5E20" stroke-width="7"/>
+    <rect x="41" y="111" width="123" height="62" rx="5" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+    <text x="102.5" y="137" text-anchor="middle" fill="#123B16" font-family="Arial, sans-serif" font-size="16" font-weight="700">Source Images</text>
+    <text x="102.5" y="159" text-anchor="middle" fill="#123B16" font-family="Arial, sans-serif" font-size="12">external input</text>
+
+    <path d="M 170 142 H 202" fill="none" stroke="#263238" stroke-width="2.5" marker-end="url(#arrow-dark)"/>
+
+    <rect x="205" y="105" width="145" height="74" rx="8" fill="#F3EAF8" stroke="#5B2C83" stroke-width="3" stroke-dasharray="10 6"/>
+    <text x="277.5" y="133" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="15" font-weight="700">Explicit mode</text>
+    <text x="277.5" y="155" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="14">Copy / Reference</text>
+
+    <path d="M 350 142 H 375 V 113 H 395" fill="none" stroke="#5B2C83" stroke-width="2.5" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+    <path d="M 350 142 H 375 V 198 H 395" fill="none" stroke="#6B7075" stroke-width="2.5" stroke-dasharray="2 7" stroke-linecap="round" marker-end="url(#arrow-dark)"/>
+
+    <rect x="398" y="84" width="145" height="58" rx="8" fill="#F3EAF8" stroke="#5B2C83" stroke-width="3" stroke-dasharray="10 6"/>
+    <text x="470.5" y="108" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="15" font-weight="700">Copy</text>
+    <text x="470.5" y="128" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="12">project-owned copy</text>
+
+    <rect x="398" y="164" width="145" height="68" rx="8" fill="#F1F3F4" stroke="#5F6368" stroke-width="3" stroke-dasharray="2 7" stroke-linecap="round"/>
+    <text x="470.5" y="190" text-anchor="middle" fill="#303438" font-family="Arial, sans-serif" font-size="15" font-weight="700">Reference</text>
+    <text x="470.5" y="210" text-anchor="middle" fill="#303438" font-family="Arial, sans-serif" font-size="11">verification pending</text>
+    <text x="470.5" y="225" text-anchor="middle" fill="#303438" font-family="Arial, sans-serif" font-size="11">source unchanged</text>
+
+    <path d="M 543 113 H 566 V 142 H 592" fill="none" stroke="#5B2C83" stroke-width="2.5" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+    <path d="M 543 198 H 566 V 142 H 592" fill="none" stroke="#6B7075" stroke-width="2.5" stroke-dasharray="2 7" stroke-linecap="round" marker-end="url(#arrow-dark)"/>
+
+    <rect x="595" y="100" width="180" height="84" rx="8" fill="#FFF4D6" stroke="#5B2C83" stroke-width="3" stroke-dasharray="10 6"/>
+    <text x="685" y="128" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="15" font-weight="700">Annotation Workspace</text>
+    <text x="685" y="151" text-anchor="middle" fill="#4A3510" font-family="Arial, sans-serif" font-size="13" font-weight="700">MUTABLE</text>
+    <text x="685" y="170" text-anchor="middle" fill="#4A3510" font-family="Arial, sans-serif" font-size="11">drafts + decisions</text>
+
+    <path d="M 775 142 H 807" fill="none" stroke="#5B2C83" stroke-width="2.5" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+
+    <rect x="810" y="100" width="155" height="84" rx="8" fill="#F3EAF8" stroke="#5B2C83" stroke-width="3" stroke-dasharray="10 6"/>
+    <text x="887.5" y="126" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="14" font-weight="700">Human confirmation</text>
+    <text x="887.5" y="148" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="12">all candidates resolved</text>
+    <text x="887.5" y="167" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="12">whole image reviewed</text>
+
+    <path d="M 965 142 H 997" fill="none" stroke="#5B2C83" stroke-width="2.5" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+
+    <rect x="1000" y="100" width="165" height="84" rx="8" fill="#F3EAF8" stroke="#5B2C83" stroke-width="3" stroke-dasharray="10 6"/>
+    <text x="1082.5" y="128" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="15" font-weight="700">Ground Truth</text>
+    <text x="1082.5" y="151" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="12">human-confirmed only</text>
+    <text x="1082.5" y="170" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="11">no automatic promotion</text>
+
+    <path d="M 1082 184 V 260 H 170 V 284" fill="none" stroke="#5B2C83" stroke-width="2.5" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+    <text x="655" y="251" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="12" font-weight="700">commit confirmed Ground Truth only</text>
+
+    <rect x="65" y="287" width="210" height="88" rx="8" fill="#F3EAF8" stroke="#5B2C83" stroke-width="3" stroke-dasharray="10 6"/>
+    <text x="170" y="315" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="15" font-weight="700">Dataset Revision</text>
+    <text x="170" y="339" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="13" font-weight="700">IMMUTABLE</text>
+    <text x="170" y="359" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="11">new changes create a new revision</text>
+
+    <path d="M 275 331 H 327" fill="none" stroke="#5B2C83" stroke-width="2.5" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+
+    <rect x="330" y="287" width="195" height="88" rx="8" fill="#F3EAF8" stroke="#5B2C83" stroke-width="3" stroke-dasharray="10 6"/>
+    <text x="427.5" y="315" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="15" font-weight="700">Training Run / Trial</text>
+    <text x="427.5" y="338" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="12">Run: controlled status changes</text>
+    <text x="427.5" y="358" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="11">completed Trial: IMMUTABLE</text>
+
+    <path d="M 525 331 H 590" fill="none" stroke="#5B2C83" stroke-width="2.5" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+    <text x="557" y="317" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="11" font-weight="700">Succeeded only</text>
+
+    <rect x="593" y="287" width="210" height="88" rx="8" fill="#F3EAF8" stroke="#5B2C83" stroke-width="3" stroke-dasharray="10 6"/>
+    <text x="698" y="315" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="15" font-weight="700">Model Version</text>
+    <text x="698" y="339" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="13" font-weight="700">IMMUTABLE</text>
+    <text x="698" y="359" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="11">never from Failed / Cancelled</text>
+
+    <path d="M 803 331 H 868" fill="none" stroke="#5B2C83" stroke-width="2.5" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+
+    <rect x="871" y="287" width="220" height="88" rx="8" fill="#F3EAF8" stroke="#5B2C83" stroke-width="3" stroke-dasharray="10 6"/>
+    <text x="981" y="322" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="16" font-weight="700">Report / Inference</text>
+    <text x="981" y="347" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="12">uses a selected Model Version</text>
+  </g>
+
+  <g id="assist-lifecycle" role="group" aria-label="Human-gated model suggestion lifecycle">
+    <text x="40" y="430" fill="#172027" font-family="Arial, sans-serif" font-size="18" font-weight="700">Assist path — suggestions remain separate from Ground Truth</text>
+
+    <rect x="35" y="456" width="185" height="82" rx="8" fill="#F1F3F4" stroke="#5F6368" stroke-width="3" stroke-dasharray="2 7" stroke-linecap="round"/>
+    <text x="127.5" y="483" text-anchor="middle" fill="#303438" font-family="Arial, sans-serif" font-size="14" font-weight="700">Approved Assist Model</text>
+    <text x="127.5" y="504" text-anchor="middle" fill="#303438" font-family="Arial, sans-serif" font-size="13">or Project Model</text>
+    <text x="127.5" y="523" text-anchor="middle" fill="#303438" font-family="Arial, sans-serif" font-size="11">approval / Gate pending</text>
+
+    <path d="M 220 497 H 257" fill="none" stroke="#6B7075" stroke-width="2.5" stroke-dasharray="2 7" stroke-linecap="round" marker-end="url(#arrow-dark)"/>
+
+    <rect x="260" y="456" width="185" height="82" rx="8" fill="#F3EAF8" stroke="#5B2C83" stroke-width="3" stroke-dasharray="10 6"/>
+    <text x="352.5" y="483" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="15" font-weight="700">Model Suggestion</text>
+    <text x="352.5" y="505" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="12">output is IMMUTABLE</text>
+    <text x="352.5" y="524" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="11">decision may change</text>
+
+    <path d="M 445 497 H 482" fill="none" stroke="#5B2C83" stroke-width="2.5" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+
+    <polygon points="485,497 565,451 645,497 565,543" fill="#F3EAF8" stroke="#5B2C83" stroke-width="3" stroke-dasharray="10 6"/>
+    <text x="565" y="489" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="14" font-weight="700">Human decision</text>
+    <text x="565" y="510" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="12">accept / edit / reject</text>
+
+    <path d="M 645 487 H 687" fill="none" stroke="#5B2C83" stroke-width="2.5" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+    <text x="665" y="473" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="11">accept / edit</text>
+
+    <rect x="690" y="456" width="175" height="82" rx="8" fill="#FFF4D6" stroke="#5B2C83" stroke-width="3" stroke-dasharray="10 6"/>
+    <text x="777.5" y="484" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="15" font-weight="700">Draft Annotation</text>
+    <text x="777.5" y="507" text-anchor="middle" fill="#4A3510" font-family="Arial, sans-serif" font-size="13" font-weight="700">MUTABLE</text>
+    <text x="777.5" y="526" text-anchor="middle" fill="#4A3510" font-family="Arial, sans-serif" font-size="11">not Ground Truth</text>
+
+    <path d="M 565 543 V 571 H 650" fill="none" stroke="#5B2C83" stroke-width="2.5" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+    <rect x="653" y="552" width="212" height="38" rx="6" fill="#FFFFFF" stroke="#5B2C83" stroke-width="2" stroke-dasharray="10 6"/>
+    <text x="759" y="576" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="12" font-weight="700">reject → excluded; no draft created</text>
+
+    <path d="M 865 497 H 902" fill="none" stroke="#5B2C83" stroke-width="2.5" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+
+    <rect x="905" y="456" width="250" height="82" rx="8" fill="#F3EAF8" stroke="#5B2C83" stroke-width="3" stroke-dasharray="10 6"/>
+    <text x="1030" y="481" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="14" font-weight="700">Explicit human confirmation</text>
+    <text x="1030" y="503" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="12">review image + resolve every suggestion</text>
+    <text x="1030" y="523" text-anchor="middle" fill="#35184D" font-family="Arial, sans-serif" font-size="11">only then may Ground Truth be confirmed</text>
+
+    <path d="M 1100 456 V 415 H 1145 V 184" fill="none" stroke="#5B2C83" stroke-width="2.5" stroke-dasharray="10 6" marker-end="url(#arrow-purple)"/>
+    <text x="1127" y="404" text-anchor="end" fill="#35184D" font-family="Arial, sans-serif" font-size="11" font-weight="700">human-confirmed path only</text>
+  </g>
+
+  <g id="invariant-notes" role="group" aria-label="Lifecycle invariants">
+    <rect x="35" y="610" width="690" height="62" rx="8" fill="#FFF8E1" stroke="#6D4C00" stroke-width="2"/>
+    <text x="53" y="635" fill="#4E3500" font-family="Arial, sans-serif" font-size="13" font-weight="700">Safety invariants</text>
+    <text x="53" y="657" fill="#4E3500" font-family="Arial, sans-serif" font-size="12">Reference source is never changed or deleted • unresolved suggestions are excluded from Dataset Revisions • no Suggestion-to-Ground-Truth shortcut</text>
+  </g>
+
+  <g id="status-legend" role="group" aria-label="Status legend">
+    <text x="755" y="620" fill="#172027" font-family="Arial, sans-serif" font-size="14" font-weight="700">Status legend</text>
+
+    <rect x="755" y="634" width="22" height="16" rx="2" fill="#E3F2FD" stroke="#0D47A1" stroke-width="3"/>
+    <text x="785" y="647" fill="#172027" font-family="Arial, sans-serif" font-size="11">Implemented — blue, solid</text>
+
+    <rect x="755" y="658" width="22" height="16" rx="2" fill="#F3EAF8" stroke="#5B2C83" stroke-width="3" stroke-dasharray="7 4"/>
+    <text x="785" y="671" fill="#172027" font-family="Arial, sans-serif" font-size="11">Design fixed / not implemented — purple, dashed</text>
+
+    <rect x="755" y="682" width="22" height="16" rx="2" fill="#F1F3F4" stroke="#5F6368" stroke-width="3" stroke-dasharray="2 5" stroke-linecap="round"/>
+    <text x="785" y="695" fill="#172027" font-family="Arial, sans-serif" font-size="11">Verification or Gate pending — gray, dotted</text>
+
+    <rect x="755" y="706" width="22" height="16" rx="2" fill="#E8F5E9" stroke="#1B5E20" stroke-width="6"/>
+    <rect x="759" y="710" width="14" height="8" rx="1" fill="none" stroke="#FFFFFF" stroke-width="1.5"/>
+    <text x="785" y="719" fill="#172027" font-family="Arial, sans-serif" font-size="11">External input / OS resource — green, double border</text>
+  </g>
+
+  <text x="40" y="726" fill="#455A64" font-family="Arial, sans-serif" font-size="11">Dashed lifecycle arrows describe the target design; they do not claim current product capability.</text>
+  <text x="40" y="744" fill="#455A64" font-family="Arial, sans-serif" font-size="11">Source: ADR-0002; FR-DAT, FR-ANN, FR-AST, FR-TRN, FR-MOD.</text>
+</svg>

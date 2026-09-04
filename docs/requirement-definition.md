@@ -3,15 +3,15 @@
 | 項目 | 内容 |
 |---|---|
 | 文書名 | AutoVision Studio 要求定義書 |
-| 文書バージョン | 0.3 Draft |
+| 文書バージョン | 0.4 Draft |
 | 作成日 | 2026-09-02 |
 | 対象リリース | Version 1（MVP） |
 | 対象リポジトリ | `dahatake/AutoVision-Studio` |
-| ステータス | 実現性調査済み・実装前レビュー待ち |
+| ステータス | Windows MVP スコープ確定・実装中 |
 
 ## 1. 目的
 
-AutoVision Studio は、画像分類（Image Classification）および物体検出（Object Detection）のデータ取り込み、ローカル学習、モデル版管理、評価、カメラ映像へのリアルタイム推論を、Windows および macOS 上で完結させるデスクトップアプリケーションである。
+AutoVision Studio は、画像分類（Image Classification）および物体検出（Object Detection）のデータ取り込み、ローカル学習、モデル版管理、評価、カメラ映像へのリアルタイム推論を、Windows 上で完結させるデスクトップアプリケーションである。Version 1（MVP）は Windows 11 24H2 以降の x64 を対象とし、macOS 対応は将来版へ延期する。
 
 本製品は次を最優先の価値とする。
 
@@ -21,7 +21,7 @@ AutoVision Studio は、画像分類（Image Classification）および物体検
 4. 商用製品へ組み込めるライセンス条件を満たすソフトウェアおよびモデルだけを使用すること。
 5. OS 別のインストーラー 1 つだけで導入でき、完了後に追加セットアップなしですぐ利用できること。
 
-本書で「必須」と記載した要求は MVP の受入条件である。「推奨」は、原則として実装するが、MVP から除外する場合に理由と代替策の記録を必要とする。
+本書で「必須」と記載した要求は MVP の受入条件である。「推奨」は、原則として実装するが、MVP から除外する場合に理由と代替策の記録を必要とする。「将来」は macOS 対応時に再検証する保持要求であり、Version 1 の実装・Gate・受入条件には含めない。
 
 ## 2. 実現性調査の結論
 
@@ -31,26 +31,26 @@ AutoVision Studio は、画像分類（Image Classification）および物体検
 
 | 領域 | 判定 | 根拠・条件 |
 |---|---|---|
-| 画像分類のローカル学習・推論 | 実現可能 | PyTorch 系で学習し、ONNX Runtime で Windows/macOS 推論を共通化できる [S1][S3]。 |
+| 画像分類のローカル学習・推論 | 実現可能 | PyTorch 系で学習し、ONNX Runtime で Windows 推論を実装できる [S1]。macOS 共通化の調査結果 [S3] は将来対応の入力として保持する。 |
 | 物体検出のローカル学習・推論 | 実現可能 | 軽量な MobileNet/SSDLite 系などが存在する [S12][S13]。ただし、画像ごとの矩形アノテーションが必須である。 |
 | 自動 Fine-Tuning / Hyperparameter Tuning | 実現可能 | Optuna の探索・枝刈り、および Hyperband による計算予算の早期配分が利用できる [S9][S10][S11]。 |
 | Windows のローカル実行 | 実現可能 | CPU は常時フォールバックにでき、DirectX 12 GPU では DirectML、対応環境では Windows ML を使用できる [S1][S4]。 |
-| macOS のローカル実行 | 実現可能 | Apple Silicon の MPS で学習、CoreML Execution Provider で推論を高速化できる [S3][S5]。 |
+| macOS のローカル実行 | 将来対応 | Apple Silicon の MPS 学習と CoreML Execution Provider 推論は技術候補である [S3][S5]。Version 1 の実装・試験・配布対象には含めない。 |
 | 100 ms 間隔のカメラ推論 | 条件付きで実現可能 | 軽量モデル、固定入力形状、アクセラレーター、最新フレーム優先制御が必要。すべての PC で 10 FPS を保証することはできない。 |
 | 商用利用可能性 | 条件付きで実現可能 | OSS 本体が permissive license でも、学習済み重みと学習元データには別条件があり得る [S14]。出荷前の重み単位の監査が必須である。 |
 | Cloud を使用しない動作 | 実現可能 | モデル、ランタイム、依存物を同梱し、外向き通信を禁止する。Windows ML の実行プロバイダー自動取得等には依存しない。 |
-| Windows/macOS 自己完結インストーラー | 実現可能 | Windows は署名済み EXE/MSI 系、macOS は署名済み flat PKG が適する [S33][S35]。アプリ、runtime、基盤重みを同梱するため配布物は大きくなる。 |
+| 自己完結インストーラー | 実現可能 | Version 1 は署名済み Windows EXE を使用する [S33]。macOS flat PKG の調査 [S35] は将来対応の入力として保持する。アプリ、runtime、基盤重みを同梱するため配布物は大きくなる。 |
 | 画面上での教師データ作成 | 実現可能 | 画像分類のタグ選択と物体検出の矩形作成・移動・サイズ変更・削除は、Microsoft および既存アノテーション製品で実装例がある [S37][S40][S41]。 |
 | 既存モデルによる初期ラベル・矩形補助 | 条件付きで実現可能 | 分類タグや検出矩形の prelabeling は確立したパターンである [S37][S38][S39][S42]。ただし誤提案を前提に人間の確認・修正を必須とし、同梱 checkpoint の商用利用と再配布を別途承認する。 |
 
 ### 2.2 成立に必須の条件
 
 1. 物体検出データには、少なくとも画像、クラス名、矩形座標を含む正しいアノテーションが存在すること。
-2. macOS の MVP 対象を Apple Silicon 搭載 Mac とすること。
+2. Version 1 の対象を Windows 11 24H2 以降の x64 とすること。macOS は将来対応とし、Windows の完了証拠を macOS の合格証拠へ転用しないこと。
 3. 10 FPS は「推奨ハードウェア＋出荷時承認済み軽量モデル」で実機検証し、性能ゲートを通過すること。
 4. 学習済み基盤重みごとに、重みのライセンス、学習元データの条件、再配布条件を法務またはリリース責任者が承認すること。
 5. 学習時間と精度はデータ件数、画像解像度、クラス数、ハードウェアに依存するため、固定時間または固定精度を製品全体では保証しないこと。
-6. 各 OS のクリーン環境で、ネットワークおよび開発用 runtime なしのインストール・初回起動試験に合格すること。
+6. クリーンな Windows 11 x64 環境で、ネットワークおよび開発用 runtime なしのインストール・初回起動試験に合格すること。
 7. 分類補助モデルおよび物体検出補助モデルについて、checkpoint 単位の商用利用・再配布・学習データ由来の監査とローカル実機 PoC を完了すること。
 8. モデルの補助出力を自動的に正解へ昇格させず、人が確認したアノテーションだけを学習に使用すること [S37][S38]。
 
@@ -83,10 +83,10 @@ Azure Machine Learning の資料 [S37][S38] は UI と human-in-the-loop の設�
 - 取り込んだ画像に対する、画面上での分類ラベルおよび物体検出矩形の作成・編集・確認
 - 監査済み既存モデルと Project の既存モデル版による、ラベル名、分類ラベル、矩形の補助候補生成
 - 学習結果、ハイパーパラメーター、元画像、予測結果の表示
-- PC/Mac カメラを用いた 100 ms 間隔のフレーム取得と推論
+- Windows PC カメラを用いた 100 ms 間隔のフレーム取得と推論
 - ローカル保存、ローカルログ、障害復旧
 - 完全オフライン動作
-- Windows x64 用および macOS arm64 用の自己完結型インストーラー
+- Windows 11 x64 用の自己完結型インストーラー
 - インストール直後の追加ダウンロード、runtime 導入、コマンド操作を不要にする同梱配布
 - ソフトウェア部品表（SBOM）と第三者ライセンス表示
 
@@ -100,6 +100,7 @@ Azure Machine Learning の資料 [S37][S38] は UI と human-in-the-loop の設�
 - 分散学習、複数 PC をまたぐ学習
 - セグメンテーション、姿勢推定、OCR、生成 AI
 - 未監査の外部モデルやプラグインの読み込み
+- macOS 向けアプリケーション、MPS/CoreML 対応、カメラ権限試験、PKG、署名、notarization、servicing
 
 > 未アノテーション画像だけでは教師あり学習を開始できない。MVP では、既存ラベル/COCO JSON の import、または本製品の教師データ作成画面で人が確認した annotation のいずれかを学習入力とする。
 
@@ -107,20 +108,20 @@ Azure Machine Learning の資料 [S37][S38] は UI と human-in-the-loop の設�
 
 - Project の作成、データ取り込み、学習、HPO、モデル変換、評価、保存、カメラ推論、ログ、診断には Cloud resource、外部 API、外向き通信を一切使用しない。
 - モデル、Execution Provider、依存ライブラリは、監査済みインストーラーへ事前同梱する。実行時 download を行わない。
-- 開発・リリース工程における公開ソフトウェアの取得、コード署名、Apple notarization、配布物の公開はアプリの実行機能には含めない。ただし、これらへ画像、ラベル、Project、モデル、学習結果を送信してはならない。
-- Apple notarization も含めて開発・配布工程の外部サービス利用を禁止する場合、署名済み macOS アプリの標準的な配布要件と両立しないため、TBD-04 で配布方法を再決定する。
+- 開発・リリース工程における公開ソフトウェアの取得、Windows コード署名、配布物の公開はアプリの実行機能には含めない。ただし、これらへ画像、ラベル、Project、モデル、学習結果を送信してはならない。
+- 将来の macOS 対応で Apple notarization を採用する場合も同じデータ境界を適用し、TBD-04 で配布方法を再決定する。
 
 ## 4. 対応プラットフォーム
 
 | プラットフォーム | MVP 対応 | 学習デバイス | 推論デバイス |
 |---|---|---|---|
 | Windows 11 24H2 以降、x64 | 必須 | NVIDIA CUDA 対応 GPUを優先、CPU フォールバック | DirectML または利用可能な Windows ML EP、CPU フォールバック |
-| macOS 13 以降、Apple Silicon arm64 | 必須 | PyTorch MPS、CPU フォールバック | ONNX Runtime CoreML EP、CPU フォールバック |
+| macOS 13 以降、Apple Silicon arm64 | 将来対応 | PyTorch MPS、CPU フォールバックを再評価 | ONNX Runtime CoreML EP、CPU フォールバックを再評価 |
 | Windows on ARM | 対象外 | 将来検討 | 将来検討 |
-| Intel Mac | 対象外 | 現行 MPS の対象および実用性能を満たさないため | 将来の CPU 推論のみを検討 |
+| Intel Mac | 将来検討 | MPS 対象外。将来の要件策定時に判断 | 将来の CPU 推論を検討 |
 | Windows 10 | 対象外 | OS サポート終了後の新規製品対象にしない | 対象外 |
 
-macOS の下限を満たしていても、出荷時点で Apple のセキュリティ更新対象外となった OS 版はサポート対象外とする。
+将来 macOS を対象へ戻す場合は、対応architecture、OS下限、Appleのセキュリティ更新対象、Python/ML wheel、署名、notarizationを新しい要求・PoC・Gateで再決定する。Version 1 のWindows成果物はmacOS対応を表明しない。
 
 ## 5. 用語と管理単位
 
@@ -197,7 +198,7 @@ macOS の下限を満たしていても、出荷時点で Apple のセキュリ�
 
 | ID | 要求 | 優先度 |
 |---|---|---|
-| FR-SYS-001 | 初回起動時およびユーザー要求時に、OS/CPU/論理コア数/物理メモリ/空きディスク/GPU または MPS/利用可能な ONNX Execution Provider/カメラ機能の有無をローカルで検出する。初回診断ではカメラストリームを開かず、OS が権限前の列挙を許さない場合は `推論開始時に確認` と表示する。 | 必須 |
+| FR-SYS-001 | 初回起動時およびユーザー要求時に、Windows/CPU/論理コア数/物理メモリ/空きディスク/GPU/利用可能な ONNX Execution Provider/カメラ機能の有無をローカルで検出する。初回診断ではカメラストリームを開かず、OS が権限前の列挙を許さない場合は `推論開始時に確認` と表示する。 | 必須 |
 | FR-SYS-002 | 診断結果を `非対応`、`CPU 動作可`、`推奨構成` のいずれかで表示し、不足理由を示す。 | 必須 |
 | FR-SYS-003 | 実行デバイスは、利用可能性、メモリ、モデル互換性を基に自動選択する。ユーザーにハイパーパラメーターを入力させない。 | 必須 |
 | FR-SYS-004 | アクセラレーターが利用不能またはモデル非互換の場合、処理を落とさず CPU へフォールバックし、その事実と性能低下見込みを表示する。 | 必須 |
@@ -321,7 +322,7 @@ macOS の下限を満たしていても、出荷時点で Apple のセキュリ�
 | FR-TRN-006 | AutoML は候補アーキテクチャ、学習率、optimizer、weight decay、batch size、入力解像度、augmentation、層の freeze/unfreeze、early stopping 条件等を内部探索する。 | 必須 |
 | FR-TRN-007 | ユーザーは探索値を指定しない。内部探索空間、選択理由、各 Trial の実値はレポートで参照できる。 | 必須 |
 | FR-TRN-008 | 探索には TPE 等の逐次探索と Hyperband/Successive Halving 等の枝刈りを用い、有望でない Trial を早期終了する [S9][S11]。 | 必須 |
-| FR-TRN-009 | CPU/CUDA/MPS ごとの最大 Trial 数と最大 wall-clock 時間をリリースごとの versioned policy に有限値として固定する。その上限内で、初期 mini-run、データ量、メモリ、アクセラレーター、タスク種別から端末ごとの実行 Trial 数と時間予算を自動決定し、予測完了時刻を開始前後に更新表示する。ユーザーには入力させず、Run レポートに上限と適用値を残す。 | 必須 |
+| FR-TRN-009 | CPU/CUDA ごとの最大 Trial 数と最大 wall-clock 時間をリリースごとの versioned policy に有限値として固定する。その上限内で、初期 mini-run、データ量、メモリ、アクセラレーター、タスク種別から端末ごとの実行 Trial 数と時間予算を自動決定し、予測完了時刻を開始前後に更新表示する。ユーザーには入力させず、Run レポートに上限と適用値を残す。MPS policy は将来 macOS 対応時に実測して追加する。 | 必須 |
 | FR-TRN-010 | 1 台の端末で同時に実行する Training Run は原則 1 件とし、他は FIFO Queue に置く。Out of Memory を避けるため Trial の並列数も自動制御する。 | 必須 |
 | FR-TRN-011 | Training Run の状態を `Queued`, `Preparing`, `Running`, `Exporting`, `Evaluating`, `Succeeded`, `Failed`, `Cancelled`, `Interrupted` で管理する。 | 必須 |
 | FR-TRN-012 | 進捗、Trial 番号、epoch、主要な validation 指標、経過時間、推定残時間、使用デバイスを更新表示する。 | 必須 |
@@ -332,7 +333,7 @@ macOS の下限を満たしていても、出荷時点で Apple のセキュリ�
 | FR-TRN-017 | 分類の既定最適化指標を macro F1、物体検出の既定最適化指標を mAP@[0.50:0.95] とする。データ不均衡も併記する。 | 必須 |
 | FR-TRN-018 | 成功モデルを固定入力形状の FP32 ONNX へ出力し、元フレームワークと ONNX Runtime CPU の parity を自動検証する。対応する生 tensor は `rtol <= 1e-3` かつ `atol <= 1e-4`、分類は test split の top-1 一致率 99.5% 以上、最適化指標の絶対低下は 0.005 以下、検出は mAP@[0.50:0.95] の絶対低下 0.005 以下を既定許容差とする。超過時は Run を `Evaluating` から `Failed` へ遷移する。例外は開発・リリース責任者が根拠、影響、モデル別承認値を model adoption record に残し、出荷前 review を通過した場合だけ versioned policy として適用できる。 | 必須 |
 | FR-TRN-019 | 学習・変換・評価の全処理をローカルで行い、モデルや画像を外部送信しない。 | 必須 |
-| FR-TRN-020 | CUDA/MPS の未対応演算、メモリ不足、ディスク不足、画像読込失敗を分類し、再試行可否と対処を表示する。 | 必須 |
+| FR-TRN-020 | CUDA の未対応演算、メモリ不足、ディスク不足、画像読込失敗を分類し、再試行可否と対処を表示する。MPS の失敗分類は将来 macOS 対応時に追加する。 | 必須 |
 | FR-TRN-021 | 追加学習で使用する Dataset Revision のクラス集合は、Base Model Version と一致しなければならない。クラスの追加、削除、名前変更がある場合、MVP では新しい Project として初回学習するよう案内する。 | 必須 |
 
 ### 8.5 モデル版管理
@@ -371,7 +372,7 @@ macOS の下限を満たしていても、出荷時点で Apple のセキュリ�
 | FR-INF-003 | カメラ権限は、ユーザーが推論開始操作をした時だけ要求する。起動時や Project 閲覧時には要求しない [S2][S6]。 | 必須 |
 | FR-INF-004 | OS 権限要求の前に、利用目的、保存有無、停止方法をアプリ内で説明し、ユーザーの明示同意を得る。 | 必須 |
 | FR-INF-005 | Windows ではアクセス可否を確認し、拒否時は `Privacy & security > Camera` を開く導線と再試行を提供する [S2]。 | 必須 |
-| FR-INF-006 | macOS では `NSCameraUsageDescription` を設定し、`notDetermined/granted/denied/restricted` を処理する。説明キー欠落による終了を出荷試験で防ぐ [S6][S7]。 | 必須 |
+| FR-INF-006 | 将来の macOS 対応では `NSCameraUsageDescription` を設定し、`notDetermined/granted/denied/restricted` を処理する。説明キー欠落による終了を出荷試験で防ぐ [S6][S7]。Version 1 の実装・受入対象には含めない。 | 将来 |
 | FR-INF-007 | 音声を利用せず、マイク権限を要求しない。 | 必須 |
 | FR-INF-008 | 権限許可後、カメラ映像を表示し、単調増加時計に基づき 100 ms ごと（10 Hz）に最新フレームを推論対象として取得する。 | 必須 |
 | FR-INF-009 | 実行中フレームとは別に保持する未処理フレーム Queue の深さを 1 とする。前回推論が完了していない状態で次のフレームが到着した場合、Queue 内の古い未処理フレームを最新フレームで置換し、遅延を蓄積させない。 | 必須 |
@@ -420,7 +421,7 @@ macOS の下限を満たしていても、出荷時点で Apple のセキュリ�
 | FR-SEC-008 | 画像 decoder は不正画像、decompression bomb、巨大解像度、path traversal、symlink 越境を検査し、処理上限を設ける。 | 必須 |
 | FR-SEC-009 | メタデータと manifest の更新を transaction/atomic rename で行い、成果物に checksum を持たせる。 | 必須 |
 | FR-SEC-010 | ログには画像本体を含めず、ユーザー名を含む絶対パスは UI 用データと診断 export を除いて可能な限りマスクする。 | 必須 |
-| FR-SEC-011 | Windows 配布物はコード署名し、macOS 配布物は Developer ID 署名、Hardened Runtime、Notarization を行う。 | 必須 |
+| FR-SEC-011 | Version 1 の Windows 配布物はコード署名する。将来の macOS 配布物は Developer ID 署名、Hardened Runtime、Notarization を行うが、Version 1 の受入対象には含めない。 | 必須 |
 | FR-SEC-012 | Project 削除後、参照元を除く Project 所有データと派生キャッシュを削除し、失敗した項目を報告する。 | 必須 |
 | FR-SEC-013 | source/build artifact 内の `http://`、`https://`、WebSocket、外部 font/CDN 参照を CI で allowlist 検査する。Electron の spellchecker 等の暗黙 download 機能は無効化するか、必要 asset を監査済み配布物へ同梱する。 | 必須 |
 
@@ -428,18 +429,18 @@ macOS の下限を満たしていても、出荷時点で Apple のセキュリ�
 
 | ID | 要求 | 優先度 |
 |---|---|---|
-| FR-INS-001 | リリースごとに Windows 11 x64 用と macOS Apple Silicon arm64 用の 2 種類のインストーラーを作成する。 | 必須 |
-| FR-INS-002 | Windows 配布物は `AutoVision-Studio-<version>-windows-x64.exe`、macOS 配布物は `AutoVision-Studio-<version>-macos-arm64.pkg` を基準とする。各 OS の利用者が起動するファイルは 1 つだけとする。 | 必須 |
+| FR-INS-001 | Version 1 の各リリースで Windows 11 x64 用インストーラーを作成する。macOSインストーラーは将来版で別途要求・検証する。 | 必須 |
+| FR-INS-002 | Version 1 の配布物は `AutoVision-Studio-<version>-windows-x64.exe` を基準とし、利用者が起動するファイルは1つだけとする。将来のmacOS成果物名候補 `AutoVision-Studio-<version>-macos-arm64.pkg` はVersion 1の成果物ではない。 | 必須 |
 | FR-INS-003 | インストーラーはネットワークに接続せず、オフラインで全 payload を検証・展開・登録できる。web installer、stub installer、実行時 dependency download を使用しない。 | 必須 |
-| FR-INS-004 | payload には、アプリ本体、Electron/Node runtime、組み込み Python runtime、固定済み Python/NPM/native dependencies、ONNX Runtime と CPU EP、OS 別 accelerator integration、Curated Base Weight、承認済み Annotation Assist Model、フォント、アイコン、SBOM、`THIRD_PARTY_NOTICES` を含める。 | 必須 |
+| FR-INS-004 | payload には、アプリ本体、Electron/Node runtime、組み込み Python runtime、固定済み Python/NPM/native dependencies、ONNX Runtime と CPU EP、Windows accelerator integration、Curated Base Weight、承認済み Annotation Assist Model、フォント、アイコン、SBOM、`THIRD_PARTY_NOTICES` を含める。 | 必須 |
 | FR-INS-005 | ユーザーに Python、Node.js、Visual C++ runtime、CUDA Toolkit、package manager、開発者ツール、環境変数の手動導入またはコマンド実行を要求しない。必要な再配布可能 runtime は同梱して自動導入する。 | 必須 |
 | FR-INS-006 | GPU/NPU driver はインストーラーから導入・更新しない。対応 driver がない場合も CPU fallback によりインストール直後から全機能を利用可能とし、アクセラレーション不可の理由だけを初回診断に表示する。 | 必須 |
 | FR-INS-007 | 開始前に OS、architecture、空き容量、書込権限、同一/旧/新バージョンの有無を検査する。非対応環境ではシステムを変更する前に停止し、理由を日本語で表示する。 | 必須 |
 | FR-INS-008 | Windows インストーラーと同梱する全 PE 実行ファイル/DLL は、信頼された CA へ連鎖する証明書と secure timestamp で Authenticode 署名し、インストール前に署名と payload hash を検証する [S33][S34]。 | 必須 |
 | FR-INS-009 | Windows は既定で per-user install とし、標準ユーザーが管理者権限なしで導入できる構成を優先する。管理者または組織が per-machine install を選ぶ場合だけ、標準 UAC prompt を許可する。 | 必須 |
-| FR-INS-010 | macOS の app 本体と全 nested executable/framework/helper は Developer ID Application、flat PKG は Developer ID Installer で署名する。Hardened Runtime、secure timestamp、最小限の entitlement を使用し、PKG を notarize して ticket を staple する [S35][S36]。 | 必須 |
-| FR-INS-011 | macOS インストーラーは標準 Installer.app で `/Applications/AutoVision Studio.app` へ導入する。OS 標準の認証 prompt は許可するが、Terminal 操作、Rosetta、Homebrew、Xcode、別 package の導入を要求しない。 | 必須 |
-| FR-INS-012 | インストール完了時、Windows は Start menu、macOS は Applications/Launchpad からアプリを直ちに起動可能にする。完了画面には起動場所を表示し、Windows では任意の `AutoVision Studio を起動` 選択肢を提供する。 | 必須 |
+| FR-INS-010 | 将来の macOS 対応では、app 本体と全 nested executable/framework/helper を Developer ID Application、flat PKGをDeveloper ID Installerで署名する。Hardened Runtime、secure timestamp、最小限の entitlementを使用し、PKGをnotarizeしてticketをstapleする [S35][S36]。Version 1 の受入対象には含めない。 | 将来 |
+| FR-INS-011 | 将来の macOS 対応では、標準 Installer.app で `/Applications/AutoVision Studio.app` へ導入し、Terminal、Rosetta、Homebrew、Xcode、別packageを要求しない。Version 1 の受入対象には含めない。 | 将来 |
+| FR-INS-012 | Version 1 のインストール完了時、Windows Start menuからアプリを直ちに起動可能にする。完了画面に起動場所と任意の`AutoVision Studio を起動`選択肢を提供する。将来のmacOSではApplications/Launchpad導線を別途検証する。 | 必須 |
 | FR-INS-013 | 初回起動ではサインイン、製品 activation、利用規約への再同意、dependency 構築、モデル download を要求せず、Project 一覧と初回診断を表示する。ユーザーは直ちに Project を作成できる。 | 必須 |
 | FR-INS-014 | インストール中および初回起動時にはカメラ権限を要求しない。カメラ権限は FR-INF-003 の推論開始操作時だけ要求する。 | 必須 |
 | FR-INS-015 | 新版の同形式インストーラーを起動すると in-place upgrade でき、Project、Dataset Revision、Training Run、Model Version、Inference Profile、設定を保持する。migration 前にバックアップし、失敗時は旧版を起動可能な状態へ rollback する。 | 必須 |
@@ -447,7 +448,7 @@ macOS の下限を満たしていても、出荷時点で Apple のセキュリ�
 | FR-INS-017 | clean install、upgrade、repair、uninstall の結果を個人情報と Project 内容を含まないローカルログへ記録し、失敗画面から保存場所を開ける。 | 必須 |
 | FR-INS-018 | 失敗またはキャンセル時は、作成途中の app file、service、shortcut、registry/package receipt を rollback し、動作不能な部分インストールを残さない。 | 必須 |
 | FR-INS-019 | clean install では OS 再起動を要求しない。使用中ファイルにより upgrade 後の再起動が不可避な場合だけ理由を表示し、ユーザーに選択させる。 | 必須 |
-| FR-INS-020 | Windows の Apps、macOS のアプリ内ヘルプからアンインストール手順へ到達できる。アプリ本体と同梱 runtime は削除し、ユーザー Project は既定で保持する。Project も削除する場合は対象と容量を明示して別途確認する。 | 必須 |
+| FR-INS-020 | Version 1 はWindowsのAppsからアンインストール手順へ到達できる。アプリ本体と同梱runtimeは削除し、ユーザーProjectは既定で保持する。Projectも削除する場合は対象と容量を明示して別途確認する。macOSの導線は将来対応で定義する。 | 必須 |
 
 ## 9. データモデル
 
@@ -544,8 +545,8 @@ stateDiagram-v2
 | NFR-PERF-002 | Dataset Revision 確定後、Training Run を 5 秒以内に Queue 登録する。データ検証・コピー時間はこの 5 秒に含めない。 |
 | NFR-PERF-003 | カメラ取得周期は 100 ms を目標とし、推奨環境における周期ジッターの p95 を ±20 ms 以内とする。 |
 | NFR-PERF-004 | 推奨環境と承認済み軽量モデルで、30 分の連続試験における各推論 service time を 100 ms 未満、warm-up 後の capture-to-display latency p95 を 100 ms 以下、drop 数を 0 とする。 |
-| NFR-PERF-005 | DirectML/CoreML では可能な限り batch=1 の固定入力形状を使用する。DirectML セッションは単一推論ワーカーから逐次呼び出す [S3][S4]。 |
-| NFR-PERF-006 | CoreML のコンパイルキャッシュはモデル hash ごとに分離し、モデル変更時に古いキャッシュを再利用しない [S3]。 |
+| NFR-PERF-005 | DirectML では可能な限り batch=1 の固定入力形状を使用し、単一推論ワーカーから逐次呼び出す [S4]。CoreML条件は将来macOS対応時に再検証する [S3]。 |
+| NFR-PERF-006 | 将来のmacOS対応ではCoreMLのコンパイルキャッシュをモデルhashごとに分離し、モデル変更時に古いキャッシュを再利用しない [S3]。Version 1の受入対象には含めない。 |
 | NFR-PERF-007 | 学習時間に固定 SLA は設けず、実測 mini-run から概算を更新する。 |
 
 ### 11.2 信頼性・復旧
@@ -582,7 +583,7 @@ stateDiagram-v2
 |---|---|
 | NFR-MNT-001 | 依存バージョンを OS/architecture ごとに lock し、再現可能なビルドを行う。 |
 | NFR-MNT-002 | 各 Model Version からデータ manifest、コード版、環境、パラメーター、親版を追跡できる。 |
-| NFR-MNT-003 | 学習、ONNX export、各 EP の互換性を Windows/macOS の実機 CI またはリリース試験機で確認する。 |
+| NFR-MNT-003 | Version 1では学習、ONNX export、各Windows EPの互換性をWindows実機CIまたはリリース試験機で確認する。macOS EPは将来対応時に別の実機証拠を要求する。 |
 | NFR-MNT-004 | 精度差、ONNX 出力差、推論速度をモデル候補ごとの回帰試験にする。 |
 
 ### 11.6 ストレージ
@@ -601,10 +602,10 @@ stateDiagram-v2
 | NFR-INS-002 | インストール完了から追加設定なしでアプリを起動でき、最小対応環境におけるアプリアイコン操作から Project 一覧表示までを 15 秒以内とする。OS の初回セキュリティ確認時間は除外する。 |
 | NFR-INS-003 | インストールに必要な空き容量は、圧縮 payload、展開後サイズ、一時領域、10% の安全余裕から build 時に算出して manifest に記録し、開始前に検査する。 |
 | NFR-INS-004 | インストーラー UI、エラー、進捗、完了、アンインストール案内を日本語で表示し、キーボード操作とスクリーンリーダー用ラベルを提供する。 |
-| NFR-INS-005 | clean install、同一版 repair、直前版からの upgrade、失敗 rollback、uninstall を OS ごとのクリーン試験機で毎リリース検証する [S34][S35]。 |
-| NFR-INS-006 | Windows は signature verification、macOS は `codesign`、package signature、notarization、stapled ticket、Gatekeeper assessment を build gate で検証する。 |
+| NFR-INS-005 | Version 1ではclean install、同一版repair、直前版からのupgrade、失敗rollback、uninstallをクリーンなWindows試験機で毎リリース検証する [S34]。macOS試験 [S35] は将来対応時に追加する。 |
+| NFR-INS-006 | Version 1ではWindows signature verificationをbuild gateで検証する。macOSの`codesign`、package signature、notarization、stapled ticket、Gatekeeper assessmentは将来対応時のbuild gateとする。 |
 | NFR-INS-007 | インストーラー内の全 payload を SBOM と照合し、欠落、余剰、hash 不一致、unknown license があればリリースを失敗させる。 |
-| NFR-INS-008 | Windows と macOS の同一製品版は、同じ schema version、Curated Base Weight version、Annotation Assist Model version、機能 flag、ライセンス通知を含む。 |
+| NFR-INS-008 | 将来macOSを追加する同一製品版では、WindowsとmacOSが同じschema version、Curated Base Weight version、Annotation Assist Model version、機能flag、ライセンス通知を含む。Version 1の受入対象には含めない。 |
 
 ### 11.8 教師データ品質・モデル支援
 
@@ -623,26 +624,28 @@ stateDiagram-v2
 
 ### 12.1 最小・推奨構成
 
-| 項目 | Windows 最小（機能動作） | Windows 推奨（実用学習） | macOS 最小 | macOS 推奨 |
-|---|---|---|---|---|
-| OS/CPU | Windows 11 24H2+ x64、64-bit 4 core | 8 core 以上 | macOS 13+、Apple M1 | Apple M2 Pro 相当以上 |
-| メモリ | 16 GB RAM | 32 GB RAM 以上 | 16 GB unified memory | 24–32 GB 以上 |
-| 学習アクセラレーター | 不要、CPU 動作 | CUDA 対応 NVIDIA GPU、VRAM 8 GB 以上。検出の広い探索には 12 GB 以上を推奨 | Apple Silicon MPS | GPU core と unified memory に余裕のある Apple Silicon |
-| 推論アクセラレーター | 不要、CPU fallback | DirectX 12 GPU または対応 EP | CoreML/Apple Silicon、CPU fallback | Apple Neural Engine/GPU 利用可能構成 |
-| ストレージ | アプリ領域 20 GB 以上＋データ/成果物計算値 | NVMe SSD、50 GB 以上の余裕＋データ | 20 GB 以上＋データ/成果物計算値 | SSD 50 GB 以上の余裕＋データ |
-| カメラ | UVC 互換、720p、10 FPS 以上 | 720p/30 FPS 以上 | 内蔵または UVC 互換 | 720p/30 FPS 以上 |
+| 項目 | Windows 最小（機能動作） | Windows 推奨（実用学習） |
+|---|---|---|
+| OS/CPU | Windows 11 24H2+ x64、64-bit 4 core | 8 core 以上 |
+| メモリ | 16 GB RAM | 32 GB RAM 以上 |
+| 学習アクセラレーター | 不要、CPU 動作 | CUDA 対応 NVIDIA GPU、VRAM 8 GB 以上。検出の広い探索には 12 GB 以上を推奨 |
+| 推論アクセラレーター | 不要、CPU fallback | DirectX 12 GPU または対応 EP |
+| ストレージ | アプリ領域 20 GB 以上＋データ/成果物計算値 | NVMe SSD、50 GB 以上の余裕＋データ |
+| カメラ | UVC 互換、720p、10 FPS 以上 | 720p/30 FPS 以上 |
+
+macOSの最小・推奨構成は将来の要求策定時に実機PoCから定義する。旧Version 1案のApple M1/M2、unified memory、MPS/CoreMLの値をWindows MVPの保証値へ転用しない。
 
 ### 12.2 特別なハードウェアの要否
 
 - **Windows:** 専用 GPU は機能上必須ではない。CPU だけで学習・推論できるが、物体検出と複数 Trial の学習は数時間から数日になり得るため、NVIDIA GPU を強く推奨する。
-- **macOS:** MVP は Apple Silicon を必須とする。PyTorch MPS は MPS 対応デバイスを必要とし、現行実装は unified memory を前提とする [S5]。Intel Mac の学習は MVP で保証しない。
+- **macOS（将来対応）:** architecture、OS下限、メモリ、MPS/CoreML、CPU fallbackを将来のPoCで再決定する [S3][S5]。Version 1では保証しない。
 - **NPU:** 必須ではない。NPU は主に推論向けであり、AutoML 学習デバイスとしては扱わない。
 - **10 FPS:** 専用アクセラレーターなしでも軽量モデルで達成できる場合はあるが、全 CPU への保証はしない。推奨構成での実測を出荷条件とする。
 
 ### 12.3 自動リソース制御
 
 - 初回診断と mini-run から安全な batch size を探索する。
-- GPU/MPS memory pressure または OOM 時は batch size を下げて 1 回だけ自動再試行する。
+- GPU memory pressure または OOM 時は batch size を下げて 1 回だけ自動再試行する。MPSの制御は将来対応とする。
 - 再試行後も失敗する場合は CPU またはより軽量な候補へ切り替え、レポートへ記録する。
 - 物理メモリとディスクの安全余裕を侵食する Trial は開始しない。
 - バッテリー駆動または thermal pressure 上昇時は警告し、性能より安定性を優先する。
@@ -654,7 +657,7 @@ stateDiagram-v2
 ```mermaid
 flowchart LR
     U[利用者] --> UI[Electron + React Desktop UI]
-    CAM[PC / Mac Camera] --> UI
+    CAM[Windows PC Camera] --> UI
     UI <-->|validated IPC| ORCH[Local Orchestrator]
     UI --> ANN[Annotation Workspace]
     ANN --> FS
@@ -664,14 +667,13 @@ flowchart LR
     AST --> AM[Approved Assist Model / Project Model]
     AST --> ANN
     ORCH --> TRAIN[Python Training Worker]
-    TRAIN --> PT[PyTorch: CUDA / MPS / CPU]
+    TRAIN --> PT[PyTorch: CUDA / CPU]
     TRAIN --> OPT[Optuna: TPE + Hyperband]
     TRAIN --> ONNX[ONNX Export + Parity Test]
     ONNX --> FS
     UI <-->|latest frame, queue=1| INF[Inference Utility Process]
     INF --> ORT[ONNX Runtime]
     ORT --> WIN[Windows: DirectML / CPU]
-    ORT --> MAC[macOS: CoreML / CPU]
 ```
 
 ### 13.1 技術候補とライセンス一次評価
@@ -705,7 +707,7 @@ flowchart LR
    - 重み自体に商用利用・再配布可能な明示ライセンスがある。
    - 製品チームが権利確認済みデータからローカルで作成し、配布権を保有する。
 5. ImageNet/COCO の名称だけを根拠に重みを許可しない。
-6. 精度だけでなく、ONNX 変換成功率、Windows/macOS 演算対応、p95 latency、サイズ、メモリを選定指標にする。
+6. 精度だけでなく、ONNX変換成功率、Windows演算対応、p95 latency、サイズ、メモリを選定指標にする。macOS演算対応は将来版で独立評価する。
 
 ### 13.3 Annotation Assist Model 候補評価
 
@@ -729,16 +731,16 @@ SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要�
 | R-02 | ImageNet/COCO 由来の権利が曖昧 | 商用利用上の紛争 | 無承認で同梱しない。権利確認済み重みまたは監査済み Open Images 等から自社作成。 |
 | R-03 | 未確認 annotation のまま学習が開始される | 教師データ不足または品質低下 | Annotation Workspace で未確認状態を表示し、FR-ANN-011 の確定 gate により学習開始を拒否する。 |
 | R-04 | CPU-only で AutoML が長時間化 | UX 悪化、完了不能 | mini-run 見積り、軽量候補、Hyperband、早期停止、GPU 推奨表示。 |
-| R-05 | MPS/CUDA の未対応演算または OOM | Run 失敗 | 候補別互換試験、batch 自動縮小、CPU fallback、checkpoint。 |
+| R-05 | CUDA の未対応演算または OOM | Run 失敗 | 候補別互換試験、batch 自動縮小、CPU fallback、checkpoint。MPSは将来macOSリスクとして再評価する。 |
 | R-06 | PyTorch と ONNX の出力差 | 誤推論 | export 後の数値 parity と Dataset 指標回帰を成功条件にする。 |
-| R-07 | CoreML/DirectML がモデルの一部しか実行しない | 10 FPS 未達 | 固定 shape、演算 allowlist、EP profile、軽量候補への切替。 |
+| R-07 | DirectML がモデルの一部しか実行しない | 10 FPS 未達 | 固定shape、演算allowlist、EP profile、軽量候補への切替。CoreMLは将来対応で再評価する。 |
 | R-08 | 100 ms より推論が遅い | 遅延蓄積 | Queue=1、古いフレーム drop、実 FPS 表示。推奨構成では性能ゲート必須。 |
-| R-09 | macOS/Windows のカメラ拒否・署名不備 | 推論不能または app 終了 | packaged app で権限状態ごとの E2E 試験、説明キー、設定導線、署名/notarization。 |
+| R-09 | Windowsのカメラ拒否・署名不備 | 推論不能またはapp終了 | packaged appで権限状態ごとのE2E試験、設定導線、署名検証。macOS権限・notarizationは将来対応で再評価する。 |
 | R-10 | Reference 元が移動・変更される | 再現不能、画像表示切れ | hash 検証、再リンク、学習中変更時の停止、Copy 推奨表示。 |
 | R-11 | AutoML が validation に過適合する | 実運用品質低下 | test split の最終一回評価、全 Trial 開示、データ漏洩検査。 |
 | R-12 | Electron/decoder の脆弱性 | ローカルコード実行 | sandbox、IPC allowlist、remote content 禁止、依存更新、悪性画像試験。 |
 | R-13 | runtime、基盤重み、Annotation Assist Model の同梱でインストーラーが大容量化する | 配布・展開時間とディスク消費の増大 | OS/architecture 別 package、圧縮、重複排除、事前サイズ表示を行う。ただし自己完結性のため payload を実行時 download へ分離しない。 |
-| R-14 | 署名、notarization、stapling、証明書期限の不備 | SmartScreen/Gatekeeper による警告または起動拒否 | 全 nested binary と最終 installer の署名検証、timestamp、notary log、stapled ticket をリリースゲート化する。 |
+| R-14 | 署名または証明書期限の不備 | SmartScreenによる警告または起動拒否 | 全PEと最終installerの署名検証、timestampをリリースゲート化する。notarization、stapling、Gatekeeperは将来macOS対応のリスクとして保持する。 |
 | R-15 | upgrade 中断で既存アプリまたは Project migration が破損する | アプリ起動不能、データ損失 | 事前バックアップ、transactional install、rollback、旧版起動確認を必須試験とする。 |
 | R-16 | 誤った Model Suggestion にユーザーが引きずられる | 誤ラベルの体系的混入 | 候補/確定レイヤー分離、能力限界表示、accept/edit/reject、undo、blind audit を行う [S37][S52]。 |
 | R-17 | 汎用モデルが業務固有 class を知らない | 候補なし、誤った class 名や box | 手動 Label Schema、model alias、Project model への段階移行、低 score の非表示、`不明` 扱いを行う [S38][S47]。 |
@@ -750,22 +752,22 @@ SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要�
 
 | Gate | 合格条件 |
 |---|---|
-| POC-01 分類 E2E | Windows 推奨機と Mac 推奨機で、取り込み→AutoML→モデル版→レポート→カメラ推論を完了する。 |
-| POC-02 検出 E2E | 同一 2 環境で COCO JSON を取り込み、box 表示まで完了する。 |
-| POC-03 推論性能 | 各 OS の推奨構成で、承認済み軽量モデルを 30 分連続実行し、全推論 service time 100 ms 未満、capture-to-display p95 100 ms 以下、10 Hz の全フレーム処理、drop=0 を満たす。 |
-| POC-04 CPU fallback | Windows CPU-only と Apple Silicon Mac の CPU fallback で全機能が完了し、性能警告と実測値を表示する。10 FPS は合格条件外。Intel Mac は試験対象に含めない。 |
+| POC-01 分類 E2E | Windows推奨機で、取り込み→AutoML→モデル版→レポート→カメラ推論を完了する。 |
+| POC-02 検出 E2E | Windows推奨機でCOCO JSONを取り込み、box表示まで完了する。 |
+| POC-03 推論性能 | Windows推奨構成で、承認済み軽量モデルを30分連続実行し、全推論service time 100ms未満、capture-to-display p95 100ms以下、10Hzの全フレーム処理、drop=0を満たす。 |
+| POC-04 CPU fallback | Windows CPU-onlyで全機能が完了し、性能警告と実測値を表示する。10 FPSは合格条件外。macOS CPU fallbackは将来対応とする。 |
 | POC-05 復旧 | 学習中にアプリを強制終了し、再起動後に checkpoint から再開して整合したモデルを得る。 |
 | POC-06 オフライン | ネットワーク無効状態で初回起動後の全主要フローを完了し、通信キャプチャの外向き通信が 0 件である。 |
-| POC-07 権限 | Windows/macOS で未決定、許可、拒否、制限、途中切断を試験し、クラッシュしない。 |
+| POC-07 権限 | Windowsで未決定、許可、拒否、途中切断を試験し、クラッシュしない。macOS固有状態は将来対応で試験する。 |
 | POC-08 ONNX parity | 候補ごとに元モデルと ONNX の出力・評価差が定義した許容範囲内である。許容範囲はモデル採用記録に固定する。 |
 | POC-09 ライセンス | SBOM、third-party notices、全 weight manifest に unknown、非商用、未承認 copyleft がない。 |
 | POC-10 削除 | Project 削除で Project 所有データが消え、Reference 元が変更・削除されない。 |
 | POC-11 Windows installer | クリーンな Windows 11 x64 標準ユーザー環境で、ネットワーク無効・開発 runtime なしの状態から EXE 1 ファイルだけで導入し、再起動なしで Project 作成まで完了する。署名検証にも合格する。 |
-| POC-12 macOS installer | クリーンな Apple Silicon Mac で、ネットワーク無効・Rosetta/Homebrew/Xcode なしの状態から stapled PKG 1 ファイルだけで導入し、Applications から Project 作成まで完了する。Gatekeeper assessment に合格する。 |
-| POC-13 servicing | 両 OS で直前版からの upgrade、同一版 repair、意図的な中断からの rollback、uninstall を行い、Project 保持とアプリ整合性を確認する。 |
-| POC-14 分類 annotation | 未ラベル画像を import し、Label Schema 作成、gallery 一括 tag、single view 修正、undo、自動保存、確定、新 Dataset Revision、学習自動開始までを Windows/macOS で完了する。 |
-| POC-15 検出 annotation | 未 annotation 画像を import し、複数 rectangle の作成・移動・resize・class 変更・削除、対象物なし、COCO import 修正、確定、学習自動開始までを Windows/macOS で完了する。 |
-| POC-16 初期モデル支援 | 分類と検出の採用候補ごとに、完全オフライン、CPU/CUDA/MPS、installer 同梱、license manifest、候補表示、accept/edit/reject、未確認候補の学習除外を確認する。representative gold set で manual-only より最終品質を悪化させず annotation 中央所要時間を短縮する。 |
+| POC-12 macOS installer | **将来対応。** クリーンなApple Silicon Macでの署名・notarization・stapled PKG・Gatekeeper試験はVersion 1のGateに含めない。 |
+| POC-13 servicing | Windowsで直前版からのupgrade、同一版repair、意図的な中断からのrollback、uninstallを行い、Project保持とアプリ整合性を確認する。macOS servicingは将来対応とする。 |
+| POC-14 分類 annotation | 未ラベル画像をimportし、Label Schema作成、gallery一括tag、single view修正、undo、自動保存、確定、新Dataset Revision、学習自動開始までをWindowsで完了する。 |
+| POC-15 検出 annotation | 未annotation画像をimportし、複数rectangleの作成・移動・resize・class変更・削除、対象物なし、COCO import修正、確定、学習自動開始までをWindowsで完了する。 |
+| POC-16 初期モデル支援 | 分類と検出の採用候補ごとに、完全オフライン、CPU/CUDA、installer同梱、license manifest、候補表示、accept/edit/reject、未確認候補の学習除外を確認する。representative gold setでmanual-onlyより最終品質を悪化させずannotation中央所要時間を短縮する。MPSは将来対応とする。 |
 | POC-17 Project model 支援 | 成功済み Model Version を明示選択し、新規画像へ分類 tag または検出 rectangle を生成する。version/hash/provenance を記録し、確認済み Ground Truth を再生成で上書きしない。 |
 
 ## 16. 受入条件
@@ -780,10 +782,10 @@ SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要�
 8. **10 Hz:** 推奨構成で 30 分間、100 ms 周期、全推論 service time 100 ms 未満、capture-to-display p95 100 ms 以下、未処理 Queue 蓄積なし、drop 0 を満たす。
 9. **低速端末:** 性能未達時に古いフレームを drop し、実 FPS/latency/drop を正しく表示する。
 10. **オフライン:** 画像・モデル・テレメトリを外部送信せず、ネットワークなしで主要フローが完了する。
-11. **クロスプラットフォーム:** Windows x64 と macOS arm64 の署名済み配布物で同じ Project 機能とモデル意味論を提供する。
+11. **Windows製品整合:** 署名済みWindows x64配布物で開発時と同じProject機能、schema、モデル意味論を提供する。クロスプラットフォームparityは将来macOS対応時に追加する。
 12. **商用利用:** 実際の配布物に含まれる全ソフトウェア、重み、データ、asset がライセンスゲートを通過する。
 13. **Windows 導入:** クリーンな Windows 11 x64 で、署名済み EXE 1 ファイルを起動するだけでオフライン導入でき、別 runtime、コマンド、再起動なしで Project を作成できる。
-14. **macOS 導入:** クリーンな Apple Silicon Mac で、署名・notarize・staple 済み PKG 1 ファイルを起動するだけでオフライン導入でき、別 runtime、コマンドなしで Project を作成できる。
+14. **macOS導入（将来対応）:** 署名・notarize・staple済みPKGによる導入はVersion 1の受入条件に含めず、将来版で新しい実機証拠を要求する。
 15. **更新・復旧:** 直前版からの upgrade で全 Project データを保持し、意図的に失敗させた場合は旧版を起動可能な状態へ rollback する。
 16. **分類教師データ作成:** 未ラベル画像に画面上で Label Schema 内の 1 class を設定・修正・一括適用し、確認済み項目だけから Dataset Revision を確定できる。
 17. **検出教師データ作成:** 未 annotation 画像に画面上で複数 rectangle と class を作成・編集し、`対象物なし` を区別して Dataset Revision を確定できる。
@@ -796,7 +798,7 @@ SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要�
 | 元要求 | 対応箇所 |
 |---|---|
 | Image Classification と Object Detection | 1, 3, 8.3–8.7 |
-| Windows/macOS のローカルで学習・推論 | 2, 4, 8.1, 12, 15 |
+| Windowsのローカルで学習・推論、macOSは将来対応 | 2, 4, 8.1, 12, 15 |
 | 複数 Project と全情報 CRUD | 7, 8.2, 9, 16.1 |
 | フォルダー/ファイル選択 | FR-DAT-001, FR-DAT-005, FR-DAT-006 |
 | コピー/参照をユーザー選択 | FR-DAT-002, FR-DAT-011–014 |
@@ -817,7 +819,7 @@ SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要�
 | 論文・Microsoft 等のベストプラクティス | 2, 13, 18 |
 | Cloud を一切使用しない | 3.2–3.3, FR-TRN-019, FR-SEC-001–003, POC-06 |
 | 商用利用可能なモデル/ソフトウェアのみ | 8.8, 13.1–13.3, POC-09, POC-16 |
-| Windows/macOS ごとのインストーラー | 3.1, 8.10, 11.7, POC-11–13, 16.13–15 |
+| Windowsインストーラー、macOSは将来対応 | 3.1, 8.10, 11.7, POC-11–13, 16.13–15 |
 | インストーラー完了後すぐ利用可能 | FR-INS-003–006, FR-INS-012–014, NFR-INS-001–002 |
 
 ## 18. 未決事項
@@ -826,8 +828,8 @@ SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要�
 |---|---|---|---|
 | TBD-01 | rotated bounding box、polygon、mask を将来追加するか | MVP は axis-aligned rectangle のみ | Version 2 計画時 |
 | TBD-02 | Curated Base Weight の最終セット | MobileNetV3/SSDLite 等の軽量構造を優先し、重み監査と PoC 後に固定 | 実装開始前 |
-| TBD-03 | CPU/CUDA/MPS ごとの AutoML 最大 Trial 数と最大時間 | mini-run から予算を下げることは許可するが、有限の製品上限値を versioned policy として固定し、ユーザーには編集させない | POC-01/02 後、実装着手前 |
-| TBD-04 | macOS の配布経路と notarization の許容 | Developer ID 署名済み direct distribution と Apple notarization を基準とし、Project/モデルを送らない。開発・配布工程にも外部サービスを禁止する場合は代替配布を再評価 | リリース設計時 |
+| TBD-03 | CPU/CUDAごとのAutoML最大Trial数と最大時間 | mini-runから予算を下げることは許可するが、有限の製品上限値をversioned policyとして固定し、ユーザーには編集させない。MPS値は将来macOS対応時に追加する | POC-01/02後、実装着手前 |
+| TBD-04 | 将来macOS対応のarchitecture、OS下限、配布経路、notarization | Version 1から除外する。将来計画でDeveloper ID署名済みdirect distributionとApple notarization、Python/ML wheel、MPS/CoreML、camera、servicingを再調査し、Project/モデルを外部送信しない | 将来macOS計画開始前 |
 | TBD-05 | 業務ごとの合格精度 | 製品共通値を置かず、レポートで判断可能にする | 利用 Project ごと |
 | TBD-06 | 分類・検出の Annotation Assist Model | SigLIP / Florence-2 / Grounding DINO 等は技術候補に留め、checkpoint、学習データ由来、再配布、実機性能、最終 annotation 品質を監査して各 1 つを承認する | 実装着手前、POC-16 完了時 |
 | TBD-07 | annotation editor の実装方式 | CVAT/Label Studio は機能・license の参考とし、全体を同梱するか task-focused editor を実装するかを installer 容量、依存、UX、SBOM で比較する | アーキテクチャ設計時 |
