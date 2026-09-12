@@ -1,0 +1,70 @@
+Global Wheat Head Dataset 2021 — Version 1.0
+AutoVision Studio 固定サンプルの帰属・変更表示
+
+原作者（Zenodo記録の表記）: DAVID Etienne (INRAe)
+帰属: DAVID Etienne および Global Wheat Head Dataset contributors
+      （原記録が指定する2020/2021文献を下記に掲載）
+公開: 2021-07-12 / 原記録更新: 2021-07-13
+出典参照日: 2026-09-06
+固定版DOI: https://doi.org/10.5281/zenodo.5092309
+原記録: https://zenodo.org/records/5092309
+原record API: https://zenodo.org/api/records/5092309
+公式サイト: https://www.global-wheat.com/gwhd.html
+
+ライセンス
+原PNG画像とCSV annotationには、原記録のdataset licenseである
+Creative Commons Attribution 4.0 International (CC BY 4.0) が適用されます。
+https://creativecommons.org/licenses/by/4.0/
+法文: https://creativecommons.org/licenses/by/4.0/legalcode.txt
+オフライン法文の同梱先: 同じディレクトリの LICENSE.txt
+（2026-09-06に公式本文を無改変保存し、raw SHA-256を採用記録へ記録。）
+AutoVision Studio自体のMITライセンスを、この第三者データへ適用しません。
+原作者・提供された著作権表示・出典・ライセンス・免責・変更表示を保持し、
+CC BY 4.0が許す再利用を妨げる追加規約や技術的制限を課しません。
+
+原版からの変更表示（2026-09-06承認のサンプル構成）
+- AutoVision Studio側で、Version 1.0の元trainから固定20枚を部分選択。
+  PNGの原bytesと1024×1024の画像全体を保持し、選定画像の全boxを保持。
+- CSVの [xmin, ymin, xmax, ymax] をCOCOの
+  [xmin, ymin, xmax - xmin, ymax - ymin] へ形式変換（+1なし）。
+  カテゴリは wheat_head の1つです。domainをカテゴリに変換しません。
+- resize・再圧縮・crop・metadata書換・座標clamp・box間引きを行いません。
+  不正annotationを黙って捨てたり、欠損CSVをno_boxに置き換えたりしません。
+- 上流の変更履歴: 2021版は2020版を再点検・再ラベルし、画像を追加した版です
+  （下記2021文献）。これはAutoVision Studioによる変更ではありません。
+- 利用者が作成・編集・分割するProjectは原datasetの公式benchmarkではなく、
+  操作・学習フロー体験用です。精度、所要時間、撮影session間の独立性は保証しません。
+  取込annotationを自動的に確認済みGround Truthにせず、人の確認を必要とします。
+
+推奨・公認を意味しない旨と免責
+この部分選択、形式変換、AutoVision Studioまたは利用者のProjectについて、
+原作者、INRAe、contributors、Zenodoの推奨・公認・提携を意味しません。
+CC BY 4.0第5節に従い、許諾者が別途引き受けた場合を除き、法が許す範囲で
+データはAS-IS / AS-AVAILABLEで提供され、権原、非侵害、商品性、特定目的適合性、
+正確性等を保証しません。責任制限を含む詳細はLICENSE.txtおよび上記法文を参照してください。
+CC BY 4.0はプライバシー、人格権、商標等の必要な権利をすべて保証するものではありません。
+本通知は法的助言、取得bytesの検証証明、モデルの採用承認ではありません。
+
+原記録指定の引用文献
+Zenodoが研究利用時に引用を求める両書誌を以下に保持します。
+書誌フィールド・著者名の綴りは原記録どおり（HTMLの改行・空白だけ整形）。
+
+@article{david2020global,
+  title={Global Wheat Head Detection (GWHD) dataset: a large and diverse dataset of high-resolution RGB-labelled images to develop and benchmark wheat head detection methods},
+  author={David, Etienne and Madec, Simon and Sadeghi-Tehran, Pouria and Aasen, Helge and Zheng, Bangyou and Liu, Shouyang and Kirchgessner, Norbert and Ishikawa, Goro and Nagasawa, Koichi and Badhon, Minhajul A and others},
+  journal={Plant Phenomics},
+  volume={2020},
+  year={2020},
+  publisher={Science Partner Journal}
+}
+
+@misc{david2021global,
+  title={Global Wheat Head Dataset 2021: more diversity to improve the benchmarking of wheat head localization methods},
+  author={Etienne David and Mario Serouart and Daniel Smith and Simon Madec and Kaaviya Velumani and Shouyang Liu and Xu Wang and Francisco Pinto Espinosa and Shahameh Shafiee and Izzat S. A. Tahir and Hisashi Tsujimoto and Shuhei Nasuda and Bangyou Zheng and Norbert Kichgessner and Helge Aasen and Andreas Hund and Pouria Sadhegi-Tehran and Koichi Nagasawa and Goro Ishikawa and Sébastien Dandrifosse and Alexis Carlier and Benoit Mercatoris and Ken Kuroki and Haozhou Wang and Masanori Ishii and Minhajul A. Badhon and Curtis Pozniak and David Shaner LeBauer and Morten Lilimo and Jesse Poland and Scott Chapman and Benoit de Solan and Frédéric Baret and Ian Stavness and Wei Guo},
+  year={2021},
+  eprint={2105.07660},
+  archivePrefix={arXiv},
+  primaryClass={cs.CV}
+}
+
+2021文献（arXiv）: https://arxiv.org/abs/2105.07660

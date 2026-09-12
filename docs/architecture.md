@@ -4,11 +4,11 @@
 >
 > **文書成熟度:** 要求反映済み
 >
-> **要求基準:** [`requirement-definition.md`](requirement-definition.md) v0.4 Draft
+> **要求基準:** [`requirement-definition.md`](requirement-definition.md) v0.5 Draft
 >
 > **目的:** 現行 source、目標設計、許可される依存、禁止される依存を区別して案内する
 
-本書は 2026-09-04 時点の production source と目標設計を対応付ける文書です。Version 1（MVP）の対象は Windows 11 24H2 以降 x64 のみであり、macOS は将来対応です。現行 source と対象 test がある領域は `実装済み`、要求または ADR だけがある領域は `設計確定・未実装`、PoC はあるが Windows 実機または Gate が未完了の領域は `検証待ち` として区別します。詳細な設計理由、却下案、障害時の状態遷移は ADR を正本とし、本書では複製しません。
+本書は 2026-09-07 時点の production source と目標設計を対応付ける文書です。Version 1（MVP）の対象は Windows 11 24H2 以降 x64 のみであり、macOS は将来対応です。現行 source と対象 test がある領域は `実装済み`、要求または ADR だけがある領域は `設計確定・未実装`、PoC はあるが製品実装または後続 Gate が未完了の領域は `検証待ち` として区別します。詳細な設計理由、却下案、障害時の状態遷移、Gate の現行判定は ADR を正本とし、本書では複製しません。
 
 ## 文書・図の規約
 
@@ -21,7 +21,7 @@
 - SVG は外部 resource、CSS、web font、JavaScript、`foreignObject` を使用しません。
 - 状態はラベルと線種を併用します。実装済みは青・実線、設計確定・未実装は紫・破線、検証待ちは灰・点線、外部入力／OS 資源は緑・二重枠で示します。
 - 背景と文字は WCAG AA 相当の contrast を確保し、100% / 200%、high contrast、印刷でも読める余白と文字サイズを使用します。
-- 本文は v0.4 の Windows Version 1 基準です。参照する SVG は WIN-SCOPE-05 で再整合するまで旧 macOS 表示を含む場合があり、その表示を Version 1 の対象、現行実装、Gate 条件とは扱いません。本タスクでは SVG を編集しません。
+- 本文の現行要求基準は v0.5 の Windows Version 1 です。参照する SVG は WIN-SCOPE-05 で再整合するまで旧 macOS 表示を含む場合があり、その表示を Version 1 の対象、現行実装、Gate 条件とは扱いません。本タスクでは SVG を編集しません。
 
 ## システム全体と実行時 process
 
@@ -72,7 +72,7 @@ Renderer は非信頼領域です。**実装済み**の window 境界は `contex
 | Main feature services | **設計確定・未実装** | Project、data、annotation、job、model、storage、camera の調整 | shared contract、機能別 repository、OS API、worker supervisor | UI rendering、worker 内部アルゴリズム、無検証 payload の処理 |
 | Local persistence | **設計確定・未実装** | SQLite metadata と Project 所有 file の整合 | Main service からの検証済み操作 | Renderer / Preload / Python worker からの直接書き込み |
 | Python Commands / ML Domain | health のみ **実装済み**、その他は **設計確定・未実装** | scan、assist、training、export、inference の明示 command | versioned input、読み取り専用 Revision / manifest、一時 job directory、承認済み model | SQLite 書き込み、camera permission、UI 操作、network download、未承認 model plugin |
-| Packaging / Resources | schema と Windows PoC spec は **実装済み**、Version 1 製品 package は **検証待ち** | lock 済み runtime と承認済み payload の Windows x64 配布 | release manifest、SBOM / notice、Windows native build tool | runtime download、driver 導入、未承認 model の同梱、将来 macOS payload の現行同梱 |
+| Packaging / Resources | schema と Windows PoC は **実装済み・実測済み**、Version 1 製品 package は **検証待ち** | lock 済み runtime と承認済み payload の Windows x64 配布 | release manifest、SBOM / notice、Windows native build tool | runtime download、driver 導入、未承認 model の同梱、将来 macOS payload の現行同梱 |
 
 依存方向は UI から境界 contract を通って Main へ、Main から persistence / OS / worker へ向けます。結果は同じ境界を通して返し、下位 component が Renderer を import しないようにします。Shared Contracts は依存方向を安定させる境界であり、service locator や business logic の置き場にはしません。process 分離の根拠は [ADR-0001](adr/0001-process-architecture.md)、データ更新責務は [ADR-0002](adr/0002-data-lifecycle.md)を参照してください。
 
@@ -142,25 +142,25 @@ Main は一時 path の成果物を checksum 検証し、atomic rename 後に SQ
 | 許可 | 読み取り専用 Dataset Revision / model、job directory | 検証済み Model Version、memory 上の frame、承認済み EP |
 | 禁止 | SQLite 更新、正規 Project path への commit、network download | camera permission / device UI、frame / result の既定保存、DB 更新 |
 
-Job Worker は scan、assist、training、ONNX export を command allowlist で明示的に追加し、Main が exit、progress、cancel、artifact を監督します。Inference Worker は latency を蓄積しない最新 frame 優先の別 protocol とし、Job Worker の FIFO queue や汎用 scheduler を再利用しません。Version 1 の binary framing と Windows DirectML / CPU の production 採否は Gate 1、モデルを用いる command は Gate 2、production 実装は JOB-* / AST-* / TRN-* / INF-* の完了後に更新します。CoreML / MPS は将来 macOS lane の候補であり、Version 1 Gate の採否対象ではありません。protocol と lifecycle の詳細は [ADR-0001](adr/0001-process-architecture.md) §2.5〜2.6 にリンクします。
+Job Worker は scan、assist、training、ONNX export を command allowlist で明示的に追加し、Main が exit、progress、cancel、artifact を監督します。Inference Worker は latency を蓄積しない最新 frame 優先の別 protocol とし、Job Worker の FIFO queue や汎用 scheduler を再利用しません。Version 1 の binary framing と Windows DirectML / CPU は Gate 1 PoC の採用境界として `CONDITIONAL_GO` だが、production 実装は未完了です。モデルを用いる command は Gate 2、production worker は JOB-* / AST-* / TRN-* / INF-* の完了後に更新します。CoreML / MPS は将来 macOS lane の候補であり、Version 1 Gate の採否対象ではありません。protocol と lifecycle の詳細は [ADR-0001](adr/0001-process-architecture.md) §2.5〜2.6、Gate 判定は [ADR-0004](adr/0004-spike-decisions.md)を参照してください。
 
 ## Copy / Reference の data ownership
 
 | 観点 | Copy モード | Reference モード |
 |---|---|---|
-| 現在状態 | **設計確定・未実装** | **検証待ち**。Version 1 の SPI-19 Windows reboot 条件は未完了。保存済み macOS `NOT_RUN` は将来履歴 |
+| 現在状態 | **設計確定・未実装** | **設計確定・未実装**。SPI-19 は `SKIPPED_BY_USER`。DAT-12 の通常検証と DAT-15 の正式製品受入は未実施 |
 | Project の所有物 | Project 内の複製、manifest、派生物 | path / file identity / size / mtime / SHA-256、Project 内の manifest / 派生物 |
 | 参照元 | copy 後も変更・削除しない | 常に利用者所有。読み取りだけで変更・削除しない |
 | 再検証 | Project 所有 copy を使用 | 起動時、Run 開始前、epoch / trial 境界で accessibility と hash を検証 |
 | Project 削除 | Project 内の複製と派生物を削除対象にできる | Project metadata / 派生物だけ。参照元は削除対象に含めない |
 
-選択はデータ確定前にユーザーが明示し、失われた Reference を暗黙に Copy と解釈しません。Reference が変更・消失した場合は再現性が失われるため、Run を開始しないか安全停止し、relink または Copy 再取り込みへ進む設計です。Version 1 の永続アクセス production 実装は、Windows で process 再起動と OS reboot 後の read/hash、変更・消失検出、relink、参照元非破壊を SPI-19 で実証するまで開始しません。native Apple Silicon Mac の永続アクセスは将来 lane で再検証し、Version 1 の開始条件には含めません。所有権、hash、削除契約の正本は [ADR-0002](adr/0002-data-lifecycle.md) §3.2 / §3.8、対応要求は FR-DAT-002、FR-DAT-011〜013 です。
+選択はデータ確定前にユーザーが明示し、失われた Reference を暗黙に Copy と解釈しません。Reference が変更・消失した場合は再現性が失われるため、Run を開始しないか安全停止し、relink または Copy 再取り込みへ進む設計です。SPI-19 は 2026-09-07 に `SKIPPED_BY_USER` となり、PASS や Gate 1 前提へ戻しません。Version 1 は DAT-12 で process 再起動、read/hash、変更・消失検出、安全停止、relink、参照元非破壊を通常検証し、OS reboot 後の継続アクセスを正式製品受入の DAT-15 で検証します。どちらも未実施です。native Apple Silicon Mac の永続アクセスは将来 lane で再検証し、Version 1 の開始条件には含めません。所有権、hash、削除契約の正本は [ADR-0002](adr/0002-data-lifecycle.md) §3.2 / §3.8、対応要求は FR-DAT-002、FR-DAT-011〜013 です。
 
 ## Packaging と OS 境界
 
 **設計確定・未実装:** Version 1 の配布目標は Windows 11 24H2 以降 x64 の per-user electron-builder / NSIS 1-file EXE です。Electron app と Windows native の PyInstaller onedir worker、承認済み model、license notice / SBOM を `extraResources` で一つの offline installer に含めます。利用者へ Python、Node.js、CUDA Toolkit、開発 tool の導入を要求せず、GPU / NPU driver は同梱・更新しません。最終 NSIS EXE と同梱する全 PE を Authenticode と secure timestamp で署名し、署名と payload hash を build gate で検証します。設計理由、署名対象、servicing は [ADR-0003](adr/0003-packaging.md)を参照してください。
 
-**検証待ち:** `ml/packaging/worker-windows.spec` は SPI-03 用の probe であり production freeze spec ではありません。保存済み Windows onedir 結果も current host では PARTIAL で、clean Windows と license payload gate が未完了です。`electron-builder.yml`、製品 NSIS installer、正式 Authenticode 署名、SBOM はまだ存在しません。NSIS / Authenticode を採用済み設計として扱うことと、署名済み installer が実装・検証済みであることは区別します。
+**検証待ち:** `ml/packaging/worker-windows.spec` は SPI-03 用の probe であり production freeze spec ではありません。SPI-03 は `SKIPPED_BY_USER`で、保存済み Windows onedir 結果は current host の PARTIAL、clean Windows と license payload gate は未完了です。一方、SPI-05 はこの onedir 2,500 fileを開発用 unsigned NSIS EXEへ同梱し、source / staging / unpacked / installed の全内容一致、install後の実health / probe、uninstall後の残留0を現hostで確認しました。これは Gate 1 PoC のPASSであり、production freezeやclean-host認定ではありません。root `electron-builder.yml`、製品 NSIS installer、正式 Authenticode 署名、SBOM はまだ存在しません。NSIS / Authenticode を採用済み設計として扱うこと、開発用PoCが通ること、署名済み製品installerが実装・検証済みであることを区別します。
 
 Version 1 installer は Windows native build / test lane だけで作成し、正式な Windows code-signing identity、Gate 4、PKG-02、PKG-04〜05、PKG-07、PKG-09A〜11、PKG-13〜17、PKG-19、PKG-22 の Windows evidence が揃うまで利用不可です。macOS Apple Silicon arm64 の PyInstaller onedir、MPS / CoreML、camera permission、flat PKG、Developer ID 署名、Hardened Runtime、notarization、stapling、Gatekeeper、servicing は将来 backlog であり、Version 1 の Gate、依存、ブロッカーではありません。保存済み macOS `NOT_RUN` は成功へ変更せず、Windows の結果で macOS を合格扱いにしません。Windows on ARM、Windows 10 は Version 1 **対象外**で、Intel Mac を含む macOS の対応条件は将来要求で再決定します。
 
@@ -177,14 +177,14 @@ Version 1 installer は Windows native build / test lane だけで作成し、�
 | Worker protocol / supervisor | production source なし。planned: `src/shared/contracts/worker.ts`, `src/main/jobs/`, `ml/src/autovision_ml/protocol.py` | **設計確定・未実装** | versioned JSON / NDJSON、Main supervision | DB 直接更新、汎用 RPC / server | JOB-03〜07 と対象 test |
 | SQLite / Project / jobs | production source なし。planned: `src/main/db/`, `src/main/projects/`, `src/main/jobs/` | **設計確定・未実装** | Main service / repository、transaction | Renderer / worker からの直接書き込み | CORE-* / JOB-* と recovery test |
 | Data / annotation lifecycle | production source なし | **設計確定・未実装** | Main-owned files、immutable Revision contract | 確定済み Revision 上書き、Suggestion 自動承認 | DAT-* / ANN-* と不変性 test |
-| Copy / Reference | `spikes/reference/*-result.md` | **検証待ち**。Windows reboot 条件は未完了、保存済み macOS `NOT_RUN` は将来履歴 | Project metadata、read-only source access | 参照元の変更・削除、未検証の永続 access | SPI-19 Windows 条件、DAT-08〜15。macOS は将来 lane |
+| Copy / Reference | `spikes/reference/*-result.md` | **設計確定・未実装**。SPI-19 は `SKIPPED_BY_USER`、保存済み部分結果と OS reboot `NOT_RUN` は履歴 | Project metadata、read-only source access | 参照元の変更・削除、未検証の永続 access | DAT-08〜15。DAT-12/15をSPI-19のPASSへ転用せず、macOS は将来 lane |
 | Assist / approved models | `resources/models/manifest.json`, `manifest.schema.json` | schema は **実装済み**、model は Gate 待ちで空 | approved C6 / C7 entry だけ | runtime download、未監査 model / plugin | Gate 2、SPI-11〜18、PKG-01 |
 | Training / Model Version / report | production source なし | **設計確定・未実装** | immutable Revision、Job Worker、一時 artifact | mutable model version、Failed / Cancelled Run からの model 生成 | Gate 2 / 3、TRN-* / REP-* |
-| Camera inference | `spikes/inference/provider-result.md` | production は **設計確定・未実装**、Windows CPU / DirectML provider PoC は **検証待ち** | user-initiated Windows video permission、Inference Worker、DirectML / CPU fallback | 起動時 permission、audio、frame / result の既定保存 | INF-*、SPI-07〜09 の Windows 条件。macOS TCC / CoreML は将来 lane |
-| Python packaging | `ml/packaging/worker-windows.spec`, `spikes/packaging/windows-result.md` | SPI-03 probe は **検証待ち** | PoC-only generated entry / onedir | production installer / freeze 完了の主張 | clean Windows、license gate、PKG-02 |
-| Installer / servicing | ADR-0003 と planned Windows PKG-* のみ | **設計確定・未実装**、利用不可 | Windows native NSIS / Authenticode release lane | unsigned release、未検証 installer、将来 macOS lane の現行 Gate 混入 | Gate 4、D-16、Windows PKG-*、DOCS-401 / 402。macOS PKG は将来 |
+| Camera inference | `spikes/inference/provider-result.md` | production は **設計確定・未実装**。SPI-07/08 は限定 PoC、SPI-09 は `SKIPPED_BY_USER` | user-initiated Windows video permission、Inference Worker、DirectML / CPU fallback | 起動時 permission、audio、frame / result の既定保存 | INF-*、特に INF-13〜15 の製品受入。macOS TCC / CoreML は将来 lane |
+| Python packaging | `ml/packaging/worker-windows.spec`, `spikes/packaging/windows-result.md`, `spikes/packaging/windows-installer-result.md` | SPI-03 は `SKIPPED_BY_USER`。SPI-05は現hostの開発用NSIS resource smokeを **PASS** | PoC-only generated entry / onedir | production worker / freeze完了の主張、clean-host合格への読替え | license gate、PKG-02 の実worker全file検証・freeze |
+| Installer / servicing | ADR-0003、SPI-05 evidence、planned Windows PKG-* | SPI-05 PoCは **実測済み**。製品installer / servicingは **設計確定・未実装**、利用不可 | Windows native NSIS / Authenticode release lane | unsigned PoCのrelease利用、未検証servicing、将来 macOS lane の現行 Gate 混入 | Gate 4、D-16、Windows PKG-*、DOCS-401 / 402。macOS PKG は将来 |
 
-表の `planned` path は [`implementation-plan.md`](implementation-plan.md) §7 の成果物予定であり、現在の filesystem に存在するとは限りません。Node source には対象 test が存在しますが、2026-09-04 の事実ベースラインでは exact npm 12.0.0 がなく最新 test / typecheck / build は未実行です。source の状態語と最新 PASS を混同しません。
+表の `planned` path は [`implementation-plan.md`](implementation-plan.md) §7 の成果物予定であり、現在の filesystem に存在するとは限りません。2026-09-07の横断回帰ではexact npm 12.0.0でNode test、typecheck、Main / Preload / Renderer buildをPASSしましたが、これは表で未実装とした製品機能や後続Gateの合格を意味しません。sourceの状態語、PoCのPASS、製品受入を混同しません。
 
 ## 要求に沿った変更境界
 
@@ -198,10 +198,10 @@ Version 1 installer は Windows native build / test lane だけで作成し、�
 | Import / annotation | FR-DAT-*、FR-ANN-* | 設計確定・未実装 | Main data service、annotation repository、検証済み worker command | Copy / Reference ownership、Ground Truth、Revision immutability | 参照元変更、未確認候補の確定、過去 Revision 上書きをしない |
 | Job / training / report | FR-TRN-*、FR-MOD-*、FR-REP-*、Gate 2 / 3 | 設計確定・未実装 | versioned worker contract、Main supervisor、明示的 ML command | FIFO、cancel / recovery、artifact hash、lineage | network download、generic scheduler、worker DB write を追加しない |
 | Assist / model | FR-AST-*、FR-LIC-*、Gate 2 | Gate 待ち・未実装 | approved manifest と task-specific assist code | license / provenance / quality / platform evidence | 未監査 model、runtime plugin、Suggestion 自動承認を入れない |
-| Camera / inference | FR-INF-*、Gate 1 / 4 | Windows provider PoC のみ検証待ち | Windows permission boundary、frame protocol、Inference Worker、DirectML / CPU、overlay | user gesture、audio 無効、queue depth、non-persistence、Windows evidence | 起動時 permission、frame のログ / disk 保存、Job Worker との混同、将来 CoreML / TCC の現行 Gate 混入をしない |
-| Packaging / OS | FR-INS-*、NFR-INS-*、Gate 4 / 5 | Windows NSIS / Authenticode は設計確定・未実装 | Windows native freeze / Authenticode sign / NSIS package / test lane | model manifest、SBOM、notice、Project retention | cross-build の合格扱い、driver 導入、runtime download、将来 PKG / notarization の現行 Gate 混入をしない |
+| Camera / inference | FR-INF-*、Gate 1 / 4 | Gate 1 PoCは`CONDITIONAL_GO`、製品機能は未実装 | Windows permission boundary、frame protocol、Inference Worker、DirectML / CPU、overlay | user gesture、audio 無効、queue depth、non-persistence、Windows evidence | 起動時 permission、frame のログ / disk 保存、Job Worker との混同、将来 CoreML / TCC の現行 Gate 混入をしない |
+| Packaging / OS | FR-INS-*、NFR-INS-*、Gate 4 / 5 | SPI-05開発用NSIS PoCはPASS、製品NSIS / Authenticodeは未実装 | Windows native freeze / Authenticode sign / NSIS package / test lane | model manifest、SBOM、notice、Project retention | unsigned PoCのrelease利用、cross-build の合格扱い、driver 導入、runtime download、将来 PKG / notarization の現行 Gate 混入をしない |
 
-要求 ID が存在しない挙動は先に要求変更レビューへ戻します。process、data ownership、packaging の採用決定を変える場合は、実装より先に対応する [ADR-0001](adr/0001-process-architecture.md)、[ADR-0002](adr/0002-data-lifecycle.md)、[ADR-0003](adr/0003-packaging.md)を更新します。user-visible な変更は実装・実測後に [`users-guide.md`](users-guide.md)へ反映し、production source が目標構成へ到達した時点で DOCS-407 により本書の `planned` と対応表を更新します。
+要求 ID が存在しない挙動は先に要求変更レビューへ戻します。process、data ownership、packaging の採用決定を変える場合は、実装より先に対応する [ADR-0001](adr/0001-process-architecture.md)、[ADR-0002](adr/0002-data-lifecycle.md)、[ADR-0003](adr/0003-packaging.md)を更新します。Gate判定を変更する場合は[ADR-0004](adr/0004-spike-decisions.md)へ証拠と範囲を反映します。user-visible な変更は実装・実測後に [`users-guide.md`](users-guide.md)へ反映し、production source が目標構成へ到達した時点で DOCS-407 により本書の `planned` と対応表を更新します。
 
 ## 関連文書
 
@@ -210,3 +210,4 @@ Version 1 installer は Windows native build / test lane だけで作成し、�
 - [Process architecture ADR](adr/0001-process-architecture.md)
 - [Data lifecycle ADR](adr/0002-data-lifecycle.md)
 - [Packaging ADR](adr/0003-packaging.md)
+- [Windows spike / Gate decision ADR](adr/0004-spike-decisions.md)

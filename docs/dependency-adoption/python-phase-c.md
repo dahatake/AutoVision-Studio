@@ -309,3 +309,13 @@ C0-PYTHONはexact manifest/lock、正しいrequired environment、全artifact SH
 native Apple Silicon検証は`c0-review.md` §6のowner指示により **WAIVED / NOT_RUN** とし、C0 blockerから外す。macOSの適合性を合格扱いせず、macOS固有taskとGateは正本変更がない限り未実施のままとする。
 
 C0-REVIEWの独立敵対レビューはblocking finding 0で完了した。以上によりC0-PYTHONは **CLOSED（Windows lane）** とする。
+
+## 11. 2026-09-07 Pillow用途追加追補
+
+GWHD固定サンプルの先頭取得物が、上流では64桁hexの`.png`名・`image/png`として記録される一方、raw bytesは1024×1024の完全なbaseline JPEGだった。原bytesを再圧縮せず実体形式で検証・配布するため、既にlock・license裁定済みの`pillow@12.3.0`をruntime direct dependencyへ昇格し、固定サンプルの形式判定、`verify()`後の再open、全画素`load()`、dimensions/frame数検査に使用する。取得、hash、原子的保存は従来どおり標準ライブラリだけで行う。
+
+- package blockは70のまま、外部package集合・artifact bytes・採用exact版を増やしていない。
+- 現在のdirect dependencyはruntime 7件＋dev 4件の11件。2026-09-03の「10 direct package」は当時の実測履歴として変更しない。
+- `ml/pyproject.toml` raw SHA-256は`93a3065c303c791a85b57ba2a6f8f769ee7fc80ae3bf43f883d3bf71204f0ed4`、`ml/uv.lock` LF canonical SHA-256は`44751699477d7bbbf9c6f470066cbe334d4e2c667c3341c78a30f529c7d7da39`。
+- `uv lock --check`、`uv sync --locked`、Pillow 12.3.0 import、既存pytest 4件をWindows CPython 3.14.7で再実行し合格した。macOS実行は追加していない。
+- MIT-CMU本文と著作権・帰属表示の伝播条件、SBOM・最終payload再検査はC0裁定どおり維持する。通常DAT-03/DAT-05 importerの合格とは扱わない。

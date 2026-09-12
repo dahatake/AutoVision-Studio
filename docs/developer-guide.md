@@ -4,7 +4,7 @@
 >
 > **文書成熟度:** 構成のみ
 >
-> **要求基準:** [`requirement-definition.md`](requirement-definition.md) v0.4 Draft
+> **要求基準:** [`requirement-definition.md`](requirement-definition.md) v0.5 Draft
 >
 > **対象者:** AutoVision Studio を要求定義に沿って変更・検証するソフトウェアエンジニア
 
@@ -59,7 +59,7 @@ npm run typecheck
 npm run build
 ```
 
-`npm test` は product version checker、Node test、Vitest を順に実行します。`npm run build` は version checker の後で Main、Preload、Renderer を build します。`start`、`dev`、`lint` script は現在の `package.json` にないため案内しません。
+`npm test` は product version / documentation checker、各 checker の Node test、Vitest を順に実行します。`npm run build` は version checker の後で Main、Preload、Renderer を build します。`start`、`dev`、`lint` script は現在の `package.json` にないため案内しません。
 
 `ml/` では次を実行します。
 
@@ -74,9 +74,21 @@ uv run --locked --system-certs ruff format --check src tests
 
 最後の command は Windows の repository root にある lock 済み Pyright を `ml/` から呼び出す path です。別 OS 向けの separator 読み替えは Version 1 の検証手順ではありません。Pyright は package を自動取得しません。
 
+サンプル素材・検証器を変更した場合は、通常の `testpaths = ["tests"]` に含まれない `scripts/samples/` も明示検証します。同期済みの `ml/.venv` を使い、引き続き `ml/` から次を実行します。部分的な `-k` 選択だけを検証器全体の合格に読み替えません。
+
+```text
+.venv\Scripts\python.exe -B -m pytest -q ..\scripts\samples\test_verify_samples.py
+.venv\Scripts\python.exe -B -m ruff check ..\scripts\samples\verify_samples.py ..\scripts\samples\test_verify_samples.py
+.venv\Scripts\python.exe -B -m ruff format --check ..\scripts\samples\verify_samples.py ..\scripts\samples\test_verify_samples.py
+```
+
+結果には cwd、実行ファイル・引数、終了コード、件数と skip 理由、検証した source と結果ファイルの作業ツリー raw bytes SHA-256 を記録します。並行編集がある場合は source の検証前後の一致も確認し、時点の異なる成功ログを現行版の合格証拠へ流用しません。通常のPyright対象は `ml/src` と `ml/tests` であり、外部スクリプトの型検査合格とは区別します。対象スクリプトのエディター診断も別途確認します。
+
 ### VS Code / Pylance
 
 interpreter は `ml/.venv` を選択します。system Python を選択した状態の import diagnostic を project dependency 不足の証拠にしません。Python command、pytest、Ruff は repository root ではなく `ml/` から実行します。
+
+補助のMypy Type Checker拡張を利用する場合も、ワークスペースの`.vscode/settings.json`でcwdを`ml/`、interpreterを`ml/.venv/Scripts/python.exe`、extraPathsを`ml/src`へ限定しています。2026-09-11に、正しいvenvでは解決できるpytest/自packageが補助チェッカーで見つからない診断を確認し、この配置へ合わせて解消しました。severity低下・ignore-missing-imports・拡張無効化は行っていません。設定の根拠は[公式拡張案内](https://github.com/microsoft/vscode-mypy/blob/main/README.md)とインストール済み2026.6.0の設定定義です。製品の必須型検査は引き続き既存のstrict Pyrightとし、補助チェッカーの結果と混同しません。
 
 `ml/pyproject.toml` の Pyright `pythonVersion = "3.13"` と Ruff `target-version = "py313"` は、過去の両 OS dependency lock 調査から保持している保守的な共有 code target です。これは macOS を Version 1 の検証対象または対応 OS とする設定ではありません。Version 1 の runtime 適合は uv の Windows environment marker と Windows CPython 3.14 での pytest により別に確認し、検証時に静的 target を手動変更しません。将来 macOS lane では Python version、wheel、静的 target を改めて決定します。
 
@@ -91,17 +103,19 @@ interpreter は `ml/.venv` を選択します。system Python を選択した状
 
 | 領域 | 現行 entry / 正本 | 役割 |
 |---|---|---|
-| Electron Main | `src/main/index.ts` | app lifecycle と secure main window を接続 |
+| Electron Main | `src/main/index.ts` | app lifecycle、secure main window、DB初期化、限定IPCを接続 |
 | Main lifecycle | `src/main/app-lifecycle.ts` | single instance、window lifecycle、OS 終了分岐 |
 | Window security | `src/main/window.ts`, `src/main/security.ts` | BrowserWindow security と navigation 制限 |
 | Preload | `src/preload/index.ts` | versioned `AppApi` の限定公開 |
 | Shared contract | `src/shared/contracts/app.ts` | Main / Preload / Renderer 境界の型 |
 | Renderer | `src/renderer/main.tsx`, `src/renderer/App.tsx` | React root と navigation shell |
-| Routes | `src/renderer/routes.tsx` | 11 route。各 feature は見出しだけ |
-| Python worker | `ml/src/autovision_ml/cli.py` | 現在は `health` command だけ |
+| Routes | `src/renderer/routes.tsx` | 11 screen IDとworkflow／settingsの配置定義。Project・診断等の接続状態は各featureと実行記録を参照 |
+| Python worker | `ml/src/autovision_ml/cli.py` | `health`（版・OS）、`probe-hardware`（端末観測）、`scan-dataset`（Mainのrequestから画像・注釈を検査）の3 command |
 | Model governance | `resources/models/manifest.json` | 承認済み同梱 model の fail-closed 正本。現在は空 |
 
 production source と `spikes/` を混同しません。`spikes/` は PoC、root `build/` は検証 harness / 生成物、`work/` は時点計画です。
+
+`scan-dataset`は相関付きNDJSONとローカルのscan結果を生成します。元画像のCopy、DBへの取込保存、Workspaceの作成、人手確認、Training Queueの完成を意味しません。`probe-hardware`の観測成功も、モデル性能やcamera権限の検証とは別です。
 
 ## アーキテクチャと信頼境界
 

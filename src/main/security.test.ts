@@ -1,13 +1,16 @@
 import type {
   BrowserWindowConstructorOptions,
+  Protocol,
   WebContents,
   WindowOpenHandlerResponse,
 } from 'electron';
 import { describe, expect, it, vi } from 'vitest';
+import rendererHtml from '../renderer/index.html?raw';
 
 import {
   applyWindowSecurity,
   createSecureWebPreferences,
+  registerImageScheme,
 } from './security.js';
 import { createMainWindow } from './window.js';
 
@@ -28,6 +31,29 @@ function createWebContentsHarness() {
 }
 
 describe('secure window', () => {
+  it('registers only the explicit image privileges without CSP bypass or streaming privileges', () => {
+    const registerSchemesAsPrivileged = vi.fn<Protocol['registerSchemesAsPrivileged']>();
+    expect(registerSchemesAsPrivileged).not.toHaveBeenCalled();
+    registerImageScheme({ registerSchemesAsPrivileged });
+    expect(registerSchemesAsPrivileged.mock.calls).toEqual([[ [{ scheme: 'av-image', privileges: {
+      standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, bypassCSP: false,
+    } }] ]]);
+  });
+
+  it('places a restrictive file-renderer CSP before scripts, preserving inline styles and camera media only', () => {
+    const html = rendererHtml;
+    const meta = /<meta http-equiv="Content-Security-Policy" content="([^"]+)"\s*\/>/u.exec(html)!;
+    expect(meta).not.toBeNull();
+    expect(html.indexOf(meta[0])).toBeLessThan(html.indexOf('<script'));
+    expect(meta[1]!.split('; ')).toEqual([
+      "default-src 'self'", "script-src 'self'", "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: av-image:", "connect-src 'self' av-image:", "font-src 'self' data:",
+      "object-src 'none'", "base-uri 'none'", "form-action 'none'", "frame-src 'none'",
+      "worker-src 'self'", "media-src 'self' blob:",
+    ]);
+    expect(meta[1]).not.toMatch(/unsafe-eval|https?:|file:|\*/u);
+  });
+
   it('uses explicit isolation, sandbox, and Node integration restrictions', () => {
     expect(createSecureWebPreferences()).toEqual({
       allowRunningInsecureContent: false,

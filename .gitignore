@@ -247,6 +247,9 @@ playwright-report/
 # resources/models/manifest*.json contains only JSON metadata and stays tracked.
 vendor/models/
 
+# Public sample acquisition cache; only the selected resources/samples/ assets are tracked.
+vendor/samples/
+
 # ---- Python freeze outputs ----------------------------------
 # PyInstaller onedir output lands in ml/dist/ (also caught by the dist/ rule above).
 ml/dist/

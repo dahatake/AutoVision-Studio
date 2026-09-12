@@ -1,0 +1,217 @@
+{
+  "files": [
+    {
+      "byteSize": 18657,
+      "path": "LICENSE.txt",
+      "sha256": "9ba9550ad48438d0836ddab3da480b3b69ffa0aac7b7878b5a0039e7ab429411"
+    },
+    {
+      "byteSize": 5137,
+      "path": "ATTRIBUTION.txt",
+      "sha256": "1bbf8f19c3b69247c90c3bf411a142f9f9962462e1a8b1b382b6b206fdcd14cd"
+    },
+    {
+      "byteSize": 207425,
+      "path": "annotations.coco.json",
+      "sha256": "04b9b815695559e9198464d200056fb387e21e1d34d8169e192e8511c99feffb"
+    }
+  ],
+  "id": "gwhd-2021",
+  "images": [
+    {
+      "byteSize": 453251,
+      "detectedFormat": "jpeg",
+      "domain": "Arvalis_11",
+      "path": "images/0007634580386bd39d4d0d24df58893c3bb967e12d6fc065ce8659e9acacc928.jpg",
+      "sha256": "f5bc6c56843bd2b10f08f60d7926bd647964d9d8a6e31cada62d9ccf9349fd92",
+      "sourceFilename": "0007634580386bd39d4d0d24df58893c3bb967e12d6fc065ce8659e9acacc928.png",
+      "sourceId": "0007634580386bd39d4d0d24df58893c3bb967e12d6fc065ce8659e9acacc928"
+    },
+    {
+      "byteSize": 2383896,
+      "detectedFormat": "png",
+      "domain": "Arvalis_3",
+      "path": "images/00417fc37a35f14ce3044bf2ae6c76d19bf42a426a94038e9f96dfe5fe8a25ca.png",
+      "sha256": "b012edf5e7bffa66e21e584fd6c5d4c694b00ea7900cae723c1f15cbd42efb10",
+      "sourceFilename": "00417fc37a35f14ce3044bf2ae6c76d19bf42a426a94038e9f96dfe5fe8a25ca.png",
+      "sourceId": "00417fc37a35f14ce3044bf2ae6c76d19bf42a426a94038e9f96dfe5fe8a25ca"
+    },
+    {
+      "byteSize": 2020958,
+      "detectedFormat": "png",
+      "domain": "ETHZ_1",
+      "path": "images/004b381a051838dc0cc8ff293e09823faa1dd6f26e82ffa99af6bbef6fe6168c.png",
+      "sha256": "642792127bf7dbcdd177e9e289bfc7d5f01f51058b2b0cb904ecbb17d1daf769",
+      "sourceFilename": "004b381a051838dc0cc8ff293e09823faa1dd6f26e82ffa99af6bbef6fe6168c.png",
+      "sourceId": "004b381a051838dc0cc8ff293e09823faa1dd6f26e82ffa99af6bbef6fe6168c"
+    },
+    {
+      "byteSize": 2432810,
+      "detectedFormat": "png",
+      "domain": "Arvalis_2",
+      "path": "images/004ccec5da561b85d8b05ed11c071ac9ef3af5c8c9a1d65a98772dc16c275ebd.png",
+      "sha256": "24827f4ae0af3ccd8565beda58e02b65d6c0df817944386652060aa2bea5c4f2",
+      "sourceFilename": "004ccec5da561b85d8b05ed11c071ac9ef3af5c8c9a1d65a98772dc16c275ebd.png",
+      "sourceId": "004ccec5da561b85d8b05ed11c071ac9ef3af5c8c9a1d65a98772dc16c275ebd"
+    },
+    {
+      "byteSize": 726151,
+      "detectedFormat": "jpeg",
+      "domain": "NMBU_1",
+      "path": "images/006f18cc577457d0d0b987d1af19e5568541cc5f84e1438b0ca4e98df505d53d.jpg",
+      "sha256": "8d8748eba709d102f8b2dd7294bd163b3e81ae1efc4a7bacad2c6fa720caa7d3",
+      "sourceFilename": "006f18cc577457d0d0b987d1af19e5568541cc5f84e1438b0ca4e98df505d53d.png",
+      "sourceId": "006f18cc577457d0d0b987d1af19e5568541cc5f84e1438b0ca4e98df505d53d"
+    },
+    {
+      "byteSize": 2366087,
+      "detectedFormat": "png",
+      "domain": "Arvalis_2",
+      "path": "images/00758c1521d734827989764b85e0f2458aeaa5dc031e2b1fc16bb40e90825b31.png",
+      "sha256": "e5c9fa23ba972e3919e80aa53b7fe306a2ba0b4696dad4f4ff62a8bd27fd3395",
+      "sourceFilename": "00758c1521d734827989764b85e0f2458aeaa5dc031e2b1fc16bb40e90825b31.png",
+      "sourceId": "00758c1521d734827989764b85e0f2458aeaa5dc031e2b1fc16bb40e90825b31"
+    },
+    {
+      "byteSize": 1274575,
+      "detectedFormat": "png",
+      "domain": "Rres_1",
+      "path": "images/0077c64686e9712d9b8efcd930ce5b0d68c72d8fb50ee99ed01ff2fd73e6d1d2.png",
+      "sha256": "2454d9090c4fafadd7c7d24840eb1d2e049b7c9fc2f7f4fb3fb78a84ad0fa917",
+      "sourceFilename": "0077c64686e9712d9b8efcd930ce5b0d68c72d8fb50ee99ed01ff2fd73e6d1d2.png",
+      "sourceId": "0077c64686e9712d9b8efcd930ce5b0d68c72d8fb50ee99ed01ff2fd73e6d1d2"
+    },
+    {
+      "byteSize": 2016676,
+      "detectedFormat": "png",
+      "domain": "ETHZ_1",
+      "path": "images/007a81874e72838a323f6cbde923eceda5d192e2dc54cad06084e5c8e80d1422.png",
+      "sha256": "e0a0297889ace37cf679a9626a9a0dfc0f74640bb0413696197ccc9a7adb3c21",
+      "sourceFilename": "007a81874e72838a323f6cbde923eceda5d192e2dc54cad06084e5c8e80d1422.png",
+      "sourceId": "007a81874e72838a323f6cbde923eceda5d192e2dc54cad06084e5c8e80d1422"
+    },
+    {
+      "byteSize": 2009672,
+      "detectedFormat": "png",
+      "domain": "ETHZ_1",
+      "path": "images/008f21821b0d892e1727771f6d3913d905c709e9170e0b830a39906ce02498b7.png",
+      "sha256": "08abdd835a4b5d3ccaa18459a2fa867891b550b170ef1308d0883d7a929d409b",
+      "sourceFilename": "008f21821b0d892e1727771f6d3913d905c709e9170e0b830a39906ce02498b7.png",
+      "sourceId": "008f21821b0d892e1727771f6d3913d905c709e9170e0b830a39906ce02498b7"
+    },
+    {
+      "byteSize": 2142267,
+      "detectedFormat": "png",
+      "domain": "Arvalis_4",
+      "path": "images/0099b614c6a3eaf82daaef1aaa2607dc537183b818d7f531e636cf2756fa046e.png",
+      "sha256": "bc5217d4d23752a6adcfe72bcb3d76af55f6ff4a063a29cda91b3cca8c9cd576",
+      "sourceFilename": "0099b614c6a3eaf82daaef1aaa2607dc537183b818d7f531e636cf2756fa046e.png",
+      "sourceId": "0099b614c6a3eaf82daaef1aaa2607dc537183b818d7f531e636cf2756fa046e"
+    },
+    {
+      "byteSize": 2040655,
+      "detectedFormat": "png",
+      "domain": "ETHZ_1",
+      "path": "images/00b0b8b93fbff402d4f18e3026c7957ab146b02244ce714142d86100b2e9f4ba.png",
+      "sha256": "33221d7abdab5e0613b758ca7f331f6bedbe254ec7071e65b39aa040764475fd",
+      "sourceFilename": "00b0b8b93fbff402d4f18e3026c7957ab146b02244ce714142d86100b2e9f4ba.png",
+      "sourceId": "00b0b8b93fbff402d4f18e3026c7957ab146b02244ce714142d86100b2e9f4ba"
+    },
+    {
+      "byteSize": 2003190,
+      "detectedFormat": "png",
+      "domain": "ETHZ_1",
+      "path": "images/00b984a8a9c1e7a275f53bc98f32b5ce980fe7b8acb484813487d081c1a76f19.png",
+      "sha256": "28e6e5105c650d25883228cff9706e35e49d35343b99932a22c9c5395f4aaeb3",
+      "sourceFilename": "00b984a8a9c1e7a275f53bc98f32b5ce980fe7b8acb484813487d081c1a76f19.png",
+      "sourceId": "00b984a8a9c1e7a275f53bc98f32b5ce980fe7b8acb484813487d081c1a76f19"
+    },
+    {
+      "byteSize": 1638214,
+      "detectedFormat": "png",
+      "domain": "ULiège-GxABT_1",
+      "path": "images/00c30879c4cd0cae523b6c7ed0e52209e9cc9165d70a59b27a2872f32a5180f3.png",
+      "sha256": "7a3b37e67de41844efafcd1d4fecda23e9015f4f96ab1e6662b16c0b11ce2a09",
+      "sourceFilename": "00c30879c4cd0cae523b6c7ed0e52209e9cc9165d70a59b27a2872f32a5180f3.png",
+      "sourceId": "00c30879c4cd0cae523b6c7ed0e52209e9cc9165d70a59b27a2872f32a5180f3"
+    },
+    {
+      "byteSize": 1309927,
+      "detectedFormat": "png",
+      "domain": "Rres_1",
+      "path": "images/00d154b2ed80d66706f09b15df50f096be921564e61afb4e2ca688657c581fa2.png",
+      "sha256": "b88d4faf4f0da3e8ad2cc426e158cf3792a1356451beb913eb12fae10e283311",
+      "sourceFilename": "00d154b2ed80d66706f09b15df50f096be921564e61afb4e2ca688657c581fa2.png",
+      "sourceId": "00d154b2ed80d66706f09b15df50f096be921564e61afb4e2ca688657c581fa2"
+    },
+    {
+      "byteSize": 1654453,
+      "detectedFormat": "png",
+      "domain": "ULiège-GxABT_1",
+      "path": "images/00e6e89d1b2a6990ac77bbffcb35fa63685d658b9529b6f2ba1143228c72bc84.png",
+      "sha256": "95e15eca22ef2f7dd0d7e96560e157d9d33ef2e29a204c88cc9b001cd9c0c358",
+      "sourceFilename": "00e6e89d1b2a6990ac77bbffcb35fa63685d658b9529b6f2ba1143228c72bc84.png",
+      "sourceId": "00e6e89d1b2a6990ac77bbffcb35fa63685d658b9529b6f2ba1143228c72bc84"
+    },
+    {
+      "byteSize": 2456129,
+      "detectedFormat": "png",
+      "domain": "Arvalis_2",
+      "path": "images/00eb65c1b6b792d72151693e5b6bb3c23cdaaefaf2760463b7c20a20fc83840a.png",
+      "sha256": "322ce2d003f43167a6d02506d8321d9ee5f3c344424b73b5c9adb64c469fe8c0",
+      "sourceFilename": "00eb65c1b6b792d72151693e5b6bb3c23cdaaefaf2760463b7c20a20fc83840a.png",
+      "sourceId": "00eb65c1b6b792d72151693e5b6bb3c23cdaaefaf2760463b7c20a20fc83840a"
+    },
+    {
+      "byteSize": 1456364,
+      "detectedFormat": "png",
+      "domain": "Rres_1",
+      "path": "images/00edf3946467429004dacae317b59f5920fbc62f07773bd48b8cfa4ce92fb1de.png",
+      "sha256": "f790afa79dea26735250e657ca08c496762647423a8145d4b36b60580e99c5d1",
+      "sourceFilename": "00edf3946467429004dacae317b59f5920fbc62f07773bd48b8cfa4ce92fb1de.png",
+      "sourceId": "00edf3946467429004dacae317b59f5920fbc62f07773bd48b8cfa4ce92fb1de"
+    },
+    {
+      "byteSize": 1736124,
+      "detectedFormat": "png",
+      "domain": "Arvalis_6",
+      "path": "images/00f09bc4483ab2f654ff0f6a3236442597dd67595320fa6c3984a9ab8c844c6d.png",
+      "sha256": "103582ba9b5c34f7c843bc117671afcdadee6574681a0e28a85439762f63ebda",
+      "sourceFilename": "00f09bc4483ab2f654ff0f6a3236442597dd67595320fa6c3984a9ab8c844c6d.png",
+      "sourceId": "00f09bc4483ab2f654ff0f6a3236442597dd67595320fa6c3984a9ab8c844c6d"
+    },
+    {
+      "byteSize": 1988015,
+      "detectedFormat": "png",
+      "domain": "Arvalis_6",
+      "path": "images/011ef4cdc20abb36a566d141c606082610ef9741c578d7c05b9e9db73a199d6c.png",
+      "sha256": "e34ce8b66eea4e533a6e92b85963a774d4e72fb40d22e0b7818db9af5450bb7e",
+      "sourceFilename": "011ef4cdc20abb36a566d141c606082610ef9741c578d7c05b9e9db73a199d6c.png",
+      "sourceId": "011ef4cdc20abb36a566d141c606082610ef9741c578d7c05b9e9db73a199d6c"
+    },
+    {
+      "byteSize": 2310172,
+      "detectedFormat": "png",
+      "domain": "Arvalis_2",
+      "path": "images/01351c964abba54bedbb7ef4e3777a30c9683388b5dce987a91d8944722a9232.png",
+      "sha256": "1226ffe0adabec420bd488a23f24183eeaaa654176facc330727c4f2213e60f2",
+      "sourceFilename": "01351c964abba54bedbb7ef4e3777a30c9683388b5dce987a91d8944722a9232.png",
+      "sourceId": "01351c964abba54bedbb7ef4e3777a30c9683388b5dce987a91d8944722a9232"
+    }
+  ],
+  "licenses": {
+    "annotations": "CC-BY-4.0",
+    "images": "CC-BY-4.0"
+  },
+  "sampleVersion": 1,
+  "schemaVersion": 1,
+  "source": {
+    "byteSize": 2841482,
+    "dataset": "Global Wheat Head Dataset 2021",
+    "sha256": "1af1d8e386643afe8cd1b41d89ca2634d3212908bdbe58a9d7cd5b32e4048176",
+    "url": "https://zenodo.org/api/records/5092309/files/gwhd_2021.zip/container/gwhd_2021/competition_train.csv",
+    "version": "1.0"
+  },
+  "sourceSplit": "train",
+  "taskType": "detection"
+}

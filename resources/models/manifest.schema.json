@@ -218,12 +218,12 @@
         },
         "support": {
           "type": "array",
-          "description": "Exactly the four required verified OS/provider combinations: Windows CPU/DirectML and macOS CPU/CoreML (POC-03/08).",
+          "description": "Exactly the two required verified Windows x64/provider combinations: CPU and DirectML (Version 1 Windows MVP; POC-03/08).",
           "items": {
             "$ref": "#/$defs/supportEntry"
           },
-          "minItems": 4,
-          "maxItems": 4,
+          "minItems": 2,
+          "maxItems": 2,
           "uniqueItems": true
         },
         "inferenceConfig": {
@@ -466,52 +466,24 @@
 
     "supportEntry": {
       "type": "object",
-      "description": "Verification result for one OS and Execution Provider combination (POC-03/08). DirectML applies to windows-x64; CoreML applies to macos-arm64.",
+      "description": "Verification result for one Windows x64 Execution Provider combination (Version 1 Windows MVP; POC-03/08).",
       "required": ["os", "executionProvider", "verified"],
       "additionalProperties": false,
       "properties": {
         "os": {
           "type": "string",
-          "enum": ["windows-x64", "macos-arm64"]
+          "const": "windows-x64"
         },
         "executionProvider": {
           "type": "string",
-          "enum": ["cpu", "directml", "coreml"]
+          "enum": ["cpu", "directml"]
         },
         "verified": {
           "type": "boolean",
           "const": true,
           "description": "Must be true because only fully approved entries may appear in this release manifest."
         }
-      },
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "os": { "const": "windows-x64" }
-            },
-            "required": ["os"]
-          },
-          "then": {
-            "properties": {
-              "executionProvider": { "enum": ["cpu", "directml"] }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "os": { "const": "macos-arm64" }
-            },
-            "required": ["os"]
-          },
-          "then": {
-            "properties": {
-              "executionProvider": { "enum": ["cpu", "coreml"] }
-            }
-          }
-        }
-      ]
+      }
     },
 
     "inferenceConfig": {

@@ -1,0 +1,58 @@
+.import-page {
+  display: grid;
+  gap: var(--space-3);
+  min-inline-size: 0;
+  max-inline-size: 64rem;
+  color: var(--color-text);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  overflow-wrap: anywhere;
+}
+.import-page :is(section, fieldset, ul, p, h1, h2, h3) { min-inline-size: 0; margin: 0; }
+.import-page :is(fieldset, .import-page__summary) {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: var(--border-width) solid var(--color-text-muted);
+  border-radius: var(--radius-small);
+}
+.import-page label { display: flex; gap: var(--space-2); align-items: center; min-block-size: 2.5rem; }
+.import-page input:is([type='radio'], [type='checkbox']) { flex: 0 0 auto; }
+.import-page .import-page__class { display: grid; min-inline-size: 0; gap: var(--space-1); }
+.import-page input[type='text'] {
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: 2.5rem;
+  padding: var(--space-2);
+  border: var(--border-width) solid var(--color-text-muted);
+  border-radius: var(--radius-small);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+.import-page button {
+  min-block-size: 2.75rem;
+  max-inline-size: 100%;
+  inline-size: fit-content;
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid var(--color-text-muted);
+  border-radius: var(--radius-small);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  white-space: normal;
+  cursor: pointer;
+}
+.import-page button:not(:disabled):hover { background: var(--color-canvas); }
+.import-page .import-page__primary { background: var(--color-accent); color: var(--color-on-accent); }
+.import-page .import-page__primary:not(:disabled):hover { background: var(--color-accent-hover); }
+.import-page button:disabled { border-style: dashed; color: var(--color-text-muted); background: var(--color-surface); cursor: not-allowed; }
+.import-page .import-page__pager { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-block: var(--space-2); }
+.import-page :is(button, input):focus-visible { outline: var(--focus-ring-width) solid var(--color-focus-ring); outline-offset: var(--space-1); }
+.import-page [role='alert'] { padding: var(--space-2); border-inline-start: 0.25rem solid var(--color-text); }
+.import-page progress { max-inline-size: 100%; }
+@media (forced-colors: active) {
+  .import-page :is(button, fieldset, input[type='text']) { border-color: ButtonText; }
+  .import-page :is(button, input):focus-visible { outline-color: Highlight; }
+}

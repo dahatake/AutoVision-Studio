@@ -8,6 +8,8 @@ AutoVision Studio は、画像分類と物体検出の教師データ作成、�
 
 現時点で一般利用者向けのインストールや製品操作はできません。文書中の `設計確定・未実装` は目標であり、利用可能な機能を意味しません。
 
+公開サンプルの準備では、Beans分類60枚と原本hash・ライセンス通知を保存済みです。GWHD検出も固定20枚の原画像bytes・全1079 boxを保持したCOCO annotation・manifest・CC BY 4.0のライセンス／帰属通知を準備済みです。通常decoder / importerのhelperによる全80画像の検証（DATA-07）は実施済みですが、サンプルProjectのアプリ内作成・編集・学習や一般利用者向けインストールはまだ利用できません。素材・実装・実アプリ受入を分けた最新結果は[準備・検証状況](docs/sample-data/verification.md)を参照してください。
+
 ## 主要機能と概念
 
 Version 1（MVP）は、複数 Project、データ取り込み、分類ラベル／検出矩形の作成、Model Suggestion の人による確認、ローカル学習、評価レポート、Model Version 管理、カメラ推論を対象とします。これらの大部分はまだ未実装です。
@@ -68,4 +70,4 @@ source code は [MIT License](LICENSE) です。第三者 dependency、学習済
 
 完成アプリケーションが未提供のため、一般利用者向けの製品サポートはまだ開始していません。Version 1 の予定サポート範囲は Windows 11 24H2 以降の x64 のみで、macOS は現在サポート対象外です。一般利用者向けの確認項目は[トラブルシューティング](docs/users-guide.md#トラブルシューティング)、開発時の報告と変更手順は[開発・検証規約](CONTRIBUTING.md)を参照してください。未実装機能や将来 macOS 対応を利用可能な機能または現在の Gate として扱わず、[実装計画](docs/implementation-plan.md)の依存 task と Gate を確認してください。
 
-要求定義の基準版は v0.4 Draft です。SHA-256 は、Windows 作業ツリー raw CRLF bytes が `38e79907b8b5620fffd50dd73a79322d1d97e606b90e81b0b9b06140958e5ce5`、LF-normalized bytes が `8c8dcdffc6049b6fc0503079ffb1edf3c2464d9e24150155530b82fa5df44f6b` です。
+要求定義の基準版は v0.5 Draft（2026-09-07 UI改善追補、245要求）です。SHA-256 は、Windows 作業ツリー raw CRLF bytes が `cd060e8740e986271ca32cf1e22f0cad275e7c26f9ead573c9fb667f26f984fa`、LF-normalized bytes が `962f5d7209de1f607ee6cb4d31e68b084409f7b3105612e6e4042d8b893e037f` です。

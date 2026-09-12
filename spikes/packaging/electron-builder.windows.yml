@@ -1,0 +1,43 @@
+electronVersion: "44.0.0"
+npmRebuild: false
+nodeGypRebuild: false
+buildDependenciesFromSource: false
+compression: normal
+asar: true
+directories:
+  buildResources: build
+files:
+  - main.mjs
+  - harness.mjs
+extraResources:
+  - from: worker
+    to: worker
+    filter:
+      - "**/*"
+  - from: source-worker-manifest.json
+    to: spi05/source-worker-manifest.json
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  executableName: autovision-spi05
+  requestedExecutionLevel: asInvoker
+  signExecutable: false
+  verifyUpdateCodeSignature: false
+  artifactName: "autovision-spi05-${version}-windows-${arch}.${ext}"
+nsis:
+  include: build/installer.nsh
+  oneClick: false
+  perMachine: false
+  selectPerMachineByDefault: false
+  allowElevation: false
+  allowToChangeInstallationDirectory: true
+  runAfterFinish: false
+  createDesktopShortcut: false
+  createStartMenuShortcut: false
+  packElevateHelper: false
+  differentialPackage: false
+  buildUniversalInstaller: false
+  warningsAsErrors: true
+  uninstallDisplayName: "${productName}"

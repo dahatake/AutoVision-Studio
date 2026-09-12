@@ -5,6 +5,7 @@
 | ADR ID | 0002 |
 | タイトル | データライフサイクルと不変性 |
 | 作成日 | 2026-09-02 |
+| 最終更新日 | 2026-09-07（SPI-19 明示スキップ反映） |
 | 作成者 | implementation-plan.md タスク A-03 |
 | ステータス | **採用済み（実装前）** |
 | 依存 ADR | ADR-0001（プロセスアーキテクチャ） |
@@ -47,7 +48,7 @@ AutoVision Studio は、Project 単位で画像・アノテーション・学習
 - SQLite スキーマの具体的な列定義（CORE-04 以降のタスクで確定）
 - ファイルシステム上の実際のパス（CORE-01 で確定）
 - Python worker とのプロトコル詳細（JOB-03 で確定）
-- Reference モードの OS 固有の永続アクセス実装（Version 1 は Windows を SPI-19 で実証後に確定。macOS は将来検証。D-19 参照）
+- Reference モードの OS 固有の永続アクセス実装（Version 1 は Windows の通常実装を DAT-12、OS 再起動後の正式受入を DAT-15 で検証する。SPI-19 は明示スキップ、macOS は将来検証。D-19 参照）
 - 個々の Model Suggestion の score の意味とモデル別閾値（FR-AST-012, FR-AST-013, SPI-17 後）
 
 ---
@@ -85,15 +86,17 @@ Python worker は DB を直接変更しない。入力 manifest と Dataset Revi
 | Training Run 開始直前の hash 再検証 | 不要 | 必須。変更・消失が 1 件でも検出されれば Run を開始せず、relink または Copy 再取り込みを案内する（FR-DAT-013） |
 | Training Run 実行中の hash 再検証 | 不要 | epoch/trial 境界で再検証。変更・消失時は安全停止（FR-DAT-013） |
 | Project 削除時の元ファイル扱い | 複製を削除（FR-PRJ-008） | 元ファイルは一切削除しない（FR-PRJ-008） |
-| Reference 永続アクセスの実証 | 不要 | Version 1 は SPI-19 で Windows のプロセス再起動・OS 再起動後の read/hash 検証、変更・消失検出、relink、参照元非破壊を実証してから実装を確定する（D-19）。macOS 固有アクセスは将来検証とし、Version 1 Gate に含めない |
+| Reference 永続アクセスの検証 | 不要 | SPI-19 は `SKIPPED_BY_USER`。Version 1 は DAT-12 でプロセス再起動、read/hash、変更・消失検出、安全停止、relink、参照元非破壊を検証し、OS 再起動後の継続アクセスは正式製品受入の DAT-15 で検証する。macOS 固有アクセスは将来検証とする |
 
-**現時点の実装状態:** Reference モードの永続アクセスは SPI-19 で検証中であり、未実証の機能を実装済みと扱わない。Windows の SPI-19 が合格するまで Version 1 の Reference モード本実装は開始しない。保存済みの macOS `NOT_RUN` は履歴として保持するが、Windows の合否にも macOS の合格にも読み替えない。
+**現時点の実装状態:** SPI-19 は 2026-09-07 のユーザー指示で `SKIPPED_BY_USER` であり、PASS ではない。Reference モード本実装と DAT-12/15 の検証は未実施である。保存済みのプロセス再起動結果と OS 再起動 `NOT_RUN` は履歴として保持し、通常実装または正式受入の合格へ読み替えない。
 
-**SPI-19 の Version 1 検証条件:**
+**SPI-19 の当初検証条件（実施対象外となった履歴）:**
 - Windows で選択済み参照を保存し、アプリのプロセス再起動後と OS 再起動後の双方で再読込と SHA-256 検証に成功する。
 - 参照元の変更と消失を検出し、継続を拒否した上で relink により意図したファイルへの参照と hash 検証を回復できる。
 - 選択、検証、変更・消失検出、relink の全経路で参照元を変更、移動、削除しないことを before/after のファイル状態と hash で示す。
-- macOS sandbox、security-scoped bookmark、native file access の成否は将来版の検証条件であり、Version 1 の SPI-19 または Gate 1 の合否を停止しない。
+- macOS sandbox、security-scoped bookmark、native file access の成否は将来版の検証条件とする。
+
+この当初条件は SPI-19 の PASS や Gate 1 前提へ戻さない。対応する製品要件は DAT-12/15 で別に検証する。
 
 ### 3.3 Ground Truth とその確定条件
 
@@ -379,7 +382,7 @@ Project 削除前に、対象エンティティ種別ごとの件数と容量を
 
 | 項目 | 内容 | 必要な Gate / タスク | 状態 |
 |---|---|---|---|
-| **G-1** | Reference モードの Windows 永続アクセス実証（D-19） | SPI-19 の Windows 条件合格が必要 | **未実施。Windows のプロセス再起動・OS 再起動後の read/hash、変更・消失検出、relink、参照元非破壊を実証できなければ Version 1 の Reference モード本実装は開始しない。macOS は Version 1 Gate 外** |
+| **G-1** | Reference モードの Windows 検証割当（D-19） | DAT-12 の通常検証と DAT-15 の正式製品受入が必要 | **依存変更済み、実装・受入は未実施。SPI-19 は `SKIPPED_BY_USER` のまま PASS にせず、DAT-12 でプロセス再起動・read/hash・変更/消失・安全停止・relink・参照元非破壊、DAT-15 で OS 再起動後の継続アクセスを検証する。macOS は Version 1 Gate 外** |
 | **G-2** | SQLite スキーマの具体的な列定義と migration 手順 | CORE-04（001_core.sql）, ANN-01（004_annotations.sql）, AST-02（005_suggestions.sql）| 未実施。本 ADR はスキーマ設計の原則を固定するが、実際の DDL は別タスクで確定 |
 | **G-3** | Python worker の split アルゴリズムの実装と、データ不足（ゼロ件クラス・少数クラス）の扱い | ANN-17（split_dataset.py） | 未実施。FR-DAT-009 / FR-DAT-010 の自動調整ロジックの具体的な実装 |
 | **G-4** | Gate 2: Curated Base Weight および Annotation Assist Model の法務承認 | SPI-11〜14, SPI-17, Gate 2 | 未承認。承認前は ModelSuggestion の生成機能を出荷しない（FR-AST-004） |
@@ -395,7 +398,7 @@ Project 削除前に、対象エンティティ種別ごとの件数と容量を
 |---|---|---|
 | データ階層の定義（§3.1） | **ADR で確定。コード未実装** | CORE-04 以降で実装 |
 | Copy モードの hash 保存契約（§3.2） | **ADR で確定。コード未実装** | DAT-06, DAT-07 で実装 |
-| Reference モードの hash 保存と再検証契約（§3.2） | **ADR で確定。Version 1 実装は SPI-19 の Windows 条件合格後** | Windows 条件は未実証のため本実装保留（D-19）。macOS 固有アクセスと保存済み `NOT_RUN` は将来 lane で扱い、Version 1 Gate に含めない |
+| Reference モードの hash 保存と再検証契約（§3.2） | **ADR で確定。コードと通常検証は未実施** | DAT-12 で Windows の通常実装を検証し、DAT-15 で OS 再起動後の正式受入を行う。SPI-19 は `SKIPPED_BY_USER` のまま PASS にせず、macOS 固有アクセスと保存済み `NOT_RUN` は将来 lane で扱う |
 | Ground Truth 確定条件（§3.3） | **ADR で確定。コード未実装** | ANN-15, ANN-22 で実装 |
 | Dataset Revision 不変性（§3.4） | **ADR で確定。コード未実装** | ANN-18, ANN-19 で実装 |
 | Training Run 状態遷移（§3.5） | **ADR で確定。コード未実装** | JOB-02 で実装 |

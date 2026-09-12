@@ -122,5 +122,5 @@
   <text x="1013" y="681" font-size="13" fill="#0f172a">外部入力 / OS 資源（緑・二重枠）</text>
 
   <text x="40" y="716" font-size="12.5" fill="#475569">注: 枠の状態は配置または内容の成熟度を示す。実在パスは明記し、未実在パスは planned と表示する。</text>
-  <text x="40" y="738" font-size="12.5" fill="#475569">根拠: 現行 repository tree、.gitignore、CONTRIBUTING §11、work/20260904-1140-DocumentationTaskExecutionPlan.md §7.1 / §7.4。</text>
+  <text x="40" y="738" font-size="12.5" fill="#475569">根拠: 現行 repository tree、.gitignore、CONTRIBUTING §11、docs/documentation-fact-baseline.md §7.1 / §7.4。</text>
 </svg>

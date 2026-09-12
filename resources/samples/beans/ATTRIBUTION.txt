@@ -1,0 +1,38 @@
+Beans (Bean disease dataset / ibean)
+
+Created by Makerere AI Lab.
+Leaf images were collected in Uganda by Makerere AI Lab in collaboration with
+the National Crops Resources Research Institute (NaCRRI). NaCRRI experts
+annotated the images during collection, according to the original README.
+
+Copyright (c) 2020 AIR Lab Makerere University
+
+License: MIT, for the original dataset images and classification annotations.
+The original README's The Data / Versions/Release section explicitly lists MIT
+as the data license; this attribution does not rely on a code-license badge.
+See `LICENSE.txt` in this directory for the complete original license, including
+its permission, notice-retention and warranty-disclaimer terms. Retain the
+copyright and permission notices in all copies or substantial portions.
+The original `LICENSE.txt` was saved without modification on 2026-09-06.
+
+Original data release: 2020-01-20. Source pages consulted: 2026-09-06.
+Original README (fixed GitHub commit):
+https://raw.githubusercontent.com/AI-Lab-Makerere/ibean/6bea90a2a1e6378b134f2941fba43e3d6c5b4373/README.md
+Original LICENSE (same commit):
+https://raw.githubusercontent.com/AI-Lab-Makerere/ibean/6bea90a2a1e6378b134f2941fba43e3d6c5b4373/LICENSE
+Distribution: official AI-Lab-Makerere/beans account on Hugging Face.
+Fixed revision: 27aa014ce09b193e1a6f58112d4a66e0eddb69c5
+Original train ZIP (fixed acquisition source):
+https://huggingface.co/datasets/AI-Lab-Makerere/beans/resolve/27aa014ce09b193e1a6f58112d4a66e0eddb69c5/data/train.zip
+
+AutoVision sample selection: 60 images from original train only;
+20 each of angular_leaf_spot, bean_rust, and healthy.
+Changes from the original dataset: subset selection only. Original image bytes
+and all source classification labels are retained without modification.
+The preparation does not resize, crop, re-compress or rewrite image metadata.
+This is a small workflow sample, not the complete dataset or its official split.
+
+Imported labels remain import-unmodified until user edits (then import-edited).
+Their provenance does not automatically confirm them or make them Ground Truth.
+For workflow demonstration, not agricultural diagnosis or an official benchmark.
+No safety or accuracy guarantee is made; no pretrained weights are approved here.

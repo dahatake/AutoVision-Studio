@@ -160,3 +160,7 @@ reviewerはoptional findingとして、Node追加273件のlicense内訳を274件
 C0-NODEの47件とC0-PYTHONの6件は、§1のexact version・用途・配布形態に限定してownerが **APPROVED_WITH_CONDITIONS** と裁定した。Windowsのclean install、lock、test、type/lint、build、Electron window、runtime smoke、脆弱性監査、lock不変性は合格した。
 
 native macOS検証は§6のとおり **WAIVED / NOT_RUN** で、macOS PASSまたはmacOS対応表明ではない。以上により **C0はCLOSED、Windows B-GATEはPASS** とする。Phase CではWindowsまたはOS非依存taskを開始できる。§3〜4の条件に違反した場合は当該承認を失効し、releaseを停止する。
+
+### 9.3 2026-09-07 Pillow用途追加裁定
+
+`pillow@12.3.0`はexact artifact、license、runtime配布条件を変更せず、固定サンプルの実体形式・全画素decode検証へ用途を追加する。同packageはC0時点でTorchVision経由のruntime componentとして条件付き承認済みであり、用途追加後もMIT-CMU本文とCarnegie Mellonを含む著作権・帰属表示を伝播する。同じ12.3.0をruntime direct dependencyへ昇格するが、一般allowlistを拡張せず、通常importerの実装済み・合格とも扱わない。現在のlock/hash・検証結果は`python-phase-c.md` §11へ記録する。

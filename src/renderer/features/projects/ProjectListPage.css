@@ -1,0 +1,97 @@
+.project-list-page {
+  display: grid;
+  grid-template-rows: auto minmax(min-content, 1fr) auto;
+  gap: var(--space-2);
+  /* v3 §3.3 starting budget, not a verified AppShell viewport measurement. */
+  block-size: max(16rem, calc(100dvh - 16rem));
+  min-block-size: max(16rem, calc(100dvh - 16rem));
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  color: var(--cp-text);
+  overflow-wrap: anywhere;
+}
+.project-list-page * { min-inline-size: 0; box-sizing: border-box; }
+.project-list-page :is(h1, p, ul, dl, dd) { margin: 0; }
+.project-list-page__header { display: grid; gap: var(--space-2); }
+.project-list-page :is(.project-list-page__toolbar, .project-list-page__actions, nav) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.project-list-page h1 { display: flex; align-items: center; gap: var(--space-2); margin-inline-end: auto; }
+.project-list-page input {
+  flex: 1 1 10rem;
+  inline-size: 12rem;
+  max-inline-size: 100%;
+  min-block-size: 2.5rem;
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-width) solid var(--color-text-muted);
+  border-radius: var(--radius-small);
+  background: var(--cp-surface);
+  color: var(--cp-text);
+  font: inherit;
+}
+.project-list-page button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-1);
+  min-block-size: 2rem;
+  max-inline-size: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-width) solid var(--color-text-muted);
+  border-radius: var(--radius-small);
+  background: var(--cp-surface);
+  color: var(--cp-text);
+  font: inherit;
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.project-list-page__toolbar button { min-block-size: 2.5rem; }
+.project-list-page button:hover:not(:disabled) { background: var(--cp-surface-soft); }
+.project-list-page button:disabled { color: var(--color-text-muted); cursor: default; }
+.project-list-page :is(button, input, summary, [tabindex]):focus-visible {
+  outline: var(--focus-ring-width) solid var(--cp-accent);
+  outline-offset: var(--space-1);
+}
+.project-list-page__list { padding: 0; list-style: none; }
+.project-list-page__row {
+  display: grid;
+  grid-template-columns: minmax(10rem, 1fr) minmax(0, 2fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 3rem;
+  padding: var(--space-1) var(--space-2);
+  border-block-end: var(--border-width) solid var(--cp-border);
+  background: var(--cp-surface);
+  line-height: 1.25;
+}
+.project-list-page__row:focus-within { outline: var(--border-width) solid var(--cp-accent); outline-offset: -1px; }
+.project-list-page__name { font-weight: var(--font-weight-semibold); white-space: pre-wrap; }
+.project-list-page dl { display: grid; grid-template-columns: 1fr 1.7fr 1.2fr 1.1fr 1fr; gap: var(--space-2); }
+.project-list-page dt { color: var(--color-text-muted); }
+.project-list-page time { font-variant-numeric: tabular-nums; }
+.project-list-page__pager { justify-content: center; }
+.project-list-page__name-details summary { min-block-size: 2rem; cursor: pointer; white-space: normal; }
+.project-list-page .project-list-page__full-name { margin-block: var(--space-2); white-space: pre-wrap; font-weight: normal; }
+.project-list-page__name-details nav { font-weight: normal; white-space: normal; }
+@media (max-width: 64rem) {
+  .project-list-page__row { grid-template-columns: minmax(0, 1fr); }
+  .project-list-page__actions { justify-content: flex-start; }
+}
+@media (max-width: 48rem), (max-height: 36rem) {
+  .project-list-page { block-size: auto; }
+  .project-list-page dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (pointer: coarse) {
+  .project-list-page :is(button, summary) { min-block-size: 2.75rem; }
+}
+@media (forced-colors: active) {
+  .project-list-page :is(button, input, .project-list-page__row) { border-color: ButtonText; }
+  .project-list-page :is(button, input, summary, [tabindex]):focus-visible,
+  .project-list-page__row:focus-within { outline-color: Highlight; }
+  .project-list-page button:disabled { color: GrayText; }
+}

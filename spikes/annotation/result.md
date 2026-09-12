@@ -5,14 +5,17 @@
 | Task | SPI-10 |
 | 対象要求 | NFR-ANN-002（4K画像・100 rectangles・zoom/pan/select/move/resizeのUI応答p95 100 ms以内） |
 | 検証計画HEAD | `769cc5b5136951ed4ce028c249a2b0db58213e3b` |
+| 実行時HEAD | `6523995637fb3085f2ef4642abe424652ab59cac` |
 | raw evidence | `build/spi10/benchmark-result.json` |
-| raw evidence SHA-256 | `3822D0303192F556DE6933D7DB166E697EA54D515990C7D9BEDE4FD3BDEC05FD`（707,791 bytes） |
-| process evidence | `build/spi10/dist/benchmark-process-result-136b4ca6-7497-4ff2-95f5-ef0cb9ca8a52.json`（SHA-256 `A231846C98E1B1FA09DB0B3EEA4CBBB0F1CAF08CF51A34409115DA1CD9553DD8`） |
-| run ID | `136b4ca6-7497-4ff2-95f5-ef0cb9ca8a52` |
-| 検証期間 | 2026-09-03T16:15:33.424Z〜2026-09-03T16:18:34.949Z |
-| Electron測定完了 | 2026-09-03T16:18:33.573Z |
+| raw evidence SHA-256 | `1F419247C7281D36B3A0D9FE08FD0B28D682858BA63798F39A4C96EFC4B864ED`（708,607 bytes） |
+| process evidence | `build/spi10/dist/benchmark-process-result-710f0ba5-40f1-4744-89fd-27a61714554c.json`（698,024 bytes、SHA-256 `99F49FB7DD37288808ACF3675AB72DE39805BD4D43024E09B29B7708A9D3BE96`） |
+| run ID | `710f0ba5-40f1-4744-89fd-27a61714554c` |
+| 検証期間 | 2026-09-07T03:07:00.100Z〜2026-09-07T03:09:39.984Z |
+| Electron測定完了 | 2026-09-07T03:09:39.843Z |
 | 判定 | **PASS**（このWindows実測条件におけるSPI-10 PoC） |
 | 非対象 | macOS性能保証、production annotation editor、keyboard/screen reader、永続化、実カメラ、モデル推論 |
+
+2026-09-06のrun `1e2984e5-48d1-4a0b-bbeb-e258333a058b`はcreate測定中にbaselineが安定せずFAILした。2026-09-07の最初の再試行はVitest fork workerの起動timeoutでElectron測定前にFAILし、対象テストだけの再実行では9件PASSした。いずれもPASSへ読み替えず、RAF不足など未確認の原因を断定しない。現行sourceを変更せずに再実行した上表のrunが全工程を完走したため、このrunだけを現在の判定証拠とする。
 
 ## 実行環境
 
@@ -49,31 +52,31 @@
 - p95は100値を昇順にし、`ceil(100 × 0.95) - 1`の要素を採用した。空、負値、NaN、Infinityは集計を失敗させる。
 - `npm@12.0.0 run verify:spi10`からunit、strict typecheck、構文、Vite build、diff check、Electron benchmark、process cleanup、source/bundle再hash、atomic renameを直列実行した。run UUIDとexclusive lockで別runのartifact混入を拒否する。
 
-60 Hz表示で測定したanimation-frame間隔はmean 16.383 ms、p95 16.800 ms、max 16.900 msだった。
+60 Hz表示で測定したanimation-frame間隔はmean 16.650 ms、p95 18.700 ms、max 20.100 msだった。
 
 ## 実測結果
 
 | 操作 | 応答起点 | paint p95 (ms) | capture mean (ms) | capture p95 (ms) | capture max (ms) | stable-confirm p95 (ms) | pixel / visual proof | 判定 |
 |---|---|---:|---:|---:|---:|---:|---:|---|
-| create | `mouseUp` | 23.442 | 50.774 | 61.039 | 82.526 | 109.192 | 100 / 100 | PASS |
-| select | `mouseUp` | 28.969 | 48.107 | 53.454 | 63.640 | 104.003 | 100 / 100 | PASS |
-| move | final-coordinate `mouseMove` | 27.227 | 48.054 | 59.246 | 84.772 | 108.682 | 100 / 100 | PASS |
-| resize | final-coordinate `mouseMove` | 23.171 | 47.821 | 59.539 | 61.955 | 108.222 | 100 / 100 | PASS |
-| zoom | `mouseWheel` | 49.682 | 59.491 | 71.756 | 85.058 | 120.840 | 100 / 100 | PASS |
-| pan | final-coordinate `mouseMove` | 22.775 | 51.599 | 61.463 | 62.681 | 108.723 | 100 / 100 | PASS |
+| create | `mouseUp` | 18.902 | 33.048 | 38.509 | 42.399 | 73.296 | 100 / 100 | PASS |
+| select | `mouseUp` | 20.395 | 32.321 | 39.092 | 45.391 | 70.936 | 100 / 100 | PASS |
+| move | final-coordinate `mouseMove` | 19.460 | 33.960 | 45.802 | 53.526 | 82.161 | 100 / 100 | PASS |
+| resize | final-coordinate `mouseMove` | 21.147 | 34.776 | 43.050 | 52.956 | 76.552 | 100 / 100 | PASS |
+| zoom | `mouseWheel` | 37.810 | 49.910 | 58.412 | 63.792 | 91.686 | 100 / 100 | PASS |
+| pan | final-coordinate `mouseMove` | 19.927 | 49.688 | 56.893 | 79.587 | 105.534 | 100 / 100 | PASS |
 
-全6操作の判定対象capture p95は100 ms以内だった。stable-confirm p95は2回目の同一changed captureまでを含む補助値で、全操作が100 msを超えた事実も表へ明記した。5 metric×6操作のraw件数、finite/non-negative、mean/p95/maxを独立再計算し、保存summaryと一致した。
+全6操作の判定対象capture p95は100 ms以内だった。stable-confirm p95は2回目の同一changed captureまでを含む補助値で、panだけが100 msを超えた事実も表へ明記した。保存raw値の件数、finite/non-negative、mean/p95/maxを独立再計算し、summaryと一致した。
 
 ### Gesture全体の補助値
 
 | 操作 | gesture開始→capture p95 (ms) |
 |---|---:|
-| create | 225.453 |
-| select | 154.374 |
-| move | 189.754 |
-| resize | 172.069 |
-| zoom | 139.274 |
-| pan | 173.293 |
+| create | 188.383 |
+| select | 121.918 |
+| move | 166.369 |
+| resize | 156.916 |
+| zoom | 105.580 |
+| pan | 195.817 |
 
 この補助値には、drag startから判定入力までの入力配送保証用2-frame settleを複数回含む。NFR-ANN-002の応答判定には使わないが、100 msを超える事実を隠していない。
 
@@ -107,13 +110,13 @@
 | SPI-10専用TypeScript strict check | TypeScript 7.0.2、`--ignoreConfig --strict --moduleResolution Bundler`、PASS |
 | Main / launcher syntax | Node.js 24.19.0 `--check`、双方PASS |
 | Vite production build | Vite 7.3.6、99 modules、524,397-byte JS bundle、PASS |
-| Electron benchmark | 170,092 ms、exit 0、6 operations × 100 samples、全pixel/visual proof変化、全敵対probe PASS、Renderer diagnostics 0 |
+| Electron benchmark | 150,801 ms、exit 0、6 operations × 100 samples、全pixel/visual proof変化、全敵対probe PASS、Renderer diagnostics 0 |
 | Lifecycle / cleanup | `quit-event-0`後にprocess evidence確定、同一Electron実体の起動前/終了後process 0、強制cleanup 0 |
-| Raw evidence独立再計算 | 359 checks PASS。5 metrics × 6 operations、600 capture proofs、attempt範囲、adversarial result、DPI-aware bitmap寸法を再検証 |
-| Source integrity | 実測時Windows working-tree bytesの12 source SHA-256が現行fileと一致し、Renderer埋込7 build-source SHA-256も一致。`core.autocrlf=true`によるCRLF→LF正規化後は12/12がstage済みGit blobと一致し、意味差分0 |
-| Bundle integrity | JS SHA-256 `5A461DF05F662ED2A1B0B16238AEF37F3D3ACA7D9DF29274A987C2E7060E072B`、index SHA-256 `77668921EB45E9E206D013A2DABA2B11409C98EB3487A252B6ABC612E1B55519`が一致 |
+| Raw evidence独立再計算 | 6 operations × 100 samples、600 pixel/visual proof、summary、attempt範囲、adversarial result、DPI-aware bitmap寸法を再検証して一致 |
+| Source integrity | 実測時Windows working-tree bytesの12 source SHA-256が現行fileと一致し、Renderer埋込7 build-source SHA-256も一致。46行のdirty statusと`build/spi10/main.mjs`の未コミット診断追加もraw evidenceへ保存した。Git blob一致やclean treeは主張しない |
+| Bundle integrity | JS SHA-256 `3A4DCE813A5F1FE48797A0A693A859F0684BDC1E7DED412AA8CBFC172C7DA944`、index SHA-256 `FFFF43723936F21C8CF79BC71FA2D4F1699F6EA75BF8D4B51C34756AD0CB5EE1`が一致 |
 | Lock integrity | package-lock SHA-256 `7F1BD82EFE1E4919DCE6DDFFDB763CEFF4404D29B60E8E946A150345A8DFE1A5`がlauncher前後・source evidenceで一致 |
-| Final evidence | run ID一致、707,791 bytes、SHA-256 `3822D0303192F556DE6933D7DB166E697EA54D515990C7D9BEDE4FD3BDEC05FD`、一時file/lockなし |
+| Final evidence | run ID一致、708,607 bytes、SHA-256 `1F419247C7281D36B3A0D9FE08FD0B28D682858BA63798F39A4C96EFC4B864ED`、一時file/lockなし |
 | Editor diagnostics | 0件 |
 | `git diff --check` | PASS |
 
@@ -157,5 +160,8 @@ hashはGitHubのKonva公式repository `master` raw MDXを同日に取得した�
 20. `npm exec -- node`がNode.js実体ではなくregistryの`node` package導入を要求した。promptで拒否し、package script `npm run verify:spi10`へ変更してexact npm lifecycleを検証した。
 21. viewport一致検証が同値の`{scale,x,y}`と`{x,y,scale}`を`JSON.stringify`で比較し、キー順序だけで偽FAILになった。保存した実値で同値を確認し、`x/y/scale`のフィールド比較へ修正した。
 22. 独立監査の初回だけ、960×540 DIPを物理解像度と誤認した。保存済みdisplay scale 1.25とcapture値から1200×675・3,240,000 bytesが正しいと確認し、DPI-aware検証へ修正した。raw evidence本体は変更していない。
+23. 2026-09-06の再実行でcreate sample 6のbaseline安定確認がFAILし、launcherは旧final evidenceを削除した。失敗時の6 captureを保存する診断を追加したが、その後の成功経路・判定metricは変更していない。
+24. 2026-09-07の最初の再試行はVitest fork workerの起動timeoutでElectron前に停止した。対象9件を単独再実行してPASSを確認した後、同じsourceでlauncher全体を1回再実行した。timeoutを描画不良や合格へ読み替えない。
+25. 新run後の独立監査で`result.md`の旧run ID・hash・実測値が現在のraw evidenceと不一致と判明したため、本書を新runへ同期した。旧runや途中FAILの値を新runへ混在させていない。
 
-修正後にexact npm 12 launcherから9 unit tests、専用strict typecheck、両Node構文、Vite build、実Electron benchmark、4敵対probe、quit後process確認を完走した。さらに359項目の独立統計/hash/proof監査を行い、ブロッキング所見0を確認した。敵対的レビューは **CLOSED**、SPI-10は **VERIFIED** とする。
+修正後にexact npm 12 launcherから9 unit tests、専用strict typecheck、両Node構文、Vite build、実Electron benchmark、4敵対probe、quit後process確認を完走した。新runの統計・hash・proofを独立再計算し、実在する指摘だった本書の旧値を反映した。反映後の再レビューで指摘0件を確認したため、敵対的レビューは **CLOSED**、SPI-10は **VERIFIED** とする。

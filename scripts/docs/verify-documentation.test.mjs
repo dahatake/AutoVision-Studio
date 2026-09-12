@@ -22,7 +22,7 @@ import {
 } from './verify-documentation.mjs';
 
 const REQUIREMENT_FILE = 'docs/requirement-definition.md';
-const BASELINE_FILE = 'work/20260904-DocumentationFactBaseline.md';
+const BASELINE_FILE = 'docs/documentation-fact-baseline.md';
 const SVG_FILE = 'images/system-architecture.svg';
 
 function writeFixtureFile(repositoryRoot, relativePath, contents) {
@@ -212,6 +212,46 @@ test('ignores a fake requirement ID inside a fenced code block', (t) => {
   );
 
   assert.deepEqual(collectDocumentationIssues(repositoryRoot), []);
+});
+
+test('preserves a historical baseline with different requirement hashes', (t) => {
+  const repositoryRoot = createRepositoryFixture(t);
+  const baselinePath = join(repositoryRoot, BASELINE_FILE);
+  writeFixtureFile(repositoryRoot, BASELINE_FILE, `# Historical baseline
+
+Raw working tree SHA-256: ${'a'.repeat(64)}
+LF-normalized SHA-256: ${'b'.repeat(64)}
+`);
+  const before = readFileSync(baselinePath);
+
+  assert.deepEqual(collectDocumentationIssues(repositoryRoot), []);
+  assert.deepEqual(readFileSync(baselinePath), before);
+});
+
+test('still rejects stale current README hashes without a historical baseline', (t) => {
+  const repositoryRoot = createRepositoryFixture(t);
+  unlinkSync(join(repositoryRoot, BASELINE_FILE));
+  appendFileSync(join(repositoryRoot, REQUIREMENT_FILE), '\nCurrent requirement change.\r\n');
+
+  const issues = collectDocumentationIssues(repositoryRoot);
+  const hashIssues = issues.filter((value) => value.check === 'requirement-hash');
+
+  assert.equal(hashIssues.length, 2);
+  assert.ok(hashIssues.every((value) => value.file === 'README.md'));
+  assert.ok(hashIssues.some((value) => /raw working-tree SHA-256 .* does not match/.test(value.reason)));
+  assert.ok(hashIssues.some((value) => /LF-normalized SHA-256 .* does not match/.test(value.reason)));
+  assert.ok(issues.some((value) => value.check === 'required-file' && value.file === BASELINE_FILE));
+});
+
+test('still validates links in a historical baseline', (t) => {
+  const repositoryRoot = createRepositoryFixture(t);
+  appendFileSync(join(repositoryRoot, BASELINE_FILE), '\n[Missing](../docs/missing.md)\n');
+
+  const issues = collectDocumentationIssues(repositoryRoot);
+
+  assert.ok(issues.some(
+    (value) => value.file === BASELINE_FILE && value.check === 'markdown-link',
+  ));
 });
 
 test('reports a missing required file', (t) => {

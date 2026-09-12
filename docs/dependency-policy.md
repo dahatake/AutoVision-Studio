@@ -30,9 +30,11 @@
 | **C6 — Curated Base Weight** | 基盤モデルの学習済み checkpoint（`.safetensors`、`.onnx`） |
 | **C7 — Annotation Assist Model checkpoint** | 補助 AI の checkpoint（同梱時のみ） |
 | **C8 — 学習元データ** | 重みを生成したデータセット（配布しないが由来を記録） |
-| **C9 — フォント・アイコン・その他** | 同梱するアセット類 |
+| **C9 — フォント・アイコン・その他** | 同梱するアセット類。FR-SMP-001〜005の公開サンプル画像・annotationを含む |
 
 FR-LIC-001 に基づき、すべてのカテゴリーにわたり、名称・バージョン・ライセンス・再配布条件を部品ごとに記録しなければならない。
+
+同梱サンプルはC9として画像とannotationの許諾を別々に確認する。そこからモデルを学習する場合のC8由来情報およびC6/C7重みの審査を代替せず、サンプルを`resources/models/manifest.json`へ登録しない。
 
 ---
 
@@ -65,6 +67,8 @@ FR-LIC-001 に基づき、すべてのカテゴリーにわたり、名称・バ
 組織の法務担当が指定されていないowner管理repositoryでは、project copyright holderかつrepository ownerをrepository license decision authorityとする。owner裁定は当該repositoryのrisk acceptanceであり、配布主体または所有者が変わる場合は新しい主体の権限者が再審査する。`unknown`、空欄、`NOASSERTION`は本手続きでも承認できない。
 
 2026-09-03のC0 package固有裁定は`docs/dependency-adoption/c0-review.md`に記録する。これは一般allowlistを拡張せず、記録されたversion、用途、配布条件のいずれかが変われば失効する。
+
+**公開サンプルのdataset固有裁定（2026-09-06追加）:** C9のサンプルにも同じ権限者・fail-closed原則を適用する。package名/lockの代わりにdataset名、固定revision、選定ID一覧と取得物・配布物のSHA-256を記録し、画像とannotationのライセンス、商用利用・改変・再配布、通知、変更表示を個別に確認する。BeansのMITとGWHD 2021 Version 1.0のCC BY 4.0について、ユーザーは同日のサンプル実装計画のデフォルトを採用した。これは記載された取得版・部分集合・通知条件に限るownerの条件付き採用判断であり、弁護士の助言、未取得bytesの検証完了、製品出荷の承認ではない。実体検証前は採用記録を条件未充足として保持する。CC BYを一般allowlistへ追加せず、別dataset・版・取得元・配布主体・通知条件への変更時は再審査する。
 
 **許可ライセンスの transitive 依存への適用**
 
@@ -233,6 +237,8 @@ CUDA を同梱しない場合は、その決定と CPU fallback の保証を上�
 - `npm ci` および `uv sync --locked` は lock ファイルに基づき package を取得する。これはビルドマシンのネットワーク接続を前提とするが、**取得先は lock ファイルに記録・承認された source のみ**とする。
 - lock ファイルに存在しない URL への接続、または lock の integrity と一致しないパッケージのインストールをエラーとする。
 - 自動更新ツール（Dependabot 等）が提案した変更は、§10 の依存追加・更新手順を経てレビューされるまで適用しない。
+- FR-SMP-005の公開サンプルは通常build/testから取得しない。開発者が独立した準備スクリプトを明示実行する場合だけ、§2.1のdataset固有採用記録に列挙した固定版URLから取得できる。取得キャッシュは`vendor/samples/`へ隔離し、原bytesのSHA-256、画像・annotation対応、サイズ、通知を検証した小規模資産だけを配布対象にする。承認済み取得・同梱容量を超える場合や個別取得不能時は停止し、全体ZIPや別ミラーへ自動切替しない。
+- 要求定義§3.3の限定例外として、審査済み公開サンプル資産と必要なLICENSE/NOTICE/帰属表示だけを同梱配布できる。利用者の画像・label・annotation・Project・モデル・学習/推論結果（サンプルからの編集・生成物を含む）は取得先にも配布先にも送信しない。この例外はmodelの実行時取得、一般の外部通信、C6/C7の承認を許可しない。
 - macOS notarization は採用済みデフォルト D-11 の配布工程例外として、承認済み製品payloadを含む最終PKGを Apple notary service へ送信する。ユーザー画像・ラベル・Project・ユーザー学習済みモデル・学習結果は提出物に含めない。それ以外の build 時外部通信はログに記録し、意図しない通信は異常として扱う。
 
 ---

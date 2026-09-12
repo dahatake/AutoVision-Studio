@@ -1,8 +1,16 @@
 import type {
+  Protocol,
   WebContents,
   WebPreferences,
   WindowOpenHandlerResponse,
 } from 'electron';
+
+/** Explicit primary-Main call before app.whenReady(); importing this module is inert. */
+export function registerImageScheme(protocol: Pick<Protocol, 'registerSchemesAsPrivileged'>): void {
+  protocol.registerSchemesAsPrivileged([{ scheme: 'av-image', privileges: {
+    standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, bypassCSP: false,
+  } }]);
+}
 
 export function createSecureWebPreferences(
   preloadPath?: string,

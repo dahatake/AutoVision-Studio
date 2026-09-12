@@ -1,0 +1,182 @@
+.project-form {
+  display: grid;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  max-inline-size: 64rem;
+  color: var(--color-text);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  overflow-wrap: anywhere;
+}
+
+form.project-form h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+
+form.project-form p,
+.project-form fieldset {
+  min-inline-size: 0;
+  margin: 0;
+}
+
+.project-form fieldset {
+  padding: 0;
+  border: 0;
+}
+
+.project-form__metadata,
+.project-form__description,
+.project-form__name,
+.project-form__destination {
+  display: grid;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.project-form__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--space-2);
+}
+
+.project-form__types,
+.project-form__parent,
+.project-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.project-form__types label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-block-size: 2.5rem;
+  cursor: pointer;
+}
+
+.project-form legend {
+  margin-block-end: var(--space-2);
+  padding: 0;
+}
+
+.project-form input[type='text'],
+.project-form textarea {
+  inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: 2.5rem;
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-width) solid var(--color-text-muted);
+  border-radius: var(--radius-small);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.project-form textarea {
+  block-size: 8rem;
+  min-block-size: 8rem;
+  resize: vertical;
+}
+
+.project-form button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  min-block-size: 2.5rem;
+  padding: var(--space-1) var(--space-3);
+  border: var(--border-width) solid var(--color-text-muted);
+  border-radius: var(--radius-small);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.project-form button:not(:disabled):hover {
+  background: var(--color-canvas);
+}
+
+.project-form .project-form__primary {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.project-form .project-form__primary:not(:disabled):hover {
+  background: var(--color-accent-hover);
+}
+
+.project-form button:disabled,
+.project-form input:disabled,
+.project-form textarea:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.project-form button:disabled {
+  border-style: dashed;
+  background: var(--cp-surface-soft);
+}
+
+.project-form .project-form__path {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.project-form__hint {
+  color: var(--color-text-muted);
+}
+
+.project-form__error {
+  color: var(--color-accent);
+}
+
+.project-form__status {
+  min-block-size: 1.5em;
+}
+
+.project-form :is(button, input, textarea, [tabindex]):focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--space-1);
+}
+
+@media (max-width: 48rem) {
+  .project-form__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (pointer: coarse) {
+  .project-form button,
+  .project-form__types label {
+    min-block-size: 2.75rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .project-form button,
+  .project-form input[type='text'],
+  .project-form textarea {
+    border-color: ButtonText;
+  }
+
+  .project-form .project-form__primary {
+    background: Highlight;
+    color: HighlightText;
+  }
+
+  .project-form :is(button, input, textarea, [tabindex]):focus-visible {
+    outline-color: Highlight;
+  }
+}

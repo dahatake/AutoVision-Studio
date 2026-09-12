@@ -97,7 +97,7 @@ HTTP サーバー、localhost API、message broker、汎用 RPC framework は一
 4. Worker は推論結果を NDJSON で stdout へ返す。
 5. フレームキューの最大深度は 1 とし、古い pending フレームは新しいフレームで置換する（最新フレーム優先）。
 
-> **Gate 1 PoC 境界:** Version 1 では Windows の binary pipe (SPI-07) と DirectML / CPU Execution Provider (SPI-08) を Gate 1 の証拠とする。保存済み PoC の到達範囲と未完了条件は §2.8 のとおりであり、Gate 1 全体は未解決である。CoreML/MPS の実機検証は将来 macOS backlog であり、Gate 1/4 の証拠には含めない。
+> **Gate 1 PoC 境界:** Version 1 では Windows の binary pipe (SPI-07) と DirectML / CPU Execution Provider (SPI-08) を Gate 1 の証拠とする。保存済み PoC の到達範囲と未完了条件は §2.8 のとおりである。Gate 1 部は 2026-09-07 に ADR-0004 で `CONDITIONAL_GO` と判定したが、core / Project / data import / manual annotation の開発開始に限る。CoreML/MPS の実機検証は将来 macOS backlog であり、Gate 1/4 の証拠には含めない。
 
 ### 2.6 障害・キャンセル動作
 
@@ -125,10 +125,11 @@ HTTP サーバー、localhost API、message broker、汎用 RPC framework は一
 |---|---|---|
 | SPI-07 binary pipe | Windows 11 24H2+ x64 で 320/640 固定 RGB、各 100 frame の transport PoC と不正入力 3 件の fail-closed を確認済み \[E07\] | カメラ統合、queue=1、実モデル、warm-up、30 分連続性能、FR-INF-010 / Gate 4 合格 |
 | SPI-08 ORT provider | Windows 11 24H2+ x64 で単一 FP32 `Add` model の CPUExecutionProvider / DmlExecutionProvider session、exact output、profile attribution を確認済み \[E08\] | 採用モデルの演算網羅性、部分 fallback、GPU adapter、latency、throughput、10 FPS、production 採用確定 |
-| SPI-03 Windows onedir | 現在の Windows host で Python path から隔離した onedir worker の CPU/DirectML 実行を確認済み。ただし clean Windows 実行は `NOT_RUN / BLOCKED` \[E03\] | 自己完結 installer、clean-host、license payload、Gate 1 合格 |
+| SPI-03 Windows onedir | 現在の Windows host で Python path から隔離した onedir worker の CPU/DirectML 実行を確認済み。ただし clean Windows 実行は `NOT_RUN / BLOCKED` で、SPI-03 自体は `SKIPPED_BY_USER` \[E03\] | SPI-03 PASS、clean-host、license payload |
+| SPI-05 Windows NSIS resource | 開発用 unsigned NSIS EXE に onedir worker 2,500 file を同梱し、source / staging / unpacked / installed の全 path・size・SHA-256、install 後の実 health / probe、uninstall 後の残留 0 を確認済み \[E05\] | production config、正式署名、SBOM / license、clean-host、servicing、Gate 4 / 5 合格 |
 | macOS CoreML/MPS | 公式資料、lock/package 調査、validator/parser および過去の設計研究を保持 | native Apple Silicon 実行、CoreML/MPS 合格、Version 1 Gate 1/4 の証拠 |
 
-したがって、Main / Renderer / Preload / Job Worker / Inference Worker の境界は Version 1 の承認済みデフォルトである一方、binary protocol の production 固定、採用モデルでの DirectML 適合、性能、packaging は各後続 Gate の合格まで未確定事項を残す。
+したがって、Main / Renderer / Preload / Job Worker / Inference Worker の境界は Version 1 の承認済みデフォルトであり、Gate 1 部は限定的に成立した。一方、binary protocol の production 固定、採用モデルでの DirectML 適合、性能、production packaging は各後続 Gate の合格まで未確定事項を残す \[D04\]。
 
 ---
 
@@ -150,7 +151,7 @@ HTTP サーバー、localhost API、message broker、汎用 RPC framework は一
 - Renderer に OS リソースへの直接 API を公開しないため、Renderer 内の不正入力が直接 filesystem や child process へ到達する経路を減らせる \[P01\]。
 - Main が単一の DB ライターとなり、データ競合と partial write を防止できる。
 - Python worker の異常終了を UI プロセスから分離できる。端末全体のメモリ圧迫などの資源競合は別途検出・制御が必要であり、プロセス分離だけで防げるとは扱わない。
-- Windows の binary pipe transport と単一 `Add` model による DirectML / CPU smoke は保存済み PoC の範囲で確認済みである。ただし production protocol、採用モデル互換性、30 分性能、packaging を含む Gate 1/4 合格は主張しない \[P07\]\[E07\]\[E08\]\[E03\]。
+- Windows の binary pipe transport、単一 `Add` model による DirectML / CPU smoke、開発用 NSIS への onedir 同梱・実起動は保存済み PoC の範囲で確認済みである。Gate 1 部は `CONDITIONAL_GO` だが、production protocol、採用モデル互換性、30 分性能、正式 package、Gate 4 / 5 合格は主張しない \[P07\]\[E07\]\[E08\]\[E03\]\[E05\]\[D04\]。
 - macOS CoreML/MPS の調査は将来 backlog として保持するが、Version 1 の実装・Gate・受入証拠には含めない \[P08\]。
 - localhost サーバー・RPC framework・プラグイン API を持たないため、実行時ポート競合・プラグイン起因の脆弱性・認証の複雑さが生じない。
 
@@ -168,7 +169,9 @@ HTTP サーバー、localhost API、message broker、汎用 RPC framework は一
 | \[E07\] | `spikes/inference/pipe-result.md` — Windows binary transport PoC の保存済み結果と制限 |
 | \[E08\] | `spikes/inference/provider-result.md` — Windows CPU/DirectML provider smoke の保存済み結果と制限 |
 | \[E03\] | `spikes/packaging/windows-result.md` — Windows onedir PoC の部分合格と未完了条件 |
+| \[E05\] | `spikes/packaging/windows-installer-result.md` — 開発用 Windows NSIS resource smoke の合格結果と production 非対象境界 |
+| \[D04\] | `docs/adr/0004-spike-decisions.md` — Gate 1 `CONDITIONAL_GO`、Gate 2 `BLOCKED / NOT_COMPLETE`、skip と残存リスクの現行判定 |
 
 ---
 
-*本 ADR は実装完了または Gate 合格を宣言するものではない。Windows の後続 PoC と Gate 1/4 の結果によって §2.5「Inference Worker」の詳細仕様が更新される可能性がある。macOS CoreML/MPS は将来版で新しい要求・PoC・Gate を設定して再決定する。*
+*本 ADR はプロセス構成の決定であり、Gate 判定の正本ではない。現行 Gate 1 / 2 判定は ADR-0004 を参照し、Gate 4 / 5 と製品実装は未完了のまま区別する。macOS CoreML/MPS は将来版で新しい要求・PoC・Gate を設定して再決定する。*

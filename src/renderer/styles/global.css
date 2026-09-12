@@ -42,6 +42,11 @@ a:hover {
   outline-offset: var(--space-1);
 }
 
+summary:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--space-1);
+}
+
 #root,
 .app-shell {
   min-block-size: 100vh;
@@ -49,11 +54,31 @@ a:hover {
 
 .app-shell {
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto 1fr auto;
+  overflow-wrap: anywhere;
+}
+
+.app-shell__header,
+.app-shell__navigation-list,
+.app-shell__actions,
+.app-shell__footer,
+.settings-page__header,
+.settings-page__category-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.app-shell__header > *,
+.app-shell__navigation-list > *,
+.app-shell__actions > *,
+.settings-page > * {
+  min-inline-size: 0;
 }
 
 .app-shell__header {
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-2) var(--space-5);
   border-block-end: var(--border-width) solid var(--color-border);
   background: var(--color-surface);
 }
@@ -62,24 +87,27 @@ a:hover {
   font-weight: var(--font-weight-semibold);
 }
 
-.app-shell__body {
-  display: grid;
-  grid-template-columns:
-    minmax(12rem, var(--navigation-inline-size))
-    minmax(0, 1fr);
-  min-block-size: 0;
+.app-shell__context,
+.app-shell__note,
+.app-shell__footer {
+  color: var(--color-text-muted);
+}
+
+.app-shell__badge {
+  padding-inline: var(--space-2);
+  border: var(--border-width) solid var(--color-accent);
+  border-radius: var(--radius-small);
+  background: var(--color-navigation-active);
+  color: var(--color-accent);
 }
 
 .app-shell__navigation {
   min-inline-size: 0;
-  padding: var(--space-3);
-  border-inline-end: var(--border-width) solid var(--color-border);
+  margin-inline-start: auto;
   background: var(--color-surface);
 }
 
 .app-shell__navigation-list {
-  display: flex;
-  flex-direction: column;
   gap: var(--space-1);
   margin: 0;
   padding: 0;
@@ -87,15 +115,20 @@ a:hover {
 }
 
 .app-shell__navigation-link {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 2.5rem;
   padding: var(--space-2) var(--space-3);
+  border-block-end: var(--focus-ring-width) solid var(--color-surface);
   border-radius: var(--radius-small);
   color: var(--color-text);
   overflow-wrap: anywhere;
   text-decoration: none;
 }
 
-.app-shell__navigation-link:hover {
+.app-shell__navigation-link:hover,
+.settings-page__category-navigation a:hover {
   background: var(--color-canvas);
   color: var(--color-text);
 }
@@ -103,19 +136,181 @@ a:hover {
 .app-shell__navigation-link[aria-current='page'] {
   background: var(--color-navigation-active);
   color: var(--color-navigation-active-text);
+  border-block-end-color: var(--color-accent);
   font-weight: var(--font-weight-semibold);
 }
 
 .app-shell__main {
   min-inline-size: 0;
-  padding: var(--space-6);
+  max-inline-size: 100%;
+  padding: var(--space-4) var(--space-5);
   overflow-wrap: anywhere;
 }
 
 .app-shell__main h1 {
-  margin-block: 0 var(--space-4);
+  margin: 0;
   font-size: var(--font-size-heading);
   line-height: 1.25;
+}
+
+.app-shell__page,
+.app-shell__workflow,
+.settings-page {
+  display: grid;
+  gap: var(--space-3);
+  min-inline-size: 0;
+}
+
+.app-shell__card,
+.settings-page__content {
+  min-inline-size: 0;
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--space-4);
+  background: var(--color-surface);
+}
+
+.app-shell__card h1,
+.settings-page__content h2 {
+  margin-block: 0 var(--space-2);
+}
+
+.settings-page__content h2 {
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+
+.app-shell__main p {
+  margin-block: 0 var(--space-2);
+}
+
+.app-shell__main p:last-child,
+.app-shell__workflow > .app-shell__note,
+.app-shell__actions > p {
+  margin: 0;
+}
+
+.app-shell__actions + .app-shell__note {
+  margin-block-start: var(--space-2);
+}
+
+.app-shell :where(button),
+.app-shell__text-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  min-block-size: 2.5rem;
+}
+
+.app-shell :where(button) {
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid var(--color-text-muted);
+  border-radius: var(--radius-small);
+  background: var(--color-surface);
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.app-shell :where(button:hover) {
+  background: var(--color-canvas);
+}
+
+.app-shell .app-shell__preview-button {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.system-icon {
+  display: inline-block;
+  flex: none;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  vertical-align: middle;
+}
+
+.workflow-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border-radius: var(--radius-small);
+  background: var(--color-surface);
+}
+
+.workflow-tabs__tab {
+  flex: 1 1 9rem;
+  min-block-size: 2.75rem;
+  border-color: var(--color-surface);
+  border-block-end-width: var(--focus-ring-width);
+}
+
+.workflow-tabs__tab > span,
+.app-shell__navigation-link > span,
+.app-shell__text-link > span {
+  min-inline-size: 0;
+}
+
+.settings-page__header {
+  justify-content: space-between;
+}
+
+.settings-page__header h1 {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.settings-page__category-navigation {
+  gap: var(--space-1);
+  border-radius: var(--radius-small);
+  background: var(--color-surface);
+}
+
+.settings-page__category-navigation a {
+  min-block-size: 2.5rem;
+  padding: var(--space-2) var(--space-3);
+  border-block-end: var(--focus-ring-width) solid var(--color-surface);
+  border-radius: var(--radius-small);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.workflow-tabs__tab[aria-selected='true'],
+.settings-page__category-navigation a[aria-current='page'] {
+  border-block-end-color: var(--color-accent);
+  background: var(--color-navigation-active);
+  color: var(--color-navigation-active-text);
+  font-weight: var(--font-weight-semibold);
+}
+
+.settings-page__content summary {
+  min-block-size: 2rem;
+  padding-block: var(--space-1);
+  cursor: pointer;
+}
+
+.license-text {
+  max-block-size: min(6rem, 15vh);
+  margin-block: var(--space-1);
+  padding: var(--space-2);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-small);
+  background: var(--cp-bg-elevated);
+  font-family: Consolas, "Courier New", Courier, monospace;
+  font-size: 1rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow: auto;
+}
+
+.app-shell__footer {
+  padding: var(--space-1) var(--space-5);
+  border-block-start: var(--border-width) solid var(--color-border);
+  background: var(--color-surface);
 }
 
 .skip-link {
@@ -136,25 +331,40 @@ a:hover {
 }
 
 @media (max-width: 48rem) {
-  .app-shell__body {
-    grid-template-columns: minmax(0, 1fr);
+  .app-shell__header,
+  .app-shell__main,
+  .app-shell__footer {
+    padding-inline: var(--space-4);
+  }
+}
+
+@media (pointer: coarse) {
+  .app-shell :is(button, a, summary) {
+    min-block-size: 2.75rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .app-shell :where(button),
+  .app-shell .app-shell__preview-button,
+  .app-shell__badge,
+  .app-shell__card,
+  .settings-page__content {
+    border-color: ButtonText;
   }
 
-  .app-shell__navigation {
-    border-inline-end: 0;
-    border-block-end: var(--border-width) solid var(--color-border);
+  .app-shell__navigation-link[aria-current='page'],
+  .workflow-tabs__tab[aria-selected='true'],
+  .settings-page__category-navigation a[aria-current='page'],
+  .skip-link,
+  .skip-link:focus {
+    background: Highlight;
+    color: HighlightText;
+    border-block-end-color: HighlightText;
   }
 
-  .app-shell__navigation-list {
-    flex-flow: row wrap;
-  }
-
-  .app-shell__navigation-list > li {
-    flex: 1 1 12rem;
-    min-inline-size: 0;
-  }
-
-  .app-shell__main {
-    padding: var(--space-5);
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible,
+  summary:focus-visible {
+    outline-color: Highlight;
   }
 }

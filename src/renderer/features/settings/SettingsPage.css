@@ -1,0 +1,18 @@
+/* The connected diagnostic owns its cards; do not nest it in a second card.
+   Other categories and the persistent Project draft slot retain their layout. */
+.settings-page.settings-page--device {
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.settings-page--device > .settings-page__content {
+  grid-column: 1 / -1;
+  padding: 0;
+  border: 0;
+  background: var(--cp-bg);
+}
+
+@media (max-width: 48rem) {
+  .settings-page.settings-page--device { grid-template-columns: minmax(0, 1fr); }
+}

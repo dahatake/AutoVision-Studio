@@ -7,7 +7,7 @@
 | 最終更新日 | 2026-09-04 |
 | 対象リリース | Version 1（MVP）|
 | 対象リポジトリ | `dahatake/AutoVision-Studio` |
-| 要求定義基準 | [`docs/requirement-definition.md`](requirement-definition.md) v0.4 Draft |
+| 要求定義基準 | [`docs/requirement-definition.md`](requirement-definition.md) v0.5 Draft |
 
 ---
 
@@ -15,13 +15,13 @@
 >
 > **本ドキュメントは開発中の Version 1（MVP）を説明します。利用可能な完成アプリケーションとインストーラーはまだありません。**
 >
-> - Electron lifecycle、secure window、限定的な Preload API、navigation shell、Python `health` CLI の source と対象 test、および build 設定は存在します。
+> - Electron lifecycle、secure window、限定的なProject・診断API、navigation shell、Pythonの `health` / `probe-hardware` / `scan-dataset` のsourceと対象test、およびbuild設定は存在します。
 > - 画面別の製品機能、学習、推論、製品 installer の大部分は未実装です。
 > - Version 1 用の Windows インストーラーは存在しません。macOS 向けアプリケーションとインストーラーは Version 1 の成果物ではありません。
 > - 各節の手順・ボタン名・パス・スクリーンショットは、**実装が完了し動作が検証されるまで記載しません。**
 > - 実装フェーズの完了に伴い、対応する節のみを実測した情報で更新します。
 >
-> **本書の内容に基づいた操作は現在行えません。** 実装進捗は [`docs/implementation-plan.md`](implementation-plan.md) を参照してください。
+> **本書は完成した製品操作手順ではありません。** 一部のProject操作には開発版の技術smoke結果がありますが、学習・推論までの製品フローやWindows配布の受入は未完了です。実装進捗は [`docs/implementation-plan.md`](implementation-plan.md)、実行証拠は[UI/Core実行記録](ui-ux-execution.md)を参照してください。
 
 ### 状態凡例
 
@@ -68,7 +68,7 @@
 >
 > **最終化条件:** Gate 4 と Windows の DOCS-401、DOCS-403〜406 の実測 evidence
 
-この章の `検証待ち` は、診断を含む利用者向け初回フロー全体を指します。Electron lifecycle、secure window、Preload の `contractVersion`、navigation shell は実装済みですが、feature IPC と Project / data / annotation API は未実装です。
+この章の `検証待ち` は、診断を含む利用者向け初回フロー全体を指します。Electron lifecycle、secure window、navigation shellに加え、限定的なProject・診断IPCとPreload API、Projectの作成・一覧・設定更新・移動／復旧のbackendにはsourceと対象testがあります。取込結果のDB保存、annotation、学習・推論までを接続した製品フローの完成を意味しません。現在の接続・実行証拠と未完了範囲は[UI/Core実行記録](ui-ux-execution.md)と[開発ガイド](developer-guide.md)を参照してください。
 
 > **この節は実装完了後に実測内容で更新します。現時点は要求定義からの抜粋です。**
 
@@ -292,7 +292,7 @@ Project は AutoVision Studio の最上位管理単位です。1 つの Project 
 
 データ取り込み時に必ずどちらかを選択します（FR-DAT-002）。
 
-この選択は Project 作成時の保存場所とは別です。Copy / Reference は取り込む元データの保持方法を決め、Project 作業フォルダーはアプリが管理する database、artifact、cache の配置先を決めます。選択 UI の形式や既定値は未確定です。
+この選択は Project 作成時の保存場所とは別です。Copy / Reference は取り込む元データの保持方法を決め、Project 作業フォルダーはProject所有の画像・artifact・cacheの配置先になります。共通のSQLiteメタデータDB、移動記録、migration用backupはMainが定めるapp-data（`userData`）側に別置きされ、Project作業フォルダーの変更では移動しません。Projectフォルダーだけのコピーを完全なバックアップとみなさないでください。製品の取込UI・バックアップ／復元手順は各Windows受入後に案内します。
 
 | モード | 概要 | 注意点 |
 |---|---|---|
@@ -764,6 +764,17 @@ Project・Dataset Revision・Training Run・Model Version・キャッシュご�
 ### 診断ログの出力
 
 ローカル診断 export はユーザーの操作時だけ生成され、含有項目が事前に表示されます（NFR-SEC-004）。ログには画像本体は含まれません（FR-SEC-010）。
+
+**この小節の現状（2026-09-12／開発版0.1.0）：** 限定した「診断要約」の保存を接続しました。一般的な生ログの収集や、診断画面の全データの書き出しではありません。本章のほかの未実装機能や、製品全体の受入完了を意味しません。
+
+- 設定の「端末・容量」にある「診断要約を保存」が明示的な入口です。起動・診断取得だけでは要約ファイルを作りません。保存要求時にMain側で診断を取得し直すため、表示中の観測値とは取得時点が異なる場合があります。
+- 実装では、OS確認ダイアログに要約本文と保存先を表示し、「保存」の承認後だけ保存します。「キャンセル」が既定で、取消応答ではファイルを生成しません。確認画面の応答処理は自動試験で検証していますが、**OS確認画面の実描画・本人の操作・Narratorは未検証**です。
+- 本文はOSの数値情報、CPU数、メモリ・ディスク容量、GPU件数、既知providerの一覧への有無、固定の取得状態などに限定します。画像、機器名、自由な版文字列、Project情報、生ログ、絶対パスは含めません。CPU動作可・推奨構成・モデル性能の判定でもありません。
+- 保存先はMain管理の`userData/logs`配下の新規`diagnostics-<UUID>.txt`です。既存ファイルを上書きしません。成功時の「保存先を表示」から長いパスも全文を確認できます。**保存先の表示**にはパスが含まれますが、保存する**要約本文**には含まれません。
+- 「別の診断要約を確認・保存中」は先行要求の終了待ちです。「保存結果を確認できません」は取消・未生成の証明ではなく、途中ファイルや保存済みファイルが残る場合があります。再度要求する前に保存先の状態を確認してください。アプリは失敗後の自動再送や既存ファイルの削除を行いません。
+- 詳細画面から戻ること自体は、送信済みの保存要求の取消ではありません。取消は確認画面で行います。古い接続で「要約保存：利用不可」と表示される場合も、診断の取得は別の機能として利用できます。
+
+開発版の実UI→Preload→Main→Python→ファイル保存は隔離環境で9ステップ・21画面を確認済みです。確認ダイアログの取消／承認にはテスト応答を使った限定技術検証であり、完成製品の操作手順・正式配布の合格とは扱いません。証拠と残条件は[SEC-07実行記録](ui-ux-execution.md#sec-07診断要約の明示保存限定接続2026-09-12)を参照してください。
 
 ---
 

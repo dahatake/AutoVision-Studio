@@ -1,0 +1,452 @@
+{
+  "files": [
+    {
+      "byteSize": 1084,
+      "path": "LICENSE.txt",
+      "sha256": "6bd5d9a34c6a5aa3700e38f4deed272cc116f5c443d68ec461e775a6ee00b9e5"
+    },
+    {
+      "byteSize": 2312,
+      "path": "ATTRIBUTION.txt",
+      "sha256": "5f09e4908b2581ad2a1792ac748a70d0bc6506e0fdd1f17cfca05e39005cc1df"
+    }
+  ],
+  "id": "beans",
+  "images": [
+    {
+      "byteSize": 172270,
+      "label": "angular_leaf_spot",
+      "path": "images/angular_leaf_spot/angular_leaf_spot_train.0.jpg",
+      "sha256": "581604b273ba420fb821f558c036ccfcdffa128b80c688e5c46288b4482ab534",
+      "sourceId": "train/angular_leaf_spot/angular_leaf_spot_train.0.jpg"
+    },
+    {
+      "byteSize": 128332,
+      "label": "angular_leaf_spot",
+      "path": "images/angular_leaf_spot/angular_leaf_spot_train.1.jpg",
+      "sha256": "4a6cbe1a7cd7ed05bc393b52a3590cdd4815d310129a0e24b0dfb1b80a86bd6c",
+      "sourceId": "train/angular_leaf_spot/angular_leaf_spot_train.1.jpg"
+    },
+    {
+      "byteSize": 150876,
+      "label": "angular_leaf_spot",
+      "path": "images/angular_leaf_spot/angular_leaf_spot_train.10.jpg",
+      "sha256": "55cc43a8697b25928f0749e933d86dae7f33cc3bb4ceb22fc44b7caf20469478",
+      "sourceId": "train/angular_leaf_spot/angular_leaf_spot_train.10.jpg"
+    },
+    {
+      "byteSize": 132481,
+      "label": "angular_leaf_spot",
+      "path": "images/angular_leaf_spot/angular_leaf_spot_train.100.jpg",
+      "sha256": "baa9ca76016841d378c81373dcc9ddcbe9dd1f81285ee5d563341ba0b301a00e",
+      "sourceId": "train/angular_leaf_spot/angular_leaf_spot_train.100.jpg"
+    },
+    {
+      "byteSize": 124961,
+      "label": "angular_leaf_spot",
+      "path": "images/angular_leaf_spot/angular_leaf_spot_train.101.jpg",
+      "sha256": "570dcee8f2e3ba07f350073d4c1682248c57ad435edcf96ecec22f86654c3ffc",
+      "sourceId": "train/angular_leaf_spot/angular_leaf_spot_train.101.jpg"
+    },
+    {
+      "byteSize": 139883,
+      "label": "angular_leaf_spot",
+      "path": "images/angular_leaf_spot/angular_leaf_spot_train.102.jpg",
+      "sha256": "cf91bcc54140cd951dd426714ed43f7993704fa2b926e71b385e5c243beeb124",
+      "sourceId": "train/angular_leaf_spot/angular_leaf_spot_train.102.jpg"
+    },
+    {
+      "byteSize": 145412,
+      "label": "angular_leaf_spot",
+      "path": "images/angular_leaf_spot/angular_leaf_spot_train.103.jpg",
+      "sha256": "f691f0f77de2c7d23477734334951e82e1e4116d0910f32e6a308a467d6e4eb4",
+      "sourceId": "train/angular_leaf_spot/angular_leaf_spot_train.103.jpg"
+    },
+    {
+      "byteSize": 142126,
+      "label": "angular_leaf_spot",
+      "path": "images/angular_leaf_spot/angular_leaf_spot_train.104.jpg",
+      "sha256": "e3c89e5425464586f9d745997fba37ea0bb99f875f46164fec29162522f0be50",
+      "sourceId": "train/angular_leaf_spot/angular_leaf_spot_train.104.jpg"
+    },
+    {
+      "byteSize": 133430,
+      "label": "angular_leaf_spot",
+      "path": "images/angular_leaf_spot/angular_leaf_spot_train.105.jpg",
+      "sha256": "01bf752c107afe16d0f0e462e3e9b7f4d0e22082de0cd5aa94896b115234b88b",
+      "sourceId": "train/angular_leaf_spot/angular_leaf_spot_train.105.jpg"
+    },
+    {
+      "byteSize": 126473,
+      "label": "angular_leaf_spot",
+      "path": "images/angular_leaf_spot/angular_leaf_spot_train.106.jpg",
+      "sha256": "cf4b9f8361ea0a83a8c70e62b969ec1c6ed1491473004ac99a4a5f285ab0bb75",
+      "sourceId": "train/angular_leaf_spot/angular_leaf_spot_train.106.jpg"
+    },
+    {
+      "byteSize": 145171,
+      "label": "angular_leaf_spot",
+      "path": "images/angular_leaf_spot/angular_leaf_spot_train.107.jpg",
+      "sha256": "47f207b4e3160ca64a1aceff8dc09614b09d219c7f41c9692f48290b45f8aca8",
+      "sourceId": "train/angular_leaf_spot/angular_leaf_spot_train.107.jpg"
+    },
+    {
+      "byteSize": 161113,
+      "label": "angular_leaf_spot",
+      "path": "images/angular_leaf_spot/angular_leaf_spot_train.108.jpg",
+      "sha256": "f776a054b12884f565176be939f2ea33cfc330201440264d088c37af609be261",
+      "sourceId": "train/angular_leaf_spot/angular_leaf_spot_train.108.jpg"
+    },
+    {
+      "byteSize": 150535,
+      "label": "angular_leaf_spot",
+      "path": "images/angular_leaf_spot/angular_leaf_spot_train.109.jpg",
+      "sha256": "31401f7e9ab4b5cb18c5f7c85d4d996c7fe72ab4b2e5e1c6575a8f52d93bfb9e",
+      "sourceId": "train/angular_leaf_spot/angular_leaf_spot_train.109.jpg"
+    },
+    {
+      "byteSize": 149595,
+      "label": "angular_leaf_spot",
+      "path": "images/angular_leaf_spot/angular_leaf_spot_train.11.jpg",
+      "sha256": "87a0a4e6a5d45610c22395c76b1abd235b2ae31f67d25f39af98efdb31d7b4f3",
+      "sourceId": "train/angular_leaf_spot/angular_leaf_spot_train.11.jpg"
+    },
+    {
+      "byteSize": 135155,
+      "label": "angular_leaf_spot",
+      "path": "images/angular_leaf_spot/angular_leaf_spot_train.110.jpg",
+      "sha256": "a874669bc7b6b169e338d0865ef6726a444a48766756945dc73141728807a807",
+      "sourceId": "train/angular_leaf_spot/angular_leaf_spot_train.110.jpg"
+    },
+    {
+      "byteSize": 130958,
+      "label": "angular_leaf_spot",
+      "path": "images/angular_leaf_spot/angular_leaf_spot_train.111.jpg",
+      "sha256": "1f92891f17f6e5dc7dd252ed4e030c8bfee85cbacf97e455eb0e96541545ef5f",
+      "sourceId": "train/angular_leaf_spot/angular_leaf_spot_train.111.jpg"
+    },
+    {
+      "byteSize": 131477,
+      "label": "angular_leaf_spot",
+      "path": "images/angular_leaf_spot/angular_leaf_spot_train.112.jpg",
+      "sha256": "f708e4735fdcf080bf02b89e6843b05df0009cfe4686656ece9e0849976f55f9",
+      "sourceId": "train/angular_leaf_spot/angular_leaf_spot_train.112.jpg"
+    },
+    {
+      "byteSize": 128560,
+      "label": "angular_leaf_spot",
+      "path": "images/angular_leaf_spot/angular_leaf_spot_train.113.jpg",
+      "sha256": "49696f09dea4ad60bf07d1bfebcdf6348a688f86bf2d8118cf40afc2884198ca",
+      "sourceId": "train/angular_leaf_spot/angular_leaf_spot_train.113.jpg"
+    },
+    {
+      "byteSize": 131487,
+      "label": "angular_leaf_spot",
+      "path": "images/angular_leaf_spot/angular_leaf_spot_train.114.jpg",
+      "sha256": "93ebfc15e67f837ee5eff3a18a9e4d6bf617e41df6b740de7ccc0449f15eccc1",
+      "sourceId": "train/angular_leaf_spot/angular_leaf_spot_train.114.jpg"
+    },
+    {
+      "byteSize": 140350,
+      "label": "angular_leaf_spot",
+      "path": "images/angular_leaf_spot/angular_leaf_spot_train.115.jpg",
+      "sha256": "363595f1e55f0ee5082b78464b06a06836eb938b00d3cf549279366060659d96",
+      "sourceId": "train/angular_leaf_spot/angular_leaf_spot_train.115.jpg"
+    },
+    {
+      "byteSize": 102570,
+      "label": "bean_rust",
+      "path": "images/bean_rust/bean_rust_train.0.jpg",
+      "sha256": "7983f1e3f538a1aeac96a07618511e742c367e52135438f24d538f69e893c651",
+      "sourceId": "train/bean_rust/bean_rust_train.0.jpg"
+    },
+    {
+      "byteSize": 133897,
+      "label": "bean_rust",
+      "path": "images/bean_rust/bean_rust_train.1.jpg",
+      "sha256": "b401ee27883b561651ee3d5d00e16a779b4cdfc4656a2b237a91148fb4367a55",
+      "sourceId": "train/bean_rust/bean_rust_train.1.jpg"
+    },
+    {
+      "byteSize": 122123,
+      "label": "bean_rust",
+      "path": "images/bean_rust/bean_rust_train.10.jpg",
+      "sha256": "8d69365cf9bb36c809c30f006692499abacc3e8a87b3fad614ea8b544b399531",
+      "sourceId": "train/bean_rust/bean_rust_train.10.jpg"
+    },
+    {
+      "byteSize": 132597,
+      "label": "bean_rust",
+      "path": "images/bean_rust/bean_rust_train.100.jpg",
+      "sha256": "7a04f2c0f28bcc7458fa11c1b500a5e2bec9a6a92223e89052318e3f2cdea630",
+      "sourceId": "train/bean_rust/bean_rust_train.100.jpg"
+    },
+    {
+      "byteSize": 167420,
+      "label": "bean_rust",
+      "path": "images/bean_rust/bean_rust_train.101.jpg",
+      "sha256": "cddb4a83833fe6a31b0dbc17297b44ee266a7f049f57999888293853d4da4229",
+      "sourceId": "train/bean_rust/bean_rust_train.101.jpg"
+    },
+    {
+      "byteSize": 109876,
+      "label": "bean_rust",
+      "path": "images/bean_rust/bean_rust_train.102.jpg",
+      "sha256": "a23f5a13240867d08d7ac3e3234b1427390bbd91fd0603038ddfcfecf70f2289",
+      "sourceId": "train/bean_rust/bean_rust_train.102.jpg"
+    },
+    {
+      "byteSize": 119137,
+      "label": "bean_rust",
+      "path": "images/bean_rust/bean_rust_train.103.jpg",
+      "sha256": "f8f3ff9d5153e9aa8ad14a2ebb9787393d8ff2502379319fdb69db0a7f41519c",
+      "sourceId": "train/bean_rust/bean_rust_train.103.jpg"
+    },
+    {
+      "byteSize": 151494,
+      "label": "bean_rust",
+      "path": "images/bean_rust/bean_rust_train.104.jpg",
+      "sha256": "2c5b2b94fd923c8186835f1c668e1e64b41f64f773a7b45f77effdaf71a076c6",
+      "sourceId": "train/bean_rust/bean_rust_train.104.jpg"
+    },
+    {
+      "byteSize": 113479,
+      "label": "bean_rust",
+      "path": "images/bean_rust/bean_rust_train.105.jpg",
+      "sha256": "4134e36300d7fa8a28a287842da28add0c82b95f3b710e9b51205c8d8b648bc5",
+      "sourceId": "train/bean_rust/bean_rust_train.105.jpg"
+    },
+    {
+      "byteSize": 116703,
+      "label": "bean_rust",
+      "path": "images/bean_rust/bean_rust_train.106.jpg",
+      "sha256": "1246dca980ccf1d7d6657b5b806a8b31887c5c457a663adb2a852232125d090e",
+      "sourceId": "train/bean_rust/bean_rust_train.106.jpg"
+    },
+    {
+      "byteSize": 131383,
+      "label": "bean_rust",
+      "path": "images/bean_rust/bean_rust_train.107.jpg",
+      "sha256": "4ac2a92d7fa2f12648e51ca6e71e1c8e70d7f25274fb0ac81888113a11147354",
+      "sourceId": "train/bean_rust/bean_rust_train.107.jpg"
+    },
+    {
+      "byteSize": 127684,
+      "label": "bean_rust",
+      "path": "images/bean_rust/bean_rust_train.108.jpg",
+      "sha256": "970f1cb33a8fee13268ffac06a142a83ae78af578564699d88c81458b833f637",
+      "sourceId": "train/bean_rust/bean_rust_train.108.jpg"
+    },
+    {
+      "byteSize": 123489,
+      "label": "bean_rust",
+      "path": "images/bean_rust/bean_rust_train.109.jpg",
+      "sha256": "7fdc1914c3d3e48bc1a00ea44838f4b6ce7bb986d169226b8ffc68800478229a",
+      "sourceId": "train/bean_rust/bean_rust_train.109.jpg"
+    },
+    {
+      "byteSize": 104237,
+      "label": "bean_rust",
+      "path": "images/bean_rust/bean_rust_train.11.jpg",
+      "sha256": "e8f7cb6d1ca8ce6b2d71dfe1d21c47778a4c700caa882f7862aeafee5c88a48d",
+      "sourceId": "train/bean_rust/bean_rust_train.11.jpg"
+    },
+    {
+      "byteSize": 124067,
+      "label": "bean_rust",
+      "path": "images/bean_rust/bean_rust_train.110.jpg",
+      "sha256": "3829a90875af26899ce32fccf55e8da0a2bc3bbc5cd6cc12e563e199d01a3e2e",
+      "sourceId": "train/bean_rust/bean_rust_train.110.jpg"
+    },
+    {
+      "byteSize": 158678,
+      "label": "bean_rust",
+      "path": "images/bean_rust/bean_rust_train.111.jpg",
+      "sha256": "7570cd256bc22011dcac8d780d099a178ec2b29196ac3541c5bfe4219ef700a7",
+      "sourceId": "train/bean_rust/bean_rust_train.111.jpg"
+    },
+    {
+      "byteSize": 121981,
+      "label": "bean_rust",
+      "path": "images/bean_rust/bean_rust_train.112.jpg",
+      "sha256": "9cafa337e54d7846d74132423e633721617c2bc3df1dacd91783579125733c1a",
+      "sourceId": "train/bean_rust/bean_rust_train.112.jpg"
+    },
+    {
+      "byteSize": 141279,
+      "label": "bean_rust",
+      "path": "images/bean_rust/bean_rust_train.113.jpg",
+      "sha256": "84b20edc3000872f4e5d6e1c35f6b1d71bdfab5275e3f7559496ad61b9a7bd89",
+      "sourceId": "train/bean_rust/bean_rust_train.113.jpg"
+    },
+    {
+      "byteSize": 128087,
+      "label": "bean_rust",
+      "path": "images/bean_rust/bean_rust_train.114.jpg",
+      "sha256": "9eee3eeb3408db2966526b1735a61c46395446cd61bd65f51b08b5ada01ca9cf",
+      "sourceId": "train/bean_rust/bean_rust_train.114.jpg"
+    },
+    {
+      "byteSize": 157015,
+      "label": "bean_rust",
+      "path": "images/bean_rust/bean_rust_train.115.jpg",
+      "sha256": "bfdd0f7375e11b7a0e2a84ace3308233dbc7df0cf0ea35a564791fd9c5a8fafa",
+      "sourceId": "train/bean_rust/bean_rust_train.115.jpg"
+    },
+    {
+      "byteSize": 143460,
+      "label": "healthy",
+      "path": "images/healthy/healthy_train.0.jpg",
+      "sha256": "70d70ea39346062c67f7288d13ee1a18527fbe5cd4b93637639c9a89f032ca06",
+      "sourceId": "train/healthy/healthy_train.0.jpg"
+    },
+    {
+      "byteSize": 156342,
+      "label": "healthy",
+      "path": "images/healthy/healthy_train.1.jpg",
+      "sha256": "fe34f758653f94e5689b8d69c019d62fb2fadf2e0d06a9bbd34052a33d37491d",
+      "sourceId": "train/healthy/healthy_train.1.jpg"
+    },
+    {
+      "byteSize": 111760,
+      "label": "healthy",
+      "path": "images/healthy/healthy_train.10.jpg",
+      "sha256": "82f6b7ea47e8150189a4152039171d8fad5bccf77d478c6f818f72431cda3e02",
+      "sourceId": "train/healthy/healthy_train.10.jpg"
+    },
+    {
+      "byteSize": 132828,
+      "label": "healthy",
+      "path": "images/healthy/healthy_train.100.jpg",
+      "sha256": "a29cfd06a3d83e4a7a3697faf15503be4dacb1598000b1ac63d632aba7285d47",
+      "sourceId": "train/healthy/healthy_train.100.jpg"
+    },
+    {
+      "byteSize": 147792,
+      "label": "healthy",
+      "path": "images/healthy/healthy_train.101.jpg",
+      "sha256": "bfbaf32b541dbe1d5a7f74a3177d629e9e6366b2e6875ad0097d0251a54658d6",
+      "sourceId": "train/healthy/healthy_train.101.jpg"
+    },
+    {
+      "byteSize": 115901,
+      "label": "healthy",
+      "path": "images/healthy/healthy_train.102.jpg",
+      "sha256": "10ddc7bfca8b0e2f898f1cbff41955d41cfe748d16c92c1e65bae7b454e12b67",
+      "sourceId": "train/healthy/healthy_train.102.jpg"
+    },
+    {
+      "byteSize": 151204,
+      "label": "healthy",
+      "path": "images/healthy/healthy_train.103.jpg",
+      "sha256": "1aa83cb92663d431fa7b6e7c50118edbdaf291b7c288f90323cdf700415f05a1",
+      "sourceId": "train/healthy/healthy_train.103.jpg"
+    },
+    {
+      "byteSize": 142494,
+      "label": "healthy",
+      "path": "images/healthy/healthy_train.104.jpg",
+      "sha256": "41151fc502859d0d22a36e2d2424f1293ffc19719cc7b8124c79510c514b6a38",
+      "sourceId": "train/healthy/healthy_train.104.jpg"
+    },
+    {
+      "byteSize": 136879,
+      "label": "healthy",
+      "path": "images/healthy/healthy_train.105.jpg",
+      "sha256": "21835df6d2621969d2ae5fdea08e4911173c2f759a99e2db4eb3a19c3cbc40a2",
+      "sourceId": "train/healthy/healthy_train.105.jpg"
+    },
+    {
+      "byteSize": 134302,
+      "label": "healthy",
+      "path": "images/healthy/healthy_train.106.jpg",
+      "sha256": "536072e766165466c76e64f636fceb218e08970a041fd684f7901c1dafb272e9",
+      "sourceId": "train/healthy/healthy_train.106.jpg"
+    },
+    {
+      "byteSize": 118822,
+      "label": "healthy",
+      "path": "images/healthy/healthy_train.107.jpg",
+      "sha256": "df505ccfab2f0ea11885e53898ebdce187422b318ad8d43ba8952378a8a9140a",
+      "sourceId": "train/healthy/healthy_train.107.jpg"
+    },
+    {
+      "byteSize": 147939,
+      "label": "healthy",
+      "path": "images/healthy/healthy_train.108.jpg",
+      "sha256": "55b31582c8abbe886bbb6985f40f62dd5da8bd0ed6eb4a0bdd287778f4e8ad4f",
+      "sourceId": "train/healthy/healthy_train.108.jpg"
+    },
+    {
+      "byteSize": 162966,
+      "label": "healthy",
+      "path": "images/healthy/healthy_train.109.jpg",
+      "sha256": "006f04899e68caef48a5f381edc37590f65df582f2c7c59071d285b4a53a28ac",
+      "sourceId": "train/healthy/healthy_train.109.jpg"
+    },
+    {
+      "byteSize": 148599,
+      "label": "healthy",
+      "path": "images/healthy/healthy_train.11.jpg",
+      "sha256": "c154ac5e02c52331f8181fc90d7120abcfc6b8e94e238f31ecb293ee23778916",
+      "sourceId": "train/healthy/healthy_train.11.jpg"
+    },
+    {
+      "byteSize": 172308,
+      "label": "healthy",
+      "path": "images/healthy/healthy_train.110.jpg",
+      "sha256": "8d5438bed089424c76dd70ebfda494fb3ad4cb4a65e4a55fdc13dd1222b86b71",
+      "sourceId": "train/healthy/healthy_train.110.jpg"
+    },
+    {
+      "byteSize": 158962,
+      "label": "healthy",
+      "path": "images/healthy/healthy_train.111.jpg",
+      "sha256": "45b2e15aca40ea25c7f2b2ac6527b98c3b7921ed024ce778021913af1e9b4d4f",
+      "sourceId": "train/healthy/healthy_train.111.jpg"
+    },
+    {
+      "byteSize": 143622,
+      "label": "healthy",
+      "path": "images/healthy/healthy_train.112.jpg",
+      "sha256": "68cad4e2960a90f84e6b61c87ef5805ebc9ba52ec6c91ca5b0f13c0cca152d0c",
+      "sourceId": "train/healthy/healthy_train.112.jpg"
+    },
+    {
+      "byteSize": 146279,
+      "label": "healthy",
+      "path": "images/healthy/healthy_train.113.jpg",
+      "sha256": "092ba11bcd956e154e4211a3b52ec3e56ad6d1c414b026e37ba1193677cbda36",
+      "sourceId": "train/healthy/healthy_train.113.jpg"
+    },
+    {
+      "byteSize": 143831,
+      "label": "healthy",
+      "path": "images/healthy/healthy_train.114.jpg",
+      "sha256": "e156757353f40aafd0a4be5b0e6c2446341e346bef0058bcc9798650b51b2d96",
+      "sourceId": "train/healthy/healthy_train.114.jpg"
+    },
+    {
+      "byteSize": 156052,
+      "label": "healthy",
+      "path": "images/healthy/healthy_train.115.jpg",
+      "sha256": "6871b23ac3201acc2e7ef4d426d6606036e883aebb2090b7af9f9e63ec82c467",
+      "sourceId": "train/healthy/healthy_train.115.jpg"
+    }
+  ],
+  "licenses": {
+    "annotations": "MIT",
+    "images": "MIT"
+  },
+  "sampleVersion": 1,
+  "schemaVersion": 1,
+  "source": {
+    "byteSize": 143812152,
+    "dataset": "Beans",
+    "sha256": "284fe8456ce20687f4367ae7ad94a64577e7f9fde2c2c6b1c74340ab5dc82715",
+    "url": "https://huggingface.co/datasets/AI-Lab-Makerere/beans/resolve/27aa014ce09b193e1a6f58112d4a66e0eddb69c5/data/train.zip",
+    "version": "27aa014ce09b193e1a6f58112d4a66e0eddb69c5"
+  },
+  "sourceSplit": "train",
+  "taskType": "classification"
+}

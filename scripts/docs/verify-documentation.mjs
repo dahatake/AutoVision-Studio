@@ -25,7 +25,7 @@ export const REQUIRED_MARKDOWN_FILES = Object.freeze([
   'docs/architecture.md',
   'docs/requirement-definition.md',
   'docs/implementation-plan.md',
-  'work/20260904-DocumentationFactBaseline.md',
+  'docs/documentation-fact-baseline.md',
 ]);
 
 export const REQUIRED_SVG_FILES = Object.freeze([
@@ -1141,8 +1141,8 @@ export function collectDocumentationIssues(repositoryRoot = process.cwd()) {
     }
   }
   collectMarkdownFiles(resolve(root, 'docs'), root, markdownFiles, issues);
-  if (requiredContents.has('work/20260904-DocumentationFactBaseline.md')) {
-    markdownFiles.push('work/20260904-DocumentationFactBaseline.md');
+  if (requiredContents.has('docs/documentation-fact-baseline.md')) {
+    markdownFiles.push('docs/documentation-fact-baseline.md');
   }
   const uniqueMarkdownFiles = [...new Set(markdownFiles)].sort();
   const markdownCache = new Map();
@@ -1162,13 +1162,10 @@ export function collectDocumentationIssues(repositoryRoot = process.cwd()) {
   }
 
   const requirementBytes = requiredContents.get('docs/requirement-definition.md');
-  const baseline = requiredContents
-    .get('work/20260904-DocumentationFactBaseline.md')
-    ?.toString('utf8');
-  if (requirementBytes && readme !== undefined && baseline !== undefined) {
+  // work/ records pin historical requirements; only README declares the current baseline.
+  if (requirementBytes && readme !== undefined) {
     const hashResult = validateRequirementHashes(requirementBytes, [
       { file: 'README.md', text: readme },
-      { file: 'work/20260904-DocumentationFactBaseline.md', text: baseline },
     ]);
     issues.push(...hashResult.issues);
   }

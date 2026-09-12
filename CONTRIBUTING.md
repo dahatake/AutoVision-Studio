@@ -1,6 +1,6 @@
 # AutoVision Studio — 開発・検証方針
 
-> このファイルは `docs/requirement-definition.md` v0.4、`docs/implementation-plan.md` §1.3、§4〜§6 と ADR-0001、ADR-0003 を根拠とする。Version 1 の開発・検証・リリース対象は Windows 11 24H2 以降 x64 のみであり、macOS は将来 backlog である。
+> このファイルは `docs/requirement-definition.md` v0.5、`docs/implementation-plan.md` §1.3、§4〜§6 と ADR-0001、ADR-0003 を根拠とする。Version 1 の開発・検証・リリース対象は Windows 11 24H2 以降 x64 のみであり、macOS は将来 backlog である。
 > 2026-09-02 の作成時点では実装コードはまだ存在しなかった。この記述は履歴として残し、現在の開発手順と実装状態は [`docs/developer-guide.md`](docs/developer-guide.md) と [`docs/architecture.md`](docs/architecture.md) を参照する。
 
 ---
@@ -159,11 +159,13 @@ migration とそれを使う repository、backend と UI、分類と検出は原
 
 | 対象 | 正本 | 整合性の境界 |
 |---|---|---|
-| ML worker package | `ml/pyproject.toml` | `ml/src/autovision_ml/__init__.py`との既存test。health診断ではcomponent版として返すが、利用者向けheaderには製品版だけを表示する |
+| ML worker package | `ml/pyproject.toml` | `ml/src/autovision_ml/__init__.py`との既存test。health診断ではcomponent版として返すが、利用者向けの設定「ライセンス・情報」にはworker版ではなく、root `package.json`の`version`→既存`PRODUCT_VERSION`由来の製品版だけを表示する |
 | Preload API contract | `src/shared/contracts/app.ts` | Main/Preload/Renderer間のcontract test |
 | Release model manifest schema | `resources/models/manifest.schema.json` | JSON Schemaとrelease verifier |
 | Project Model Version | Project metadataとmodel artifact | parent、Dataset Revision、artifact hash |
 | DB schema | 順序付きmigration | migration runnerとrollback test |
+
+2026-09-07の承認済みUIR-009（`docs/implementation-plan.md` §2.1）に従う表示先変更であり、旧V-D07のheader表示決定は履歴として保持する。専用About route/dialogや新規IPCは追加せず、表示実装・検証はUIR-015/016で行う。
 
 `resources/models/manifest.json`の製品版は次の3状態だけを許可する。
 

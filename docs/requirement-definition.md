@@ -3,8 +3,9 @@
 | 項目 | 内容 |
 |---|---|
 | 文書名 | AutoVision Studio 要求定義書 |
-| 文書バージョン | 0.4 Draft |
+| 文書バージョン | 0.5 Draft |
 | 作成日 | 2026-09-02 |
+| 最終更新日 | 2026-09-07（UI改善追補） |
 | 対象リリース | Version 1（MVP） |
 | 対象リポジトリ | `dahatake/AutoVision-Studio` |
 | ステータス | Windows MVP スコープ確定・実装中 |
@@ -74,6 +75,7 @@ Azure Machine Learning の資料 [S37][S38] は UI と human-in-the-loop の設�
 - 複数 Project の作成、一覧、更新、削除
 - single-label multi-class の画像分類 Project と、multi-class bounding box の物体検出 Project
 - ローカルファイルまたはフォルダーからの学習データ取り込み
+- 商用利用・改変・再配布条件を確認した画像分類用と物体検出用の固定サンプルを各1種類同梱し、利用者の明示操作で通常の Project として作成する導線
 - 元ファイルの Project 作業領域へのコピー、または元パスの参照
 - データ検証と学習用・検証用・テスト用分割
 - バックグラウンド学習
@@ -109,6 +111,8 @@ Azure Machine Learning の資料 [S37][S38] は UI と human-in-the-loop の設�
 - Project の作成、データ取り込み、学習、HPO、モデル変換、評価、保存、カメラ推論、ログ、診断には Cloud resource、外部 API、外向き通信を一切使用しない。
 - モデル、Execution Provider、依存ライブラリは、監査済みインストーラーへ事前同梱する。実行時 download を行わない。
 - 開発・リリース工程における公開ソフトウェアの取得、Windows コード署名、配布物の公開はアプリの実行機能には含めない。ただし、これらへ画像、ラベル、Project、モデル、学習結果を送信してはならない。
+- 固定サンプル用の公開画像・ラベル・アノテーションは、商用利用・改変・再配布条件を確認したものに限り、開発工程で開発者の明示操作によって取得する。build/test、インストール、初回起動を含むアプリ実行時にサンプルを自動ダウンロードしない。
+- 開発・リリース工程の上記送信禁止に対する例外は、審査済み公開サンプル payload を必要な著作権表示、ライセンス本文、NOTICE、attribution、改変表示と共に同梱して再配布する場合だけとする。ユーザーの画像、ラベル、アノテーション、Project、モデル、学習結果・推論結果は、サンプル由来の編集・生成データも含めて外部送信しない。この例外は、その他の Cloud 不使用およびモデルの取得・監査・同梱条件を変更しない。
 - 将来の macOS 対応で Apple notarization を採用する場合も同じデータ境界を適用し、TBD-04 で配布方法を再決定する。
 
 ## 4. 対応プラットフォーム
@@ -166,15 +170,14 @@ Azure Machine Learning の資料 [S37][S38] は UI と human-in-the-loop の設�
 
 ### 7.1 共通ナビゲーション
 
-- Project 一覧
-- 選択中 Project 名とタスク種別
-- 教師データ
-- 学習
-- Training Run
-- 結果・レポート
-- 推論
-- Project 設定
-- ローカルジョブ状態、使用デバイス、空き容量、警告
+2026-09-07、ユーザーは UI/UX改善プラン v2 の DU-01〜23 を全て推奨デフォルトAで採用し、実装を指示した。以下は承認済みの目標であり、実装完了を意味しない。
+
+- 共通header：アプリ名、選択中 Project 名とタスク種別、Project 一覧、設定。
+- Project 内の作業タブ：**取り込む／教師データ／学習／結果／カメラで試す**。未到達タブも開け、不足条件を示す。閲覧だけで作成・学習・カメラを開始しない。
+- 設定カテゴリ：Project、ラベル定義、推論、端末・容量、ライセンス・情報。製品版はライセンス・情報で表示し、root `package.json` を正本とする。
+- Training Run の実行・履歴は「学習」、7つのレポートタブとモデル版比較は「結果」、補助ジョブは「教師データ」と共通ジョブ欄から到達する。
+- 初回診断は Project 一覧の要約と設定「端末・容量」へ配置する。Project 未作成でも到達でき、診断の取得中・失敗を正常な対応レベルと誤表示しない。
+- ローカルジョブ状態、使用デバイス、空き容量、警告を維持する。未取得の値を仮の正常値で埋めない。
 
 ### 7.2 画面一覧
 
@@ -191,6 +194,24 @@ Azure Machine Learning の資料 [S37][S38] は UI と human-in-the-loop の設�
 | UI-09 | Label Schema | class の作成、名前変更、統合、削除、model alias、色、説明、正常例・境界例・反例 |
 | UI-10 | 教師データ作成 | 分類の gallery/single view、検出の rectangle editor、補助候補、確認状態、filter、確定 |
 | UI-11 | 補助ジョブ | 使用モデル版、進捗、候補件数、score/threshold、accept/edit/reject、再生成、キャンセル |
+
+### 7.3 UI改善の追加要求
+
+画面IDは責務と追跡のため保持し、11画面を5機能へ削減しない。次の11要求は既存234要求への追加である。詳細な分割・検証担当はUI/UX改善プランの§3〜11に従い、旧要求の安全条件と既存Gateを緩和しない。
+
+| ID | 要求 | 優先度 |
+|---|---|---|
+| FR-UI-001 | §7.1の主導線からUI-01〜11の全責務へ到達できる。作成はProject一覧、低頻度の定義編集は設定に配置し、設定から直前の作業へ戻れる。画面遷移はnavigation、同一画面内の切替はtabsとして実装し、focusと選択状態を区別する。 | 必須 |
+| FR-UI-002 | 現在対象、主操作、戻る、undo、cancel/stop、保存状態、確認待ち、重要警告と対処入口を主画面に残す。Copy推奨でもCopy/Referenceの明示選択と権利確認を省略せず、補助model/version/hash/policy、画像単位の人手確認、カメラ同意を設定へ隠さない。HPO入力を新設せず、結果metadataと全7レポートタブを保持する。 | 必須 |
+| FR-UI-003 | 作業状態と成果物はProject/Workspace/Revision/Run/ModelのIDを照合した実domain値から表示する。過去版の学習成功を現在編集中のデータの完了へ転用せず、利用可能な旧modelと現在作業の状態を分ける。評価条件の差を表示し、異なる条件の指標差だけで改善を強調しない。未接続の画面は未実装と明示し、仮の成功値・指標・進捗を製品経路へ入れない。 | 必須 |
+| FR-UI-004 | 保存と人手確認を別状態とする。確認済みitemの内容変更時はMainとUIで確認を解除し、内容と同時保存する。undo/redoは内容だけを戻し確認済みを復元しない。離脱・Dataset確定前に未保存変更をflushし最新ackを待ち、失敗時はdraftを保持して再試行または明示破棄を選べる。Mainで期待する更新識別・内容hash・確認状態を再検証し、変更された内容や二重要求をcommitしない。Revision確定とQueue登録失敗は分け、同じ確定版への復旧で重複Runを作らない。NFR-ANN-001の1秒内保存開始とNFR-PERF-002のcommit成功後5秒内Queue登録を維持する。 | 必須 |
+| FR-UI-005 | Project/Label Schema/Inference Profileの設定を各domainへ独立保存し、成功応答の確定値、未保存・保存中・失敗、部分成功を区別する。設定往復でdirty draftを上書きせず、Projectを跨いで混載しない。新modelの生成で利用者の選択を勝手に変更せず、Profile保存値は次の明示startへ適用し、実行中処理へ遡及適用しない。作業フォルダー変更は検証済みMain処理を用い、task lockはFR-PRJ-006、Schema lockはFR-ANN-012の別契機に従う。 | 必須 |
+| FR-UI-006 | 利用者の明示操作で、選択Projectの保存済みProject metadata、Label Schema定義、Inference ProfileだけをProject直下の `setting.txt` へUTF-8・2-space整形JSONとして書き出せる。Project帰属と独立したformatVersionを持ち、未設定を仮値で埋めない。画像bytes・画像単位annotation・HPO・成績・同意記録・camera frame・raw logは含めない。SQLiteを正本とし、txtの自動読込・監視・適用・importを提供しない。同sessionで出力対象設定を変更・保存したら未書き出し表示へ戻し、session間の同期判定を追加しない。 | 必須 |
+| FR-UI-007 | txt書出し前に対象Projectの未保存・保存中・失敗draftを解消する。Rendererから任意pathやsnapshotを渡さず、Mainがsender/main frame・Project所属・pathを検証し、既存fileの上書きをOS標準dialogで確認する。確認中はlock/transactionを保持せず、承認後にProject・保存先・fileの同一性を再検証して保存済み値を一つのread transactionで取得し、通常更新と同じ短い排他範囲でchecksum付きatomic renameを行う。cancel・越境・差替え・write/rename失敗時は旧txtを保持し、成功済みDB保存を巻き戻さない。txtはProject所有データとして削除previewに含め、Reference元や外部コピーを削除しない。 | 必須 |
+| FR-UI-008 | content 1280×640 CSS px・100%を通常基準とし、現在対象/状態・主操作・警告入口を画面内に収める。全件へfilter/pageで到達可能とする。局所scrollの例外は全文license、instruction、選択Trial全parameter、2次元の表・図・拡大画像だけとする。200%と基準未満はreflow・到達性を優先して縦scrollを許す。文字縮小・切捨て・scrollbar隠蔽だけで合格とせず、実windowのCSS viewportとcontrol矩形を検証する。 | 必須 |
+| FR-UI-009 | 既存React/CSSとOS fontを使い、Clawpilot系tokenのOS連動light/dark、必要な監査済みFluent System Iconsと短い日本語labelを提供する。本文contrast 4.5:1、意味のある非文字情報3:1を実組合せで検証し、色だけで意味を示さない。tabsの矢印/Home/Endはfocus移動、Enter/Space/clickは選択とし、skip-link、戻り先focus、読み上げlabel、high contrast、reduced motionを保持する。live regionは保存完了・失敗等の必要通知に限定し、10Hz metricsを連呼しない。未要求のtheme/density設定やUI kitを追加しない。 | 必須 |
+| FR-UI-010 | 画像shortcutはinput/textarea/contenteditable/IME変換中に発火させない。一括label対象は画像IDで保持し、選択総数と表示外件数を明示する。page/filter/resizeで対象を勝手に追加せず、高score候補の一括承認を提供しない。分類・検出とも画像のzoom/pan/fit/actual-sizeを提供し、UI全体の200%拡大とは別に検証する。 | 必須 |
+| FR-UI-011 | カメラ開始待ち中のstop・離脱・Project切替で当該開始要求を失効させる。遅延成功したtrackは直ちに停止しsampler/workerを開始せず、旧応答・metricsを新sessionへ表示しない。設定往復だけで再開せず次の明示startを要求する。同意前非起動、audio無効、停止後2秒内device解放、非保存の既存要求を保持する。 | 必須 |
 
 ## 8. 機能要求
 
@@ -449,6 +470,22 @@ Azure Machine Learning の資料 [S37][S38] は UI と human-in-the-loop の設�
 | FR-INS-018 | 失敗またはキャンセル時は、作成途中の app file、service、shortcut、registry/package receipt を rollback し、動作不能な部分インストールを残さない。 | 必須 |
 | FR-INS-019 | clean install では OS 再起動を要求しない。使用中ファイルにより upgrade 後の再起動が不可避な場合だけ理由を表示し、ユーザーに選択させる。 | 必須 |
 | FR-INS-020 | Version 1 はWindowsのAppsからアンインストール手順へ到達できる。アプリ本体と同梱runtimeは削除し、ユーザーProjectは既定で保持する。Projectも削除する場合は対象と容量を明示して別途確認する。macOSの導線は将来対応で定義する。 | 必須 |
+
+### 8.11 固定サンプル Project
+
+2026-09-06 に承認された追加要求である。素材の取得・検証、アプリ内の作成・編集、学習・推論、製品配布は別の到達点とし、素材を配置しただけでアプリ内試用や既存 Gate の合格を主張しない。
+
+| ID | 要求 | 優先度 |
+|---|---|---|
+| FR-SMP-001 | Beans の分類サンプル60枚（`angular_leaf_spot`、`bean_rust`、`healthy` 各20枚）と Global Wheat Head Dataset 2021 Version 1.0 の検出サンプル20枚（小麦の穂1クラス）を固定資産として用意する。元trainから選定し、原画像bytesと選定画像の全annotationを保持する。分類はクラス別フォルダー、検出はCOCO JSONと画像ルートとして通常importを使用する。 | 必須 |
+| FR-SMP-002 | Project一覧からの利用者の明示操作で新しいUUIDの通常Projectを作成し、保存場所、FR-DAT-002のCopy/Reference選択、FR-LIC-009の権利確認を省略しない。Copyを推奨し、Referenceはapp更新・アンインストールで参照切れになり得ることを説明する。初回起動時の自動登録、既存Projectの上書き、サンプル専用DBを提供しない。 | 必須 |
+| FR-SMP-003 | 取り込んだannotationは取込由来と人の確認状態を分離し、自動的に確認済みへ変更しない。編集時のprovenanceはFR-ANN-007に従う。開いただけで学習やカメラを起動せず、Revision確定時のFR-ANN-014/FR-TRN-001を維持する。未承認モデル、偽の予測・学習結果を使わない。 | 必須 |
+| FR-SMP-004 | データセットの固定版、画像とannotationそれぞれの許諾、出典URL、原ID、サイズ、SHA-256、必要なLICENSE/NOTICE/帰属表示、部分選択・形式変換を記録する。通知と由来情報はReferenceでもProject側に保持し、オフラインで閲覧できる。同梱原本をread-onlyで扱い、Project編集・削除は原本や他Projectを変更しない。 | 必須 |
+| FR-SMP-005 | 公開サンプルの取得は§3.3の開発者による明示準備だけで行う。初回取得ファイル合計256 MiB、最終同梱資産合計96 MiBを上限とし、展開・コピーの一時容量は別途検査する。権利未確定、hash不一致、不正画像・矩形、件数不足、取得不能、容量超過では停止し、全体ZIP取得・未知のミラー・別データ・resize・枚数削減へ自動切替しない。通常build/testと製品実行に取得処理を接続しない。 | 必須 |
+
+選定IDは固定し、取得後の実測hashを完全性検証に用いる。確定後の分割はFR-DAT-009/010の通常処理を使用する。公式benchmark、撮影session間の独立性、固定精度・学習時間を保証せず、操作・学習フロー体験用と表示する。既存のモデル承認・実機・配布Gateは緩和しない。
+
+一次資料（2026-09-06参照）: [Beans原作者のデータ許諾](https://github.com/AI-Lab-Makerere/ibean)、[GWHD 2021原記録](https://zenodo.org/records/5092309)、[CC BY 4.0法文](https://creativecommons.org/licenses/by/4.0/legalcode.en)。採用実体のhash・検証・dataset固有の判断は採用記録で確定し、この要求追加を実体の検証済み証拠にはしない。
 
 ## 9. データモデル
 
@@ -792,6 +829,14 @@ SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要�
 18. **初期補助候補:** 初回 Project でも承認済み同梱モデルから label 名候補、分類候補、または rectangle 候補を表示し、ユーザーが accept/edit/reject できる。候補処理と画像単位の人手確認を省略する自動承認経路は存在しない。
 19. **既存モデル選択:** Project に複数 Model Version がある場合、補助に使う版を選択でき、候補に model version/hash が表示・保存される。
 20. **モデル支援の安全性:** 未確認候補が学習データに 0 件であること、外向き通信 0 件であること、全同梱 checkpoint がライセンス承認済みであることを検査で証明する。
+21. **固定サンプル:** 分類・検出の両サンプルから、明示的な保存場所・Copy/Reference・権利確認を経て通常Projectを作成できる。画像と取込ラベル/矩形の表示、編集、保存、再起動後復元、独立UUIDでの再作成、削除時の原本・他Project保護、オフラインの通知閲覧を実アプリで確認する。人手確認前のannotationを確定せず、素材検証・編集試用・学習/推論・製品配布の到達点を別々に記録する。既存の学習・モデル・Windows配布の受入条件は省略しない。
+22. **主導線と密度:** FR-UI-001、FR-UI-002、FR-UI-008に従い、Project一覧・設定・5作業タブからUI-01〜11へ到達する。1280×640 CSS px・100%の実windowで現在対象/状態・主操作・警告入口の矩形とscroll量、隠蔽の有無を確認する。1440×900/1920×1080では画像領域・件数を活用し、1024×600程度・200%ではreflowと全操作への到達を優先する。0/1/多数件、長いUnicode名/path/instruction、多数Error、全Trial parameterを件数・文字数が明確なfixtureで検証し、許可された局所scroll以外で操作を隠さない。
+23. **操作とアクセシビリティ:** FR-UI-009、FR-UI-010に従い、mouseとkeyboardで同じ操作ができ、矢印/Home/Endのfocus移動だけではtab選択を変えず、Enter/Space/clickで切り替わる。skip-link、戻り先focus、Windows Narrator、100%/200%、light/darkの実色contrast、high contrast、reduced motionを検証する。入力欄・IME中の画像shortcut抑制、一括選択の表示外件数と対象ID保持、分類/検出のfit/actual-size/zoom/pan、4K/100矩形の元座標非変更を確認する。操作応答は既存NFR-ANN-002/NFR-PERF-001の測定条件で実測し、新しい根拠なしの性能値を合格基準にしない。
+24. **保存・確認・確定の分離:** FR-UI-004、FR-UI-005に従い、連続編集、遅延/古いack、確認済み内容の再編集とundo/redo、一括変更、保存失敗中の離脱・確定、dialog表示後の内容変化、二重確定を検証する。最後の成功保存を再起動後に復元し、未確認・旧hashをRevisionへ入れず、commit後のQueue失敗を区別し、復旧でRevision/Runを重複作成しない。Project切替のdraft分離と、実行中学習が閲覧遷移で停止しないことを確認する。
+25. **成果物の帰属と設定:** FR-UI-003、FR-UI-005に従い、r1成功＋w2編集中、r2Queued、失敗/Cancelledを用い、現在作業と利用可能modelを区別する。異なる評価条件は条件差を示し、実測指標でも差だけを改善と断定しない。新model生成後も推論対象の利用者選択を保ち、Profile保存値は次の明示startへ適用する。ProjectとSchemaの別lock契機、各domainの部分成功・失敗を確認し、未実装画面に成功値を表示しない。
+26. **設定txtの実ファイル:** FR-UI-006、FR-UI-007に従い、UI→Main→Project直下の `setting.txt` が保存済み値と一致するUTF-8 JSONであること、allowlist外・他Project・画像等を含めないこと、再起動時に設定正本へしないことを検証する。上書き拒否、dialog待ち中の移動/削除/差替え、sender/所属/path越境、write/rename失敗で旧txtと成功済みDB保存を保持する。同sessionで設定を保存し直した後の未書き出し表示、削除preview/実削除の所有範囲も確認する。
+27. **カメラの遅延応答:** FR-UI-011に従い、同意前、権限拒否、取得待ち中のstop・離脱・Project切替、遅延resolve/reject、start-stop-start、切断、Project削除を検証する。失効trackは停止し旧metricsを表示せず、設定からの復帰だけでは再開しない。音声・disk保存なしと2秒内device解放はWindows実機でも確認し、unit testのみで実機合格にしない。
+28. **段階確認と証拠:** M1（画面枠）、M2（手動教師データ）、M3（補助・学習・結果・推論）、設定書出しを別判定する。本人確認では現在対象/状態・次の結果・戻り先について期待IDと実回答/操作を照合し、達成/未達/未実施を記録する。M1やUI試験の合格はGate 1〜5、モデル承認、署名・clean install・servicing、全文書の完成を代替しない。各タスクは対象testと独立敵対的レビュー、指摘反映後の再検証を必要とし、未実施を合格に数えない。offline・通知・rights・人手確認・サンプル原本保護の既存受入も維持する。
 
 ## 17. 元要求とのトレーサビリティ
 
@@ -821,6 +866,27 @@ SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要�
 | 商用利用可能なモデル/ソフトウェアのみ | 8.8, 13.1–13.3, POC-09, POC-16 |
 | Windowsインストーラー、macOSは将来対応 | 3.1, 8.10, 11.7, POC-11–13, 16.13–15 |
 | インストーラー完了後すぐ利用可能 | FR-INS-003–006, FR-INS-012–014, NFR-INS-001–002 |
+| 公開・再配布可能な分類/検出サンプルで試用 | 3.1, 3.3, FR-SMP-001〜005, 16.21 |
+
+### 17.1 UI改善要求の割当
+
+2026-09-07の承認による11要求を追加し、定義総数は**245件（従来234件＋FR-UIの11件）**となる。以下はUI/UX改善プランへの実行割当であり、実装・試験済みを意味しない。旧機能タスクは同計画の移管先と既存Gateを継承する。UIR-003は本節と冒頭の最終更新日だけを同一baseline整合の文書節数例外として更新し、Draft版番号と過去承認日は保持する。
+
+| 追加要求 | 実装担当（UIRは改善プランのID） | 受入・検証 | 操作文書担当 |
+|---|---|---|---|
+| FR-UI-001：主導線・11責務・戻る | UIR-013〜016、UIR-020、UIR-025、UIR-038、UIR-066C | §16.22/23/28、UIR-017/041Q/080/081/084 | UIR-D01A/D01/D02/D14A/D14B |
+| FR-UI-002：必須操作と結果情報の保持 | UIR-024、UIR-030、UIR-035〜043、UIR-044〜047、UIR-058、UIR-067/068 | §16.22/28、既存DAT/ANN/AST/TRN/REP/INFのE2E、UIR-081/084 | UIR-D03〜D10、UIR-D07P |
+| FR-UI-003：実状態・世代・比較条件 | UIR-015/016、UIR-044/045、UIR-061/066、UIR-077 | §16.25、UIR-078/081、TRN-32/33、REP-10 | UIR-D08/D09/D14/D18 |
+| FR-UI-004：保存・確認・確定 | ANN-08(B)、ANN-22、UIR-031/031U/037/038、UIR-C01〜C03、UIR-W03、UIR-041 | §16.24、ANN-27/28、UIR-041Q/081 | UIR-D04/D05/D06 |
+| FR-UI-005：設定保存・別lock・反映契機 | UIR-023/035、UIR-055〜057、UIR-059/059C、UIR-076、CORE-06、ANN-03 | §16.24/25、UIR-081/082 | UIR-D02/D06/D09/D11 |
+| FR-UI-006：保存済み設定のtxt書出し | UIR-070/071/075/076 | §16.26、UIR-082 | UIR-D11/D12/D16 |
+| FR-UI-007：txt境界・排他・非破壊 | UIR-072〜074、UIR-079、REL-01/04 | §16.26、UIR-082、既存SEC-02/03 | UIR-D11/D12/D15/D16 |
+| FR-UI-008：密度・全件到達・reflow | UIR-012/016、各機能画面 | §16.22、UIR-017/041Q/080/083 | UIR-D01A、UIR-D01〜D06、UIR-D13 |
+| FR-UI-009：外観・icon・アクセシビリティ | UIR-006/010/011/014、各機能画面 | §16.23、UIR-017/080/083、ACC-01、UX-01 | UIR-D01A/D10/D13 |
+| FR-UI-010：画像操作・選択・IME | UIR-029/032L/032I/033/034 | §16.23/24、ANN-27/28、UIR-081/083 | UIR-D04/D05 |
+| FR-UI-011：camera開始失効・復帰 | UIR-062/063、既存INF経路 | §16.27、UIR-081、INF-13/14 | UIR-D09 |
+
+設定書出しはDU-01〜03=Aに限定し、設定importへ読み替えない。全UI判定はUIR-086→実測対応DOC→UIR-087で集約し、§15の製品リリースGateと分離する。
 
 ## 18. 未決事項
 

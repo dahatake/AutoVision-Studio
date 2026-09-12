@@ -51,6 +51,7 @@ const captureRect = { x: 0, y: 0, width: 960, height: 540 };
 const markers = [];
 const rendererDiagnostics = [];
 let partialResult = null;
+let lastBaselineFailure = null;
 let pendingSuccessEvidence = null;
 let focusRecoveryCount = 0;
 
@@ -193,11 +194,84 @@ function assertCaptureDimensions(reference, capture, label) {
   }
 }
 
+async function recordUnstableBaseline(window, label, captures) {
+  const evidence = {
+    label,
+    observedAt: new Date().toISOString(),
+    captures: captures.map((capture, index) => ({ attempt: index + 1, ...capture })),
+    postFailureFocus: null,
+    postFailureVisual: null,
+    postFailureCapture: null,
+    diagnosticErrors: [],
+  };
+  lastBaselineFailure = evidence;
+  // These extra observations are not per-attempt snapshots or an atomic frame/state pair.
+  try {
+    evidence.postFailureFocus = {
+      browserWindowFocused: window.isFocused(),
+      webContentsFocused: window.webContents.isFocused(),
+      browserWindowVisible: window.isVisible(),
+    };
+    const snapshot = await timeout(
+      window.webContents.executeJavaScript(`(async () => ({
+        visual: await window.spi10Benchmark.visual(),
+        hasFocus: document.hasFocus(),
+        visibilityState: document.visibilityState,
+      }))()`),
+      `${label} diagnostic snapshot`,
+      10_000,
+    );
+    evidence.postFailureFocus.rendererDocumentFocused = snapshot.hasFocus;
+    evidence.postFailureFocus.visibilityState = snapshot.visibilityState;
+    evidence.postFailureVisual = {
+      sha256: sha256(JSON.stringify(snapshot.visual)),
+      boxCount: snapshot.visual.boxes.length,
+      draft: snapshot.visual.draft,
+      viewport: snapshot.visual.viewport,
+      selectedId: snapshot.visual.selectedId,
+    };
+  } catch (error) {
+    evidence.diagnosticErrors.push({
+      stage: 'snapshot',
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
+  try {
+    const image = await timeout(
+      window.webContents.capturePage(captureRect),
+      `${label} diagnostic capture`,
+      10_000,
+    );
+    if (image.isEmpty()) throw new Error('diagnostic capture returned an empty image');
+    const bitmap = image.toBitmap();
+    const png = image.toPNG();
+    const safeLabel = label.replace(/[^a-z0-9_-]/giu, '_').slice(0, 80) || 'baseline';
+    const fileName = `unstable-baseline-${runId}-${safeLabel}.png`;
+    await writeFile(new URL(`./dist/${fileName}`, import.meta.url), png);
+    evidence.postFailureCapture = {
+      file: `build/spi10/dist/${fileName}`,
+      sha256: sha256(bitmap),
+      byteLength: bitmap.byteLength,
+      size: image.getSize(),
+      pngSha256: sha256(png),
+      pngByteLength: png.byteLength,
+    };
+  } catch (error) {
+    evidence.diagnosticErrors.push({
+      stage: 'capture',
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
+  return evidence;
+}
+
 async function captureStableStage(window, label) {
   const maximumAttempts = 6;
+  const captures = [];
   let previous = null;
   for (let attempt = 1; attempt <= maximumAttempts; attempt += 1) {
     const capture = await captureStage(window, `${label} attempt ${attempt}`);
+    captures.push(capture);
     if (previous !== null) {
       assertCaptureDimensions(previous, capture, label);
       if (previous.sha256 === capture.sha256) {
@@ -207,7 +281,9 @@ async function captureStableStage(window, label) {
     previous = capture;
     await settleInput(window);
   }
-  throw new Error(`${label} did not stabilize after ${maximumAttempts} attempts`);
+  const error = new Error(`${label} did not stabilize after ${maximumAttempts} attempts`);
+  error.evidence = await recordUnstableBaseline(window, label, captures);
+  throw error;
 }
 
 async function captureChangedStage(window, baseline, label) {
@@ -1271,6 +1347,7 @@ async function runBenchmarkHarness() {
       markers,
       rendererDiagnostics,
       partialResult,
+      lastBaselineFailure,
       name: error instanceof Error ? error.name : 'UnknownError',
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : null,
