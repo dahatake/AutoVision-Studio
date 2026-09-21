@@ -11,6 +11,7 @@ import { createImportApi } from './import-api.js';
 import { createJobApi } from './job-api.js';
 import { createLabelSchemaApi } from './label-schema-api.js';
 import { createProjectApi } from './project-api.js';
+import { createRevisionApi } from './revision-api.js';
 
 const appApi: AppApi = Object.freeze({
   contractVersion: APP_API_CONTRACT_VERSION,
@@ -32,6 +33,9 @@ const appApi: AppApi = Object.freeze({
     removeListener: (channel, listener) => ipcRenderer.removeListener(channel, listener),
   }),
   imports: createImportApi({
+    invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
+  }),
+  revisions: createRevisionApi({
     invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
   }),
 });

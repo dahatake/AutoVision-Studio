@@ -9,6 +9,7 @@ import type { DatabaseConnection } from '../db/database.js';
 import {
   canonicalAnnotationJson, importWorkspaceStamp, readWorkspaceHeader, readWorkspaceItem,
   readWorkspaceProjectState, readWorkspaceSchemaState, workspaceTransaction,
+  freezeWorkspaceValue,
 } from './workspace-repository.js';
 
 /** Content only; neither human confirmation nor Revision/source-byte readiness. */
@@ -17,6 +18,24 @@ export const checkAnnotationContent = validateAnnotationForSchema;
 export interface ValidationIssue {
   readonly itemId: string;
   readonly code: AnnotationValidationIssue | 'unconfirmed' | 'excluded' | 'invalid-stored';
+}
+
+export interface WorkspaceValidationIssue extends ValidationIssue {
+  readonly imageKey: string | null;
+}
+
+export interface WorkspaceValidationResult {
+  readonly valid: boolean;
+  readonly workspaceId: string;
+  readonly total: number;
+  readonly confirmed: number;
+  readonly unconfirmed: number;
+  readonly excluded: number;
+  readonly schemaOutside: number;
+  readonly invalidRectangles: number;
+  readonly invalidStored: number;
+  readonly issues: readonly WorkspaceValidationIssue[];
+  readonly byCode: Readonly<Record<WorkspaceValidationIssue['code'], number>>;
 }
 
 export interface ConfirmAnnotationItemInput {
@@ -73,6 +92,88 @@ export function validateAnnotationItem(database: DatabaseConnection, projectId: 
     } catch {
       return { valid: false, issues: [{ itemId: itemKey, code: 'invalid-stored' }] };
     }
+  });
+}
+
+function increment<T extends string>(target: Map<T, number>, code: T): void {
+  target.set(code, (target.get(code) ?? 0) + 1);
+}
+
+function workspaceIssue(itemId: string, imageKey: string | null,
+  code: WorkspaceValidationIssue['code']): WorkspaceValidationIssue {
+  return Object.freeze({ itemId, imageKey, code });
+}
+
+function issueBucket(code: WorkspaceValidationIssue['code']): 'schemaOutside' | 'invalidRectangles' | 'invalidStored' | undefined {
+  if (code === 'unknown-class' || code === 'invalid-class-ids') return 'schemaOutside';
+  if (code === 'out-of-bounds' || code === 'invalid-dimensions' || code === 'invalid-annotation') return 'invalidRectangles';
+  if (code === 'invalid-stored') return 'invalidStored';
+  return undefined;
+}
+
+/** Whole-workspace readiness summary for Revision confirmation.
+ * Read-only: never changes item state, confirmations, provenance, schema, or workspace locks.
+ */
+export function validateAnnotationWorkspace(database: DatabaseConnection, projectId: string,
+  workspaceId: string): WorkspaceValidationResult {
+  const parent = annotationIdSchema.parse(projectId), workspaceKey = annotationIdSchema.parse(workspaceId);
+  return workspaceTransaction(database, false, () => {
+    const workspace = readWorkspaceHeader(database, parent, workspaceKey);
+    const schema = readWorkspaceSchemaState(database, parent, workspace.schemaId);
+    const classIds = new Set(schema.snapshot.classes.map((entry) => entry.id));
+    const rows = database.prepare(`SELECT id,image_key AS imageKey,width,height,annotation_json AS annotationJson,
+      state,negative_confirmed AS negativeConfirmed FROM annotation_items WHERE workspace_id=? ORDER BY id`).all(workspace.id);
+    let confirmed = 0, unconfirmed = 0, excluded = 0, schemaOutside = 0, invalidRectangles = 0, invalidStored = 0;
+    const issues: WorkspaceValidationIssue[] = [];
+    const byCode = new Map<WorkspaceValidationIssue['code'], number>();
+    const add = (itemId: string, imageKey: string | null, code: WorkspaceValidationIssue['code']) => {
+      issues.push(workspaceIssue(itemId, imageKey, code));
+      increment(byCode, code);
+      switch (issueBucket(code)) {
+        case 'schemaOutside': schemaOutside += 1; break;
+        case 'invalidRectangles': invalidRectangles += 1; break;
+        case 'invalidStored': invalidStored += 1; break;
+      }
+    };
+    for (const raw of rows) {
+      const row = raw as Record<string, unknown>;
+      const itemId = typeof row.id === 'string' ? row.id : '';
+      const imageKey = typeof row.imageKey === 'string' ? row.imageKey : null;
+      const state = row.state;
+      if (state === 'confirmed') confirmed += 1;
+      else if (state === 'excluded') excluded += 1;
+      else unconfirmed += 1;
+      if (typeof itemId !== 'string' || !annotationIdSchema.safeParse(itemId).success
+        || typeof row.annotationJson !== 'string' || (row.negativeConfirmed !== 0 && row.negativeConfirmed !== 1)) {
+        add(itemId, imageKey, 'invalid-stored');
+        continue;
+      }
+      if (state === 'excluded') add(itemId, imageKey, 'excluded');
+      else {
+        let annotation: unknown;
+        try { annotation = JSON.parse(row.annotationJson); }
+        catch { add(itemId, imageKey, 'invalid-stored'); continue; }
+        for (const code of checkAnnotationContent(annotation, Number(row.width), Number(row.height),
+          classIds, row.negativeConfirmed === 1)) {
+          add(itemId, imageKey, code);
+        }
+        if (state !== 'confirmed') add(itemId, imageKey, 'unconfirmed');
+      }
+    }
+    const byCodeObject = Object.fromEntries(byCode) as Record<WorkspaceValidationIssue['code'], number>;
+    return freezeWorkspaceValue({
+      valid: issues.length === 0,
+      workspaceId: workspace.id,
+      total: rows.length,
+      confirmed,
+      unconfirmed,
+      excluded,
+      schemaOutside,
+      invalidRectangles,
+      invalidStored,
+      issues,
+      byCode: byCodeObject,
+    });
   });
 }
 

@@ -7,6 +7,7 @@ import {
 } from '../../../shared/contracts/import-ipc';
 import type { Project } from '../../../shared/contracts/project';
 import { parseJobSnapshot, type JobApi, type JobSnapshot } from '../../../shared/contracts/job-ipc';
+import { useJobs } from '../jobs/JobStatusBar';
 import { ImportSummary, formatImportCount, validImportClassName } from './ImportSummary';
 import './ImportPage.css';
 
@@ -62,6 +63,7 @@ export function ImportPage(props: ImportPageProps) {
 }
 
 function ImportSession({ project, api, jobs, onImported }: ImportPageProps) {
+  const sharedJobs = useJobs();
   const id = useId();
   const [mode, setMode] = useState<Mode | null>(null);
   const [sourceKind, setSourceKind] = useState<ImportSourceKind | null>(null);
@@ -106,6 +108,7 @@ function ImportSession({ project, api, jobs, onImported }: ImportPageProps) {
     if (context.active) setPhase(next);
   }
   function observe(context: Request, selection: ImportPreviewInput) {
+    if (sharedJobs) return;
     if (!jobs) return;
     let stopped = false;
     let unsubscribe: (() => void) | undefined;
@@ -226,6 +229,11 @@ function ImportSession({ project, api, jobs, onImported }: ImportPageProps) {
 
   const busy = ['picking', 'scanning', 'committing', 'discarding'].includes(phase);
   const frozen = phase !== 'preview';
+  const actualProgress = sharedJobs
+    ? sharedJobs.projectId === project.id
+      ? sharedJobs.snapshots.find(({ job }) => job.id === request.current.selection?.jobId
+        && job.kind === 'scan-dataset')?.progress ?? null : null
+    : progress;
   return <section className="import-page" aria-labelledby={`${id}-heading`} aria-busy={busy}>
     <h1 id={`${id}-heading`}>画像を取り込む</h1>
     <p>プロジェクト：{project.name} ／ {project.taskType === 'classification' ? '画像分類' : '物体検出'}</p>
@@ -246,9 +254,11 @@ function ImportSession({ project, api, jobs, onImported }: ImportPageProps) {
     </fieldset>
     <p role="status" aria-atomic="true">{message}</p>
     {phase === 'scanning' && <div>
-      {progress && progress.total !== null && progress.total > 0
-        ? <><progress aria-label="画像の検査進捗" value={progress.processed} max={progress.total} /> <span>{formatImportCount(progress.processed)} / {formatImportCount(progress.total)}件</span></>
+      {actualProgress && actualProgress.total !== null && actualProgress.total > 0
+        ? <><progress aria-label="画像の検査進捗" value={actualProgress.processed} max={actualProgress.total} /> <span>{formatImportCount(actualProgress.processed)} / {formatImportCount(actualProgress.total)}件</span></>
         : <progress aria-label="検査中" />}
+      {sharedJobs && (!sharedJobs.available || sharedJobs.phase === 'failed') &&
+        <p role="alert">進捗通知を取得できません。検査結果を待っています。</p>}
     </div>}
     {error && <p role="alert">{error}</p>}
     {notice && <p role="alert">{notice}</p>}

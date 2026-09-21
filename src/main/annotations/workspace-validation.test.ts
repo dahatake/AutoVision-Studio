@@ -11,6 +11,11 @@ import { migrateDatabase } from '../db/migrate.js';
 import { getLabelSchema, insertImportLabels, mergeLabelClasses, prepareImportLabels } from './label-schema-service.js';
 import { annotationDigest, canonicalAnnotationJson } from './workspace-repository.js';
 import { insertPreparedAnnotationWorkspace, prepareAnnotationWorkspaceForImport, validateImportedWorkspace } from './workspace-service.js';
+import { validateAnnotationWorkspace } from './validate-annotation.js';
+import { createDatasetRevision } from '../data/revision-service.js';
+import { enqueueTrainingRun } from '../jobs/training-queue.js';
+import { confirmDatasetAndQueueTraining } from './confirm-and-queue.js';
+import { cloneWorkspaceFromRevision } from './clone-workspace.js';
 
 const at = '2026-09-12T05:30:00.123Z';
 const migrations = ['001_core', '002_jobs', '003_import', '004_import_generation', '005_import_rights', '006_annotations']
@@ -173,5 +178,85 @@ describe('ANN-05 bulk imported workspace validation', () => {
       expect(validateImportedWorkspace(db, projectId, plan.id, source).itemCount).toBe(3);
       db.exec('COMMIT'); expect(() => check(plan)).toThrow();
     } finally { other.close(); }
+  });
+
+  it('summarizes whole-workspace readiness without writes', () => {
+    const plan = fixture('classification', 2), before = graph();
+    const first = validateAnnotationWorkspace(db, projectId, plan.id);
+    expect(first.valid).toBe(false);
+    expect(first.total).toBe(2);
+    expect(first.unconfirmed).toBe(2);
+    expect(first.excluded).toBe(0);
+    expect(first.byCode.unconfirmed).toBe(2);
+    expect(graph()).toEqual(before);
+
+    db.prepare("UPDATE annotation_items SET state='excluded',exclusion_reason='unit',edit_version=edit_version+1 WHERE image_key='image:1'")
+      .run();
+    const second = validateAnnotationWorkspace(db, projectId, plan.id);
+    expect(second.unconfirmed).toBe(1);
+    expect(second.excluded).toBe(1);
+    expect(second.byCode.excluded).toBe(1);
+  });
+
+  it('creates a revision manifest, freezes the workspace, queues training and clones without changing the revision', () => {
+    const plan = fixture('classification', 1);
+    db.prepare("UPDATE annotation_items SET state='confirmed',confirmed_at=?,edit_version=edit_version+1 WHERE image_key='image:0'")
+      .run(at);
+
+    const created = createDatasetRevision(db, { projectId, workspaceId: plan.id, splitSeed: 42, createdBy: 'unit-test' });
+    expect(created.revision.revisionNo).toBe(1);
+    expect(created.revision.manifestRelativePath).toBe(`datasets/${created.revision.id}/manifest.json`);
+    expect(db.prepare('SELECT state FROM annotation_workspaces WHERE id=?').get(plan.id)).toEqual({ state: 'frozen' });
+    expect(db.prepare('SELECT count(*) AS total FROM dataset_items WHERE revision_id=?').get(created.revision.id)).toEqual({ total: 1 });
+
+    const queued = enqueueTrainingRun(db, projectId, created.revision.id, at);
+    expect(queued.job.status).toBe('Queued');
+    expect(queued.job.kind).toBe('train');
+
+    const combinedPlan = fixture('classification', 1);
+    db.prepare("UPDATE annotation_items SET state='confirmed',confirmed_at=?,edit_version=edit_version+1 WHERE workspace_id=?")
+      .run(at, combinedPlan.id);
+    const combined = confirmDatasetAndQueueTraining(db, { projectId, workspaceId: combinedPlan.id, splitSeed: 43, createdBy: 'unit-test' });
+    expect(combined.training.job.status).toBe('Queued');
+
+    const revisionCount = db.prepare('SELECT count(*) AS total FROM dataset_revisions').get();
+    const cloned = cloneWorkspaceFromRevision(db, projectId, created.revision.id);
+    expect(cloned.itemCount).toBe(1);
+    expect(db.prepare('SELECT count(*) AS total FROM dataset_revisions').get()).toEqual(revisionCount);
+    expect(db.prepare('SELECT source_revision_id AS id FROM workspace_revision_sources WHERE workspace_id=?').get(cloned.workspaceId))
+      .toEqual({ id: created.revision.id });
+  });
+
+  it('stratifies classification revision splits while keeping duplicate hashes together', () => {
+    const plan = fixture('classification', 20);
+    const classRows = db.prepare('SELECT id,normalized_name AS name FROM label_classes WHERE schema_id=?')
+      .all(plan.labels.schemaId);
+    const classes = classRows.map((row) => row as { id: string; name: string });
+    const cat = classes.find((entry) => entry.name === 'cat')!.id;
+    const dog = classes.find((entry) => entry.name === 'dog')!.id;
+    const itemRows = db.prepare('SELECT id,image_key AS imageKey,image_sha256 AS imageSha256 FROM annotation_items WHERE workspace_id=? ORDER BY image_key')
+      .all(plan.id);
+    const items = itemRows as { id: string; imageKey: string; imageSha256: string }[];
+    for (const item of items) {
+      const index = Number(item.imageKey.split(':')[1]);
+      const classId = index < 10 ? cat : dog;
+      const text = canonicalAnnotationJson({ kind: 'classification', classId });
+      db.prepare('DELETE FROM annotation_provenance WHERE item_id=?').run(item.id);
+      db.prepare("INSERT INTO annotation_provenance(item_id,target_key,kind,original_json,changes_json) VALUES (?,'classification','manual','{}','{}')")
+        .run(item.id);
+      db.prepare(`UPDATE annotation_items SET annotation_json=?,annotation_sha256=?,state='confirmed',
+        confirmed_at=?,edit_version=edit_version+1 WHERE id=?`).run(text, annotationDigest(text), at, item.id);
+    }
+    const created = createDatasetRevision(db, { projectId, workspaceId: plan.id, splitSeed: 7, createdBy: 'unit-test' });
+    const splitRows = db.prepare(`SELECT d.split,json_extract(d.annotation_json,'$.classId') AS classId,d.image_sha256 AS hash
+      FROM dataset_items d WHERE d.revision_id=? AND d.split IS NOT NULL`).all(created.revision.id);
+    const rows = splitRows.map((row) => row as { split: string; classId: string; hash: string });
+    for (const classId of [cat, dog]) {
+      expect(new Set(rows.filter((row) => row.classId === classId).map((row) => row.split)))
+        .toEqual(new Set(['train', 'validation', 'test']));
+    }
+    for (const hash of new Set(rows.map((row) => row.hash))) {
+      expect(new Set(rows.filter((row) => row.hash === hash).map((row) => row.split)).size).toBe(1);
+    }
   });
 });

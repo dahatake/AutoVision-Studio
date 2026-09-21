@@ -13,6 +13,8 @@ import {
 import { SystemIcon } from '../components/SystemIcon';
 import { LabelSchemaPage } from '../features/annotations/LabelSchemaPage';
 import { DiagnosticsPage, diagnosticsSupport } from '../features/diagnostics/DiagnosticsPage';
+import { JobProvider, JobStatusBar } from '../features/jobs/JobStatusBar';
+import { JobPage } from '../features/jobs/JobPage';
 import { ProjectForm } from '../features/projects/ProjectForm';
 import { ProjectListPage } from '../features/projects/ProjectListPage';
 import { ProjectSettingsPanel } from '../features/settings/ProjectSettingsPanel';
@@ -20,7 +22,7 @@ import { SettingsPage } from '../features/settings/SettingsPage';
 import { appRoutes, type ScreenId, type SettingsCategoryId } from '../routes';
 import { ProjectWorkspace } from './ProjectWorkspace';
 
-type View = 'list' | 'create' | 'workspace';
+type View = 'list' | 'create' | 'workspace' | 'jobs';
 type DiagnosticReadout = { phase: 'loading' | 'ready' | 'failed'; report?: HardwareDiagnostics; failure?: HardwareDiagnostics };
 type FocusTarget = { kind: 'main' } | { kind: 'settings' }
   | { kind: 'header'; id: 'app-shell-settings-link' | 'diagnostics-settings-link' }
@@ -291,6 +293,7 @@ export function AppShell() {
     + `${freeBytes === undefined ? '未取得' : `${freeBytes.toLocaleString('ja-JP')} B`}（Project 使用量ではありません）`;
 
   return (
+    <JobProvider api={jobApi} projectId={selected?.project.id ?? null}>
     <div className="app-shell">
       <a className="skip-link" href="#main-content" onClick={(event) => {
         event.preventDefault();
@@ -381,6 +384,8 @@ export function AppShell() {
             if (!api || !selected || view !== 'workspace' || settingsOpen) return false;
             openSettings(nextCategory, { baseView: 'workspace', kind: 'workspace' }); return true;
           }} />
+        {view === 'jobs' && !settingsOpen && selected && <JobPage projectName={selected.project.name}
+          onBack={() => { setView('workspace'); setFocusTarget({ kind: 'main' }); }} />}
         <SettingsPage category={category} onCategoryChange={setCategory} onBack={closeSettings}
           visible={settingsOpen} hasProject={selected !== null}
           renderProject={(visible) => api && panelSnapshot
@@ -398,11 +403,18 @@ export function AppShell() {
       </main>
 
       <footer className="app-shell__footer" aria-label="共通状態">
-        <span>共通ジョブ：未実装</span>
+        <JobStatusBar onOpenJobs={() => {
+          if (!selected) return;
+          invalidateSelection(); creationGeneration.current++; pendingCreated.current = null;
+          setLeftCreation((previous) => previous || view === 'create');
+          settingsOrigin.current = null; setSettingsOpen(false);
+          setView('jobs'); setFocusTarget({ kind: 'main' });
+        }} />
         <span>診断：{diagnosticStatus}</span>
         <span>デバイス：計算実行未確認</span>
         <span>容量：{capacity}</span>
       </footer>
     </div>
+    </JobProvider>
   );
 }

@@ -27,6 +27,7 @@ import { registerImportHandlers } from './ipc/import-handlers.js';
 import { registerJobHandlers } from './ipc/job-handlers.js';
 import { registerLabelSchemaHandlers } from './ipc/label-schema-handlers.js';
 import { registerProjectHandlers } from './ipc/project-handlers.js';
+import { registerRevisionHandlers } from './ipc/revision-handlers.js';
 import { createJobService, type JobService } from './jobs/job-service.js';
 import { recoverJobs } from './jobs/recover-jobs.js';
 import { createDiagnosticExporter } from './logging/diagnostic-export.js';
@@ -162,6 +163,7 @@ function startPrimaryInstance(): void {
         let importRegistration: ReturnType<typeof registerImportHandlers> | undefined;
         let labelSchemaRegistration: ReturnType<typeof registerLabelSchemaHandlers> | undefined;
         let annotationRegistration: ReturnType<typeof registerAnnotationHandlers> | undefined;
+        let revisionRegistration: ReturnType<typeof registerRevisionHandlers> | undefined;
         let exporter: ReturnType<typeof createDiagnosticExporter> | undefined;
         let diagnosticsService: ReturnType<typeof createDiagnosticsService> | undefined;
         let disposed = false;
@@ -203,6 +205,7 @@ function startPrimaryInstance(): void {
           try { importRegistration?.dispose(); } catch { disposalFailed = true; }
           try { labelSchemaRegistration?.dispose(); } catch { disposalFailed = true; }
           try { annotationRegistration?.dispose(); } catch { disposalFailed = true; }
+          try { revisionRegistration?.dispose(); } catch { disposalFailed = true; }
           try { exporter?.dispose(); } catch { disposalFailed = true; }
           // Reject pending diagnostics and request stop; this does not confirm
           // child exit. The diagnostic worker does not own the Project database.
@@ -232,6 +235,8 @@ function startPrimaryInstance(): void {
           labelSchemaRegistration = registerLabelSchemaHandlers(trackedIpc, this.webContents,
             expectedRendererURL, connection);
           annotationRegistration = registerAnnotationHandlers(trackedIpc, this.webContents,
+            expectedRendererURL, connection);
+          revisionRegistration = registerRevisionHandlers(trackedIpc, this.webContents,
             expectedRendererURL, connection);
           if (shuttingDown) throw new Error('MAIN_WINDOW_STOPPED');
           this.once('closed', dispose);

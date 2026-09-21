@@ -377,3 +377,72 @@ Gate 2 判定後に着手する Phase H（Annotation Assist）・Phase I（Train
 | 作業ツリー | `git status --short` | 出力なし（本書作成前） |
 
 本計画の作成では source、test、依存、lock、証跡 JSON を変更していない。アプリ全体の test suite・build は再実行していないため、既存の PASS 記録を本日の合格として読み替えない。
+
+---
+
+## Wave 2H 実行記録
+
+**対象指示:** 2026-09-21 23:50 JST の「Wave 2Hを実行、DoD確認、90分超過時停止」。この指示による実行範囲はW2-31／W2-32のみであり、上記の計画作成時の未承認表記・他Waveの承認状態を書き換えない。制限時刻は **2026-09-22 01:20 JST**。W0前提は[事実ベースライン](../docs/documentation-fact-baseline.md)のW0-04 PASSと[実装計画§15.10](../docs/implementation-plan.md#1510-ann-0406-ipcとmigration番号の現状確定2026-09-21)を確認した。
+
+### 対象・配線補完・非対象
+
+- W2-31: [JobStatusBar.tsx](../src/renderer/features/jobs/JobStatusBar.tsx)、[対象test](../src/renderer/features/jobs/JobStatusBar.test.tsx)。
+- W2-32: [JobPage.tsx](../src/renderer/features/jobs/JobPage.tsx)、[対象test](../src/renderer/features/jobs/JobPage.test.tsx)。
+- **表の4 fileだけでは製品画面に到達せず、DoDの「常時表示」を満たさないため、直接必要な配線を補完した。** [AppShell.tsx](../src/renderer/layout/AppShell.tsx)／[対象test](../src/renderer/layout/AppShell.test.tsx)、[ImportPage.tsx](../src/renderer/features/import/ImportPage.tsx)、[global.css](../src/renderer/styles/global.css)を変更。Preloadが同時に保持する購読は1つのため、shellのProject単位providerで購読し、取り込み・状態バー・一覧が同じsnapshotを参照する。汎用event bus・新規依存・IPC変更は追加していない。
+- 関連DOCとして[users-guide §14](../docs/users-guide.md#共通ジョブ状態とジョブ一覧wave-2h)に限定操作と検証範囲を追記。
+- Wave 2F／2Gの並行作業があることを確認し、共有fileの編集範囲を担当へ通知した。既存のAppShell testのrevisions fixture等を保持し、他Waveの実装を今回の完了実績に含めない。
+- 自動再開・自動再試行・scheduler・学習worker・モデル承認は対象外。Gate 2／3、UIR-017、packaged Electron、実worker、Narratorの受入を合格へ変更しない。版は0.1.0のまま、依存／lock／CHANGELOG／commit／tag／releaseを変更しない。
+
+### DoD判定
+
+| ID | 挙動と検証 | 型／editor | 独立敵対的レビュー | 結果 |
+|---|---|---|---|---|
+| W2-31 | 既存jobs.subscribeで実測progress・現在処理・明示cancelを表示。unknown／0件／未取得を区別。要求応答がRunningなら終了通知まで確認待ち。多重click、Project A→B→A、古い応答、解除、StrictMode、購読失敗を検証。設定／タブ／一覧への移動中も維持し、Importとの購読競合なし | 全体tsc exit 0、変更8 source/test/style fileのeditor diagnostics 0 | `w2h-review`（別code-review担当）blocking 0 | **PASS** |
+| W2-32 | Queuedを含む全9状態・3処理種別・ID・日時・実測進捗を作成順で表示。明示cancelと終端履歴を保持し、状態バーへ同期。新規job通知・空／取得中／失敗・Project切替を検証。再開／再試行commandなし | 同上 | `w2h-list-review` blocking 0。ブラウザーで発見したhidden/CSS修正は別担当 `w2h-visibility-review` で追加確認しblocking 0 | **PASS** |
+
+W2-31は対象3 file **134件PASS**、全体tsc exit 0、renderer build exit 0、独立レビュー完了後にW2-32へ進んだ。以下の最終190件と134件を合算しない。
+
+### 最終検証の実コマンド・結果
+
+すべてWindows上の `pwsh.exe -NoLogo -NoProfile` で実行。開始00:52 JSTの最終対象suiteは次のコマンドで実行した。
+
+```powershell
+node node_modules\vitest\vitest.mjs run src\renderer\features\jobs\JobStatusBar.test.tsx src\renderer\features\jobs\JobPage.test.tsx src\renderer\layout\AppShell.test.tsx src\renderer\features\import\ImportPage.test.tsx src\preload\job-api.test.ts src\renderer\styles\tokens.test.ts --maxWorkers=1 --testTimeout=15000 --reporter=default --reporter=json --outputFile.json=C:\Users\dahatake\.copilot\session-state\829ae4c5-d0b4-434f-9203-dbc741f73346\files\wave2h-tests.json
+```
+
+| 検証対象 | 結果 |
+|---|---|
+| JobStatusBar.test.tsx | **19 PASS** |
+| JobPage.test.tsx | **8 PASS** |
+| AppShell.test.tsx | **93 PASS** |
+| ImportPage.test.tsx | **23 PASS** |
+| job-api.test.ts | **28 PASS** |
+| tokens.test.ts | **19 PASS** |
+| 上記の同一実行集合 | **6 file／190 PASS、0 failed、exit 0、123.86秒** |
+| `node node_modules\typescript\bin\tsc -b tsconfig.main.json tsconfig.renderer.json` | **exit 0**（`npm run typecheck`と同じcompiler／引数） |
+| `node node_modules\vite\bin\vite.js build --config vite.renderer.config.ts` | **exit 0**、145 modules、production renderer bundle生成 |
+| editor diagnostics（追加4 file＋配線4 file） | **0 errors** |
+
+**途中の失敗も記録する:** 最初の`npm run typecheck`は環境のnpm 11.17.0と要求12.0.xの不一致でexit 1。manifestを緩和せず、インストール済みの同一TypeScript／Vitest／Viteをnodeで直接実行した。途中の全体tscは並行作業のworkspace-validation.test.ts／DeleteProjectDialog.tsxで失敗し、担当へ通知後、最終全体tscがexit 0になった。旧shell testの「購読なし」「footerにbuttonなし」「statusが2件」は新仕様に合わせて更新。並行実行時に既存shell testの5秒timeoutが発生したため、source設定を変更せず対象suiteを1 worker／15秒timeoutで再実行した。未実行の全suiteやMain/Preload buildをPASSとは数えない。
+
+### ブラウザー表示確認（限定技術検証）
+
+Viteをloopback `127.0.0.1:5177` で起動し、ブラウザーの`addInitScript`だけで8件のjobs API fixtureを設定した。製品コードへのtest専用分岐、実Project／DB／workerの変更はない。
+
+| viewport | 本文scroll後のfooter上端／下端 | 横overflow |
+|---|---|---|
+| 1280×720 | 468／720 px | なし |
+| 800×600 | 390／600 px | なし |
+| 390×844 | 548.60／844.00 px（丸め誤差内） | なし |
+
+ブラウザーでは、grid指定がUAの`hidden`表示を上書きし、ジョブ一覧と保持中workspaceが同時表示される問題を発見した。`.app-shell__workflow[hidden]`へ明示的な`display:none`を追加し、実CSSを読み込むtestのcomputed styleとブラウザーの可視h1が「ジョブ一覧」1つだけになることを再確認した。待機jobの明示cancelで一覧が`Cancelled`に変わって履歴を残し、状態バーのactive件数が8→7になることも確認。これは実Electron／実workerのE2Eや本人確認の代替ではない。
+
+### 最終化確認
+
+- 2026-09-22 **00:59 JST**までに実装・対象検証・独立レビュー・証拠記録を完了。開始から約69分であり、90分停止条件には未到達。
+- `node scripts\docs\verify-documentation.mjs`: **exit 0**（必須Markdown 8／SVG 5）。
+- `node --test scripts\docs\verify-documentation.test.mjs`: **22 PASS、0 failed、exit 0**。190件の製品対象suiteとは別集合。
+- `node scripts\release\verify-product-version.mjs`: **exit 0**（0.1.0）。
+- `git diff --check`: **exit 0**。
+- このセッションで起動したVite検証serverを停止。session内のJSONテスト証拠は保持し、repoに一時fixture／test専用製品分岐を残していない。
+- **Wave 2H完了済みID: W2-31、W2-32。未着手ID: なし。** 他Waveの進捗・完了判定はそれぞれの担当範囲であり、本記録では判定しない。

@@ -11,7 +11,7 @@ import type { LabelSchemaApi } from '../../shared/contracts/annotation-ipc';
 import type { DiagnosticExportResult } from '../../shared/contracts/diagnostic-export';
 import { hardwareDiagnosticsSchema, type HardwareDiagnostics } from '../../shared/contracts/diagnostics';
 import type { ImportApi, ImportCommitResponse, ImportPreview } from '../../shared/contracts/import-ipc';
-import type { JobApi } from '../../shared/contracts/job-ipc';
+import type { JobApi, JobSnapshot } from '../../shared/contracts/job-ipc';
 import {
   PROJECT_SOURCE_CLEANUP_FAILED_MESSAGE, projectSnapshotSchema, type ProjectApi,
   type ProjectCreateResponse, type ProjectGetResponse, type ProjectListResponse,
@@ -20,6 +20,7 @@ import {
 import { PRODUCT_VERSION } from '../product-version';
 import { appRoutes, screenLocations, settingsCategories, workflowTabs } from '../routes';
 import { AppShell } from './AppShell';
+import '../styles/global.css';
 
 const a = projectSnapshotSchema.parse({
   project: { id: 'abcdefab-1234-4123-8123-abcdefabcdef', name: '分類 Project', description: 'A の説明', taskType: 'classification',
@@ -116,7 +117,8 @@ function installBridge(projects: ProjectApi = api) {
   const bridge: AppApi = { contractVersion: APP_API_CONTRACT_VERSION,
     get projects() { return readProjects(); }, get labelSchemas() { return readLabelSchemasMock(); },
     get annotations() { return {} as any; }, get diagnostics() { return readDiagnostics(); },
-    get imports() { return readImports(); }, get jobs() { return readJobs(); } };
+    get imports() { return readImports(); }, get jobs() { return readJobs(); },
+    get revisions() { return { create: vi.fn(), validate: vi.fn(), confirmAndQueue: vi.fn(), clone: vi.fn() }; } };
   readBridge = vi.fn(() => bridge);
   Object.defineProperty(window, APP_BRIDGE_KEY, { configurable: true, get: readBridge });
 }
@@ -219,7 +221,7 @@ describe('AppShell (UIR-025A-W)', () => {
     expect(screen.getByRole('button', { name: 'Project を作成' })).toBeEnabled();
     expect(container).not.toHaveTextContent(/0件|保存済み|CPU 動作可|推奨構成/);
     expect(screen.queryByLabelText(/^製品バージョン /)).toBeNull();
-    for (const text of ['共通ジョブ：未実装', '診断：取得中', 'デバイス：計算実行未確認', `容量：${capacityText('未取得')}`]) {
+    for (const text of ['ジョブ：Project 未選択', '診断：取得中', 'デバイス：計算実行未確認', `容量：${capacityText('未取得')}`]) {
       expect(within(screen.getByRole('contentinfo')).getByText(text)).toBeVisible();
     }
     expect(readDiagnostics).toHaveBeenCalledTimes(1);
@@ -801,7 +803,8 @@ describe('AppShell (UIR-025A-W)', () => {
     }
     expect(api.get).toHaveBeenCalledTimes(1);
     for (const method of ['create', 'update', 'pickParent', 'move', 'recover'] as const) expect(api[method]).not.toHaveBeenCalled();
-    expect(within(screen.getByRole('contentinfo')).queryByRole('button')).toBeNull();
+    expect(within(screen.getByRole('contentinfo')).getByRole('button', { name: 'ジョブ一覧' })).toBeEnabled();
+    expect(within(screen.getByRole('contentinfo')).queryByRole('button', { name: /をキャンセル/ })).toBeNull();
   });
 
   it('lets Workspace restore only its fixed accepted opener and does not substitute an old opener for a later header return', async () => {
@@ -1015,7 +1018,8 @@ describe('AppShell UIR-026 import wiring', () => {
     const user = userEvent.setup(); const h = render(<StrictMode><AppShell /></StrictMode>);
     await enter(user);
     for (const method of Object.values(commands)) expect(method).not.toHaveBeenCalled();
-    for (const method of Object.values(jobCommands)) expect(method).not.toHaveBeenCalled();
+    for (const method of [jobCommands.list, jobCommands.get, jobCommands.cancel]) expect(method).not.toHaveBeenCalled();
+    expect(jobCommands.subscribe).toHaveBeenCalledExactlyOnceWith(a.project.id, expect.any(Function));
     for (const read of reads) expect(read).toHaveBeenCalledTimes(1);
     await chooseReference(user);
     expect(screen.getByText('選択をキャンセルしました。')).toBeVisible();
@@ -1023,9 +1027,90 @@ describe('AppShell UIR-026 import wiring', () => {
     expect(commands.start.mock.contexts).toEqual([imports]);
     h.rerender(<StrictMode><AppShell /></StrictMode>);
     expect(readImports).toHaveBeenCalledTimes(1); expect(readJobs).toHaveBeenCalledTimes(1);
-    // No preview/subscription on cancellation.
-    expect(commands.preview).not.toHaveBeenCalled(); expect(jobCommands.subscribe).not.toHaveBeenCalled();
+    // Picker cancellation does not change the shell's project-wide subscription.
+    expect(commands.preview).not.toHaveBeenCalled(); expect(jobCommands.subscribe).toHaveBeenCalledTimes(1);
     for (const read of reads) expect(read).toHaveBeenCalledTimes(1);
+  });
+
+  it('shares the actual scan subscription with the always-visible bar across tabs, settings and the list', async () => {
+    scanPorts();
+    const preview = deferred<Awaited<ReturnType<ImportApi['preview']>>>();
+    imports.preview.mockReturnValueOnce(preview.promise);
+    let notify!: (snapshot: JobSnapshot) => void;
+    const unsubscribe = vi.fn();
+    vi.mocked(jobs.subscribe).mockImplementation(async (_id, listener) => { notify = listener; return unsubscribe; });
+    const running: JobSnapshot = {
+      job: { id: token, projectId: a.project.id, kind: 'scan-dataset', status: 'Running',
+        createdAt: a.project.createdAt, updatedAt: a.project.updatedAt },
+      progress: { schemaVersion: 1, projectId: a.project.id, jobId: token, type: 'progress',
+        source: 'actual', processed: 3, total: 10 },
+      workerCompleted: false,
+    };
+    vi.mocked(jobs.cancel).mockResolvedValue(ok(running.job));
+    const user = userEvent.setup(), mounted = render(<AppShell />);
+    await enter(user); await chooseReference(user);
+    act(() => notify(running));
+    expect(jobs.subscribe).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('progressbar', { name: '画像の検査進捗' })).toHaveAttribute('value', '3');
+    const bar = within(screen.getByRole('region', { name: '共通ジョブ' }));
+    expect(bar.getByRole('progressbar')).toHaveAttribute('value', '3');
+    await user.click(screen.getByRole('tab', { name: '学習' }));
+    expect(bar.getByRole('progressbar')).toBeVisible();
+    await user.click(headerLink('設定'));
+    act(() => notify({ ...running, progress: { ...running.progress!, processed: 7 } }));
+    expect(bar.getByRole('progressbar')).toHaveAttribute('value', '7');
+    await user.click(settingsBack());
+    await user.click(screen.getByRole('tab', { name: '取り込む' }));
+    expect(screen.getByRole('progressbar', { name: '画像の検査進捗' })).toHaveAttribute('value', '7');
+    await user.click(headerLink('Project 一覧'));
+    expect(bar.getByRole('progressbar')).toBeVisible();
+    expect(jobs.subscribe).toHaveBeenCalledTimes(1); expect(unsubscribe).not.toHaveBeenCalled();
+    await user.click(bar.getByRole('button', { name: /をキャンセル/ }));
+    expect(jobs.cancel).toHaveBeenCalledExactlyOnceWith(a.project.id, token);
+    expect(bar.getByRole('button', { name: /をキャンセル/ })).toHaveTextContent('キャンセル確認待ち');
+    act(() => notify({ ...running, job: { ...running.job, status: 'Cancelled' } }));
+    expect(bar.getByText('処理中・待機中のジョブはありません')).toBeVisible();
+    await act(async () => preview.resolve({ ok: false, error: { code: 'IMPORT_SCAN_FAILED' } }));
+    mounted.unmount();
+    expect(unsubscribe).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens the job list from the bar, keeps workspace drafts and shares cancel state across navigation', async () => {
+    const queued: JobSnapshot = {
+      job: { id: token, projectId: a.project.id, kind: 'train', status: 'Queued',
+        createdAt: a.project.createdAt, updatedAt: a.project.updatedAt },
+      progress: null, workerCompleted: false,
+    };
+    const stop = vi.fn();
+    vi.mocked(jobs.subscribe).mockImplementation(async (id, listener) => {
+      if (id === a.project.id) listener(queued);
+      return stop;
+    });
+    vi.mocked(jobs.cancel).mockResolvedValue(ok({ ...queued.job, status: 'Cancelled',
+      updatedAt: '2026-09-22T00:00:00.000Z' }));
+    const user = userEvent.setup(); render(<AppShell />); await enter(user);
+    await user.click(screen.getByRole('radio', { name: '参照' }));
+    await user.click(screen.getByRole('button', { name: 'ジョブ一覧' }));
+    expect(screen.getByRole('main')).toHaveFocus();
+    const workspace = screen.getByRole('heading', { name: a.project.name, hidden: true }).closest('section');
+    expect(workspace).not.toBeNull();
+    expect(getComputedStyle(workspace!).display).toBe('none');
+    expect(screen.getByRole('heading', { name: 'ジョブ一覧' })).toBeVisible();
+    expect(screen.getByText('全1件 ／ 待機中1件 ／ 処理中0件')).toBeVisible();
+    await user.click(headerLink('設定')); await user.click(settingsBack());
+    expect(screen.getByRole('heading', { name: 'ジョブ一覧' })).toBeVisible();
+    const list = within(screen.getByRole('region', { name: 'ジョブ一覧' }));
+    await user.click(list.getByRole('button', { name: /をキャンセル/ }));
+    expect(await list.findByText(/キャンセル済み（Cancelled）/)).toBeVisible();
+    expect(jobs.cancel).toHaveBeenCalledExactlyOnceWith(a.project.id, token);
+    await user.click(list.getByRole('button', { name: '作業画面に戻る' }));
+    expect(screen.getByRole('radio', { name: '参照' })).toBeChecked();
+    expect(jobs.subscribe).toHaveBeenCalledTimes(1);
+    await user.click(headerLink('Project 一覧')); await enter(user, b);
+    await user.click(screen.getByRole('button', { name: 'ジョブ一覧' }));
+    expect(screen.getByText('ジョブはありません。')).toBeVisible();
+    expect(screen.queryByText(/Job ID/)).not.toBeInTheDocument();
+    expect(jobs.subscribe).toHaveBeenCalledTimes(2); expect(stop).toHaveBeenCalledTimes(1);
   });
 
   it('retains the same preview, mode and rights through settings without rereads or automatic commit', async () => {
@@ -1163,7 +1248,7 @@ describe('AppShell (UIR-066C)', () => {
     const user = userEvent.setup();
     const h = render(strict ? <StrictMode><AppShell /></StrictMode> : <AppShell />);
     expect(diagnosticStatus()).toHaveTextContent(/^取得中$/); expect(listStatus()).toHaveTextContent('取得中');
-    expect(screen.getAllByRole('status')).toHaveLength(2);
+    expect(screen.getAllByRole('status')).toHaveLength(3);
     expect(within(diagnosticSummary()).queryByRole('heading')).toBeNull();
     expect(screen.getByRole('button', { name: 'Project を作成' })).toBeEnabled();
     expect(screen.getByRole('button', { name: '診断を再取得' })).toBeDisabled();

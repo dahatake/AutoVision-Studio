@@ -54,6 +54,7 @@ summary:focus-visible {
 
 .app-shell {
   display: grid;
+  block-size: 100dvh;
   grid-template-rows: auto 1fr auto;
   overflow-wrap: anywhere;
 }
@@ -141,6 +142,8 @@ summary:focus-visible {
 }
 
 .app-shell__main {
+  min-block-size: 0;
+  overflow: auto;
   min-inline-size: 0;
   max-inline-size: 100%;
   padding: var(--space-4) var(--space-5);
@@ -159,6 +162,10 @@ summary:focus-visible {
   display: grid;
   gap: var(--space-3);
   min-inline-size: 0;
+}
+
+.app-shell__workflow[hidden] {
+  display: none;
 }
 
 .app-shell__card,
@@ -309,8 +316,24 @@ summary:focus-visible {
 
 .app-shell__footer {
   padding: var(--space-1) var(--space-5);
+  max-block-size: 35dvh;
+  overflow: auto;
   border-block-start: var(--border-width) solid var(--color-border);
   background: var(--color-surface);
+}
+
+.job-status-bar {
+  flex-basis: 100%;
+  color: var(--color-text);
+}
+
+.job-status-bar p {
+  margin-block: var(--space-1);
+}
+
+.job-status-bar ul {
+  margin-block: var(--space-1);
+  padding-inline-start: var(--space-4);
 }
 
 .skip-link {
