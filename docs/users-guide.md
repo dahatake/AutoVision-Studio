@@ -458,7 +458,7 @@ Dataset Revision 確定前に次の項目が検証されます（FR-ANN-011）�
 
 ## 10. Label Schema と教師データ作成の詳細
 
-> **機能状態:** 設計確定・未実装
+> **機能状態:** 検証待ち
 >
 > **文書成熟度:** 要求反映済み
 >
@@ -469,6 +469,17 @@ Dataset Revision 確定前に次の項目が検証されます（FR-ANN-011）�
 > **本節は、Label Schema 画面（UI-09）の実装・検証が完了したときに更新します。**
 >
 > 要求の詳細は要求定義 §8.3.1（FR-ANN-003〜004、FR-ANN-012）を参照してください。
+
+### 分類編集部品の検証状況（2026-09-21、Wave 2C）
+
+W2-06〜W2-08の分類編集部品にはsourceと対象テストがあります。**既存の教師データ作成ページへの接続と実アプリE2Eは今回の範囲外であり、以下は現時点で利用可能な製品操作手順ではありません。** Dataset Revisionの確定・学習開始・補助候補の一括承認は行いません。
+
+- [分類エディター](../src/renderer/features/annotations/ClassificationEditor.tsx)は、1画像に1クラスを割り当て、置換・解除・除外とundo/redoを既存の保存draft部品へ接続します。解除後の0クラスは無効な未確定下書きとして明示し、学習対象の正解とは扱いません。
+- [ラベル選択](../src/renderer/features/annotations/LabelPicker.tsx)は名前・model aliasの検索、部品が保持する直近9クラス、表示順の1〜9キーを提供します。最近使用は永続履歴ではなく、Schema切替でリセットされます。文字入力欄・IME変換中・修飾キー付き入力では数字ショートカットを発火させません。
+- [一括適用](../src/renderer/features/annotations/ClassificationBulkBar.tsx)は選択された未確認の分類画像だけが対象です。確認済み・除外・未取得・別Workspaceの画像を対象外として件数を表示します。既存IPCの状態・編集version・hash検査で確認済みへの競合更新を拒否し、途中失敗時は保存確認済み件数と失敗対象を表示して後続の書き込みを停止します。一括処理全体のrollbackは行いません。
+- [クラス分布](../src/renderer/features/annotations/ClassDistribution.tsx)は表示中の画像だけの件数・比率と確認済み件数を表示します。除外・未割当・Schema外は比率の分母から外し、別に件数を示します。未取得画像がある場合はWorkspace全体の分布ではないと警告します。警告の目安は0件、1〜2件、最多/最少の非ゼロ件数が10倍以上です。10倍は今回の部品実装で明示した暫定基準であり、要求定義の固定値や学習可否の判定ではありません。
+
+検証対象は[分類エディターのテスト](../src/renderer/features/annotations/ClassificationEditor.test.tsx)、[ラベル選択のテスト](../src/renderer/features/annotations/LabelPicker.test.tsx)、[一括適用・分布のテスト](../src/renderer/features/annotations/ClassificationBulkBar.test.tsx)です。JSDOMでの部品検証と独立レビューを製品E2E・本人確認・Gate合格の代用にはしません。
 
 Label Schema は、Project で使用するクラスの分類体系です。
 
