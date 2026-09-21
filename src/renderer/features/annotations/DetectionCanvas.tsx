@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { Image as KonvaImage, Layer, Stage } from 'react-konva';
+import { AnnotationInstructions } from './AnnotationInstructions';
 import {
   MAX_SCALE, MIN_SCALE, createViewport, fitViewport, panViewport, zoomViewportAt,
   type Size, type Viewport,
@@ -12,6 +13,8 @@ export interface DetectionCanvasProps {
   /** Caller owns layout measurement; this leaf never reads the DOM box. */
   readonly containerSize: Size;
   readonly onViewportChange?: (viewport: Viewport | null) => void;
+  /** Project の Label Schema の作業指示（W2-15）。読み取り専用でそのまま渡す。 */
+  readonly instructions: string;
   /** Konva nodes drawn in image pixel space above the image (W2-11 and later). */
   readonly children?: ReactNode;
 }
@@ -24,7 +27,7 @@ const PAN_STEP_PX = 48;
  * and transformation are W2-11/W2-12 leaves and are deliberately absent here;
  * this component just hands a viewport to whatever is rendered as children. */
 export function DetectionCanvas({
-  imageUrl, imageSize, containerSize, onViewportChange, children,
+  imageUrl, imageSize, containerSize, onViewportChange, instructions, children,
 }: DetectionCanvasProps) {
   const fit = useMemo(
     () => fitViewport(imageSize, containerSize),
@@ -100,6 +103,7 @@ export function DetectionCanvas({
 
   return (
     <section aria-label="検出キャンバス">
+      <AnnotationInstructions instructions={instructions} />
       <div role="group" aria-label="表示操作">
         <button type="button" onClick={() => zoom(ZOOM_STEP)} disabled={viewport === null}>拡大</button>
         <button type="button" onClick={() => zoom(1 / ZOOM_STEP)} disabled={viewport === null}>縮小</button>

@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import type { LabelClass } from '../../../shared/contracts/annotation';
+import { AnnotationInstructions } from './AnnotationInstructions';
 import { ItemActions } from './ItemActions';
 import { SaveStatus } from './SaveStatus';
 import type { UseAnnotationDraftResult } from './useAnnotationDraft';
@@ -9,11 +10,13 @@ export interface ClassificationEditorProps {
   readonly classes: readonly LabelClass[];
   readonly imageUrl: string;
   readonly exclusionReasons: readonly string[];
+  /** Project の Label Schema の作業指示（W2-15）。読み取り専用でそのまま渡す。 */
+  readonly instructions: string;
   readonly disabled?: boolean;
 }
 
 export function ClassificationEditor({
-  draft, classes, imageUrl, exclusionReasons, disabled = false,
+  draft, classes, imageUrl, exclusionReasons, instructions, disabled = false,
 }: ClassificationEditorProps) {
   const pickerId = useId();
   const annotation = draft.draft.annotation;
@@ -25,6 +28,7 @@ export function ClassificationEditor({
 
   return (
     <section aria-label="分類エディター">
+      <AnnotationInstructions instructions={instructions} />
       <img src={imageUrl} alt={`分類対象：${draft.item.imageKey}`} />
       <p>現在のクラス：{currentClass?.displayName ?? (annotation.classId === null ? '未割当' : 'Schema 外')}</p>
       {classes.length === 0 && <p role="alert">Label Schema にクラスを作成してください。</p>}

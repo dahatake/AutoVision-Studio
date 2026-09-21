@@ -211,7 +211,7 @@ flowchart TD
 
 | ID | タスク | 作成・編集 file | 依存 | 完了条件（DoD） |
 |---|---|---|---|---|
-| W2-15 | Annotation 指示表示 | `src/renderer/features/annotations/AnnotationInstructions.tsx`, `AnnotationInstructions.test.tsx` | W2-06, W2-10 | Project 固有の遮蔽・端切れ・極小・曖昧境界の方針をエディター内で常時参照できる。**指示の編集 UI は本タスクに含めない** |
+| W2-15 | Annotation 指示表示 | `src/renderer/features/annotations/AnnotationInstructions.tsx`, `AnnotationInstructions.test.tsx`, `ClassificationEditor.tsx`, `ClassificationEditor.test.tsx`, `DetectionCanvas.tsx`, `DetectionCanvas.test.tsx`（2026-09-21 利用者承認によりエディター2 file・対応 test 2 file を範囲へ追加） | W2-06, W2-10 | Project 固有の遮蔽・端切れ・極小・曖昧境界の方針をエディター内で常時参照できる。**指示の編集 UI は本タスクに含めない** |
 
 ### Wave 2F — 確定 → Revision → Queue（Main 側・直列）
 

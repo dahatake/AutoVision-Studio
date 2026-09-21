@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, getDefaultNormalizer, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { StrictMode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -37,14 +37,32 @@ function success(input: AnnotationSaveInput): AnnotationSaveResponse {
     }],
   } };
 }
-function Harness({ save, source = item(), disabled = false, empty = false }: {
-  save: AnnotationApi['save']; source?: AnnotationItem; disabled?: boolean; empty?: boolean;
+function Harness({ save, source = item(), disabled = false, empty = false, instructions = '' }: {
+  save: AnnotationApi['save']; source?: AnnotationItem; disabled?: boolean; empty?: boolean; instructions?: string;
 }) {
   const draft = useAnnotationDraft({ api: { save }, projectId, item: source });
   return <ClassificationEditor draft={draft} classes={empty ? [] : classes} imageUrl="av-image://project/image"
-    exclusionReasons={['重複', '対象外']} disabled={disabled} />;
+    exclusionReasons={['重複', '対象外']} instructions={instructions} disabled={disabled} />;
 }
 afterEach(() => { vi.useRealTimers(); });
+
+describe('ClassificationEditor W2-15', () => {
+  it('always shows the Project policy panel inside the editor, passed through unmodified', () => {
+    const save = vi.fn<AnnotationApi['save']>((input) => Promise.resolve(success(input)));
+    const policy = '端切れ：画像端で切れた対象も対象物として含める。\n極小：一辺8px未満は対象外。';
+    render(<Harness save={save} instructions={policy} />);
+    const editor = screen.getByRole('region', { name: '分類エディター' });
+    const panel = within(editor).getByRole('region', { name: '作業指示' });
+    expect(within(panel).getByText(policy, { normalizer: getDefaultNormalizer({ collapseWhitespace: false, trim: false }) }).textContent).toBe(policy);
+  });
+
+  it('honestly shows the unset notice inside the editor when no policy is configured', () => {
+    const save = vi.fn<AnnotationApi['save']>((input) => Promise.resolve(success(input)));
+    render(<Harness save={save} />);
+    const editor = screen.getByRole('region', { name: '分類エディター' });
+    expect(within(editor).getByRole('region', { name: '作業指示' })).toHaveTextContent('まだ設定されていません');
+  });
+});
 
 describe('ClassificationEditor W2-06', () => {
   it('assigns exactly one class, replaces it, and can undo, redo and explicitly clear to an invalid draft', async () => {

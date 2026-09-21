@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, within, getDefaultNormalizer } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DetectionCanvas } from './DetectionCanvas';
@@ -53,9 +53,27 @@ beforeEach(() => {
   vi.stubGlobal('Image', FakeImage);
 });
 
+describe('DetectionCanvas W2-15', () => {
+  it('always shows the Project policy panel inside the canvas, passed through unmodified', () => {
+    const policy = '極小：一辺8px未満は対象外。\n曖昧境界：不明瞭な境界は最も確からしい輪郭で囲む。';
+    render(<DetectionCanvas instructions={policy} imageUrl="av-image://project/item.png"
+      imageSize={imageSize} containerSize={containerSize} />);
+    const canvas = screen.getByRole('region', { name: '検出キャンバス' });
+    const panel = within(canvas).getByRole('region', { name: '作業指示' });
+    expect(within(panel).getByText(policy, { normalizer: getDefaultNormalizer({ collapseWhitespace: false, trim: false }) }).textContent).toBe(policy);
+  });
+
+  it('honestly shows the unset notice inside the canvas when no policy is configured', () => {
+    render(<DetectionCanvas instructions="" imageUrl="av-image://project/item.png"
+      imageSize={imageSize} containerSize={containerSize} />);
+    const canvas = screen.getByRole('region', { name: '検出キャンバス' });
+    expect(within(canvas).getByRole('region', { name: '作業指示' })).toHaveTextContent('まだ設定されていません');
+  });
+});
+
 describe('DetectionCanvas W2-10', () => {
   it('fits the image on mount and draws it at its own pixel size inside the scaled stage', async () => {
-    render(<DetectionCanvas imageUrl="av-image://project/item.png" imageSize={imageSize} containerSize={containerSize} />);
+    render(<DetectionCanvas instructions="" imageUrl="av-image://project/item.png" imageSize={imageSize} containerSize={containerSize} />);
     expect(await screen.findByText('表示倍率 25% ／ 表示位置 X 0, Y 250')).toBeInTheDocument();
     expect(stageViewport()).toEqual({ scale: 0.25, offsetX: 0, offsetY: 250 });
     expect(latest('Stage')).toMatchObject({ width: 1000, height: 1000, scaleY: 0.25, draggable: true });
@@ -64,7 +82,7 @@ describe('DetectionCanvas W2-10', () => {
   });
 
   it('reports a load failure instead of leaving a blank canvas that looks loaded', async () => {
-    render(<DetectionCanvas imageUrl="av-image://broken" imageSize={imageSize} containerSize={containerSize} />);
+    render(<DetectionCanvas instructions="" imageUrl="av-image://broken" imageSize={imageSize} containerSize={containerSize} />);
     expect(await screen.findByText('画像を読み込めません')).toBeInTheDocument();
     expect(latest('Image')).toBeUndefined();
     expect(latest('Stage')).toBeDefined();
@@ -72,7 +90,7 @@ describe('DetectionCanvas W2-10', () => {
 
   it('zooms about the container centre with keyboard and buttons, keeping that image pixel anchored', async () => {
     const user = userEvent.setup();
-    render(<DetectionCanvas imageUrl="av-image://project/item.png" imageSize={imageSize} containerSize={containerSize} />);
+    render(<DetectionCanvas instructions="" imageUrl="av-image://project/item.png" imageSize={imageSize} containerSize={containerSize} />);
     const centre = { x: 500, y: 500 };
     const before = displayToImage(centre, stageViewport())!;
     await user.click(screen.getByRole('button', { name: '拡大' }));
@@ -94,7 +112,7 @@ describe('DetectionCanvas W2-10', () => {
 
   it('pans with the arrow keys and restores the fitted view on demand', async () => {
     const user = userEvent.setup();
-    render(<DetectionCanvas imageUrl="av-image://project/item.png" imageSize={imageSize} containerSize={containerSize} />);
+    render(<DetectionCanvas instructions="" imageUrl="av-image://project/item.png" imageSize={imageSize} containerSize={containerSize} />);
     const region = screen.getByLabelText('画像表示領域（矢印キーで移動、プラスとマイナスで拡大縮小）');
     region.focus();
     await user.keyboard('{ArrowRight}');
@@ -108,7 +126,7 @@ describe('DetectionCanvas W2-10', () => {
   });
 
   it('adopts the offset produced by dragging the stage', async () => {
-    render(<DetectionCanvas imageUrl="av-image://project/item.png" imageSize={imageSize} containerSize={containerSize} />);
+    render(<DetectionCanvas instructions="" imageUrl="av-image://project/item.png" imageSize={imageSize} containerSize={containerSize} />);
     expect(await screen.findByText(/表示倍率 25%/u)).toBeInTheDocument();
     const onDragEnd = latest('Stage')!.onDragEnd as (event: unknown) => void;
     const stage: { x: () => number; y: () => number; getStage: () => unknown } = {
@@ -120,7 +138,7 @@ describe('DetectionCanvas W2-10', () => {
   });
 
   it('ignores a drag that bubbled up from a rectangle inside the stage', async () => {
-    render(<DetectionCanvas imageUrl="av-image://project/item.png" imageSize={imageSize} containerSize={containerSize} />);
+    render(<DetectionCanvas instructions="" imageUrl="av-image://project/item.png" imageSize={imageSize} containerSize={containerSize} />);
     expect(await screen.findByText(/表示倍率 25%/u)).toBeInTheDocument();
     const onDragEnd = latest('Stage')!.onDragEnd as (event: unknown) => void;
     const stage = { x: () => -120, y: () => 60 };
@@ -131,7 +149,7 @@ describe('DetectionCanvas W2-10', () => {
 
   it('refuses a zoom past the supported range and keeps the current view', async () => {
     const user = userEvent.setup();
-    render(<DetectionCanvas imageUrl="av-image://project/item.png" imageSize={{ width: 8, height: 8 }} containerSize={{ width: 1000, height: 1000 }} />);
+    render(<DetectionCanvas instructions="" imageUrl="av-image://project/item.png" imageSize={{ width: 8, height: 8 }} containerSize={{ width: 1000, height: 1000 }} />);
     expect(stageViewport().scale).toBe(MAX_SCALE);
     await user.click(screen.getByRole('button', { name: '拡大' }));
     expect(stageViewport().scale).toBe(MAX_SCALE);
@@ -140,7 +158,7 @@ describe('DetectionCanvas W2-10', () => {
 
   it('refuses to render a stage when the container cannot fit a single scaled pixel', () => {
     const onViewportChange = vi.fn<(viewport: Viewport | null) => void>();
-    render(<DetectionCanvas imageUrl="av-image://project/item.png" imageSize={{ width: 4000, height: 4000 }}
+    render(<DetectionCanvas instructions="" imageUrl="av-image://project/item.png" imageSize={{ width: 4000, height: 4000 }}
       containerSize={{ width: 10, height: 10 }} onViewportChange={onViewportChange} />);
     expect(screen.getByRole('status')).toHaveTextContent('表示領域が小さすぎて画像を表示できません');
     expect(latest('Stage')).toBeUndefined();
