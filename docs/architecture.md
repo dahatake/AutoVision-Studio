@@ -34,9 +34,15 @@
 
 ### 現行
 
-**実装済み:** 現在起動する production process は Electron Main、sandboxed React Renderer、Electron Preload です。`src/main/index.ts` が app lifecycle と secure `BrowserWindow` を接続し、`src/preload/index.ts` は Renderer の `window.autoVision` へ `contractVersion` だけを公開します。Renderer は `src/renderer/layout/AppShell.tsx` の navigation shell と 11 個の見出し route までで、Project、データ、学習、レポート、カメラ推論の処理は実装されていません。
+**実装済み（process と Main の所有物）:** 現在起動する production process は Electron Main と sandboxed React Renderer で、Preload は Renderer の window に attach される隔離された bridge script です（独立した第三の process ではありません）。`src/main/index.ts` が app lifecycle と secure `BrowserWindow` を接続し、`userData` 配下の SQLite（`metadata.sqlite3`）へ backup 付きで migration 001〜007 を適用し、Project 画像を返す custom scheme と機能別 IPC handler を登録します。
 
-**実装済み（診断 command のみ）:** Python package には `ml/src/autovision_ml/cli.py` の `health` command があり、version と OS 名を JSON で返します。Electron Main からの spawn、ジョブ protocol、SQLite、Project files との接続はまだありません。
+**実装済み（Preload の公開 API は6種）:** `src/preload/index.ts` は frozen な `window.autoVision` へ `contractVersion` に加えて `projects`、`labelSchemas`、`annotations`、`diagnostics`、`jobs`、`imports` の6 API を公開します。型の正本は `src/shared/contracts/app.ts` の `AppApi` です。channel は各 API 内で固定され、raw `ipcRenderer`、filesystem、Node API、`child_process` は Renderer へ渡していません。
+
+**実装済み（実 component を持つ画面）:** `src/renderer/layout/AppShell.tsx` は Project 一覧、設定（5 カテゴリ）、Project 作業画面（5 タブ）から成ります。実 component を持つのは UI-01（`src/renderer/features/diagnostics/DiagnosticsPage.tsx`）、UI-02（`src/renderer/features/projects/ProjectListPage.tsx`）、UI-03（`src/renderer/features/projects/ProjectForm.tsx` と `src/renderer/features/settings/ProjectSettingsPanel.tsx`）、UI-04（`src/renderer/features/import/ImportPage.tsx`）、UI-09（`src/renderer/features/annotations/LabelSchemaPage.tsx`）です。
+
+**設計確定・未実装（表示はできるが機能がない画面）:** UI-05 学習、UI-06 結果・レポート、UI-07 カメラ推論、UI-10 教師データ作成は Project 作業画面の tab から到達できますが、未実装である旨を示す placeholder panel を表示するだけで、対象機能は提供しません。panel には設定（UI-10 はラベル定義、UI-07 は推論）への導線や、取り込み直後の件数・Workspace ID の記録表示といった補助表示を含みますが、いずれも学習・レポート・推論・注釈編集の機能ではありません。UI-11 補助ジョブには専用 panel がなく、`src/renderer/routes.tsx` で UI-10 と同じ「教師データ」tab に割り当てられ、その未実装説明文の中でだけ言及されます。UI-08 は設定の「ライセンス・情報」から到達でき、製品 version と同梱 icon の LICENSE / NOTICE を表示するだけで、その他の第三者通知、SBOM、モデル由来の表示は未実装です。`src/renderer/routes.tsx` の `EmptyRoute` は export されていますが production では描画されておらず、`appRoutes` の 11 件は画面 ID と path の対応表として参照されるだけです。
+
+**実装済み（Python は3 command）:** `ml/src/autovision_ml/cli.py` は `health`、`probe-hardware`、`scan-dataset` を持ちます。Main は端末診断で `probe-hardware` を `execFile` で起動し、上限付き stdout から schema 検証済み JSON を受け取ります。取り込みでは job service 経由で `scan-dataset` を短命 worker として spawn し、Main が所有する一時 job directory の request / result JSON と stdio の protocol event で受け渡します。学習、assist、ONNX export、Inference Worker は未実装です。
 
 ### 目標
 

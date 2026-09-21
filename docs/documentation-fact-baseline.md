@@ -3,21 +3,21 @@
 | 項目 | 値 |
 |---|---|
 | Task | DOCS-001 |
-| 作成日 | 2026-09-04 |
+| 基準日 | 2026-09-21 |
 | Repository | `dahatake/AutoVision-Studio` |
 | Branch | `main` |
-| HEAD | `c6179c6a42f47b4962df5222aec3d93358594166` |
-| 要求基準 | `docs/requirement-definition.md` v0.3 Draft |
-| 要求定義 raw Windows 作業ツリー SHA-256 | `2f1c57da192710ffb2fd764c7e342cf2e9106fa7387be7393133873cc815052f` |
-| 要求定義 LF-normalized SHA-256 | `7a6e08e7e046a3ced59644a73bde44c4d7b279f55ba809bd78af60fdaa5b175c` |
+| HEAD | `25dc1b7dc06d690d570197f0fb2501318c959899` |
+| 要求基準 | `docs/requirement-definition.md` v0.5 Draft |
+| 要求定義 raw Windows 作業ツリー SHA-256 | `cd060e8740e986271ca32cf1e22f0cad275e7c26f9ead573c9fb667f26f984fa` |
+| 要求定義 LF-normalized SHA-256 | `962f5d7209de1f607ee6cb4d31e68b084409f7b3105612e6e4042d8b893e037f` |
 | 実測 PowerShell | 7.6.5 Core |
 | 実測 Node.js | 24.19.0 |
 | 実測 system npm | 11.17.0（製品要件外。bootstrap にのみ使用し、製品検証には使用しない） |
 | 実測 uv | 0.12.9 |
 | 検証用 npm | 12.0.0 — 承認済み Microsoft proxy metadata が示す `ms-feed-25.pkgs.visualstudio.com` artifact を metadata SHA-1 と照合して一時展開 |
-| 現在の再検証 | **PASS** — Python test / lint / type check、Node aggregate test / typecheck / build が合格 |
+| 現在の再検証 | **PASS** — W0-04 の文書検証・型検査・editor diagnostics・独立レビューが合格。未実行の aggregate test / build / Python 検証は PASS と扱わない |
 
-> 本書は 2026-09-04 時点の文書化用事実を固定する。source や test が存在することと、このセッションで test が合格したことを区別する。実行していない検証を PASS と記録しない。
+> 本書は 2026-09-21 時点の文書化用事実を固定する。source や test が存在することと、このセッションで test が合格したことを区別する。実行していない検証を PASS と記録しない。
 
 ## 1. 証拠の扱い
 
@@ -33,14 +33,15 @@
 
 | 主張 | 掲載先 | 根拠 path・節 | Evidence | 機能状態 | 文書成熟度 | 再確認条件 |
 |---|---|---|---|---|---|---|
-| Electron Main は single-instance lock、ready 後の window 作成、second-instance focus、OS 別の全 window close を処理する | `docs/architecture.md`, `docs/developer-guide.md` | `src/main/app-lifecycle.ts`, ADR-0001 §2.2 | `src/main/app-lifecycle.test.ts` は 7 ケースを定義。現セッションでは npm 不一致により未実行 | **実装済み** | **要求反映済み** | exact npm 12.0.0 で対象 test と aggregate test を再実行 |
-| BrowserWindow は context isolation、sandbox、Node integration 無効、navigation / new window deny を設定する | `README.md`, `docs/architecture.md` | `src/main/security.ts`, `src/main/window.ts`, ADR-0001 §2.3 | `src/main/security.test.ts` は 6 ケースを定義。現セッションでは未実行 | **実装済み** | **要求反映済み** | exact npm 12.0.0 で対象 test を再実行 |
-| Preload は `autoVision` に contract version だけを公開し、raw IPC / Node capability を公開しない | `docs/architecture.md`, `docs/developer-guide.md` | `src/preload/index.ts`, `src/shared/contracts/app.ts`, ADR-0001 §2.2〜2.4 | `src/preload/index.test.ts` は 2 ケースを定義。現セッションでは未実行 | **実装済み** | **要求反映済み** | exact npm 12.0.0 で対象 test を再実行 |
-| Renderer shell は UI-01〜UI-11 の 11 route を持つが、各 route は見出しだけで feature は未実装 | `README.md`, `docs/users-guide.md`, `docs/architecture.md` | `src/renderer/routes.tsx`, `src/renderer/layout/AppShell.tsx` | `src/renderer/layout/AppShell.test.tsx` は route、navigation、keyboard activation を定義。現セッションでは未実行 | **実装済み** | **要求反映済み** | exact npm 12.0.0 で対象 test。各 feature task 完了時に状態を更新 |
-| Renderer header の製品版は root `package.json` から取得する実装が未コミット差分に存在する | `README.md`, `docs/developer-guide.md` | `src/renderer/product-version.ts`, `src/renderer/layout/AppShell.tsx`, `tsconfig.renderer.json` | `src/renderer/product-version.test.ts` と更新済み `AppShell.test.tsx` が存在するが現セッション未実行 | **実装済み** | **構成のみ** | VER-04 の対象 test、typecheck、build、敵対レビュー完了後 |
-| root product version の形式と package lock / model manifest の整合を検査する未コミット実装が存在する | `docs/developer-guide.md` | `scripts/release/verify-product-version.mjs`, `package.json`, CONTRIBUTING §8.1 | `scripts/release/verify-product-version.test.mjs` が正常・異常系を定義するが現セッション未実行 | **実装済み** | **構成のみ** | VER-02 / VER-03 の Node test と aggregate test 完了後 |
-| Python worker CLI は `health` command だけを提供し、component version と OS 名を JSON で返す | `docs/architecture.md`, `docs/developer-guide.md` | `ml/src/autovision_ml/cli.py`, `ml/src/autovision_ml/__init__.py` | exact uv の frozen / offline 環境で `ml/tests/test_cli_health.py` の 4 test、Ruff、Pyright が合格 | **実装済み** | **実測済み** | CLI または lock file 変更時に同じ検証を再実行 |
-| Node / Electron / Python の build 設定と lock file は存在する | `docs/developer-guide.md` | `package.json`, `package-lock.json`, `ml/pyproject.toml`, `ml/uv.lock`, Vite / TypeScript config | 現セッションでファイルを確認。build は npm 不一致により未実行 | **検証待ち** | **要求反映済み** | exact toolchain で lock check、test、typecheck、build |
+| Electron Main は single-instance lock、ready 後の window 作成、second-instance focus、OS 別の全 window close を処理する | `docs/architecture.md`, `docs/developer-guide.md` | `src/main/app-lifecycle.ts`, ADR-0001 §2.2 | source と対象 test が存在する。W0-04 では対象 test を未実行 | **実装済み** | **要求反映済み** | lifecycle 変更時に対象 test と aggregate test を再実行 |
+| BrowserWindow は context isolation、sandbox、Node integration 無効、navigation / new window deny を設定する | `README.md`, `docs/architecture.md` | `src/main/security.ts`, `src/main/window.ts`, ADR-0001 §2.3 | source と対象 test が存在する。W0-04 では対象 test を未実行 | **実装済み** | **要求反映済み** | security / window 変更時に対象 test を再実行 |
+| Preload は `autoVision` に contract version と `projects` / `labelSchemas` / `annotations` / `diagnostics` / `jobs` / `imports` の6 APIを公開し、raw IPC / Node capability を公開しない | `docs/architecture.md`, `docs/developer-guide.md` | `src/preload/index.ts`, `src/shared/contracts/app.ts`, ADR-0001 §2.2〜2.4 | `src/preload/index.ts` と6 API factory、対象 test が存在する。W0-04 では対象 test を未実行 | **実装済み** | **要求反映済み** | Preload contract または公開 API 変更時に対象 test を再実行 |
+| Renderer の UI-01 / 02 / 03 / 04 / 09 は実 component に接続され、診断、Project 一覧・作成・設定、データ取り込み、Label Schema を提供する | `README.md`, `docs/architecture.md` | `src/renderer/layout/AppShell.tsx`, `src/renderer/layout/ProjectWorkspace.tsx`, `src/renderer/features/` | 各 component と対象 test が存在する。W0-04 では対象 test を未実行 | **実装済み** | **要求反映済み** | 各 feature 変更時に対象 test と実アプリ受入を再実行 |
+| Renderer の UI-05 / 06 / 07 / 08 / 10 / 11 は到達可能な placeholder または限定情報表示であり、学習・レポート・カメラ推論・ストレージ管理・注釈編集・補助ジョブを提供しない | `README.md`, `docs/architecture.md`, `docs/users-guide.md` | `src/renderer/layout/ProjectWorkspace.tsx`, `src/renderer/features/settings/SettingsPage.tsx`, `src/renderer/routes.tsx` | `EmptyRoute` は export されているが production では描画されない。UI-08 は製品版と同梱 icon の LICENSE / NOTICE だけを表示する | **設計確定・未実装** | **要求反映済み** | 対応する ANN / AST / TRN / REP / INF / PKG task 完了時 |
+| Renderer header の製品版は root `package.json` から取得する | `README.md`, `docs/developer-guide.md` | `src/renderer/product-version.ts`, `src/renderer/layout/AppShell.tsx`, `tsconfig.renderer.json` | source と対象 test が存在する。W0-04 では対象 test を未実行 | **実装済み** | **要求反映済み** | version 表示変更時に対象 test、typecheck、build を再実行 |
+| root product version の形式と package lock / model manifest の整合を検査する | `docs/developer-guide.md` | `scripts/release/verify-product-version.mjs`, `package.json`, CONTRIBUTING §8.1 | verifier と正常・異常系 test が存在する。W0-04 では未実行 | **実装済み** | **要求反映済み** | release metadata 変更時に version verifier と対象 test を再実行 |
+| Python worker CLI は `health` / `probe-hardware` / `scan-dataset` の3 command を提供し、Main は診断と取り込みで短命 worker を起動する | `docs/architecture.md`, `docs/developer-guide.md` | `ml/src/autovision_ml/cli.py`, `src/main/diagnostics/diagnostics-service.ts`, `src/main/data/import-service.ts` | source と対象 test が存在する。W0-04 では Python / worker test を未実行 | **実装済み** | **要求反映済み** | CLI、worker protocol、lock file 変更時に対象 test / lint / type check を再実行 |
+| Node / Electron / Python の build 設定と lock file は存在する | `docs/developer-guide.md` | `package.json`, `package-lock.json`, `ml/pyproject.toml`, `ml/uv.lock`, Vite / TypeScript config | 現行ファイルを確認。W0-04 では build と lock 検証を未実行 | **実装済み** | **要求反映済み** | exact toolchain で lock check、test、typecheck、build |
 
 ## 3. 保存済み PoC 証拠
 
@@ -56,9 +57,10 @@
 | 主張 | 掲載先 | 根拠 path・節 | Evidence | 機能状態 | 文書成熟度 | 再確認条件 |
 |---|---|---|---|---|---|---|
 | Main が SQLite の唯一の writer となり、Python worker は DB を直接更新しない | `docs/architecture.md` | ADR-0001 §2.2〜2.7、実装計画 §3 | 設計文書のみ。production DB module は未実装 | **設計確定・未実装** | **要求反映済み** | CORE-02〜07 と対象 test 完了後 |
-| Project CRUD、診断、削除 preview を UI / Main / IPC で提供する | `docs/users-guide.md`, `docs/architecture.md` | FR-SYS-001〜005、FR-PRJ-001〜010、CORE-01〜14 | route 見出しだけ存在。feature は未実装 | **設計確定・未実装** | **構成のみ** | CORE-12〜14 / CORE-13 完了後に DOCS-403 |
-| Copy / Reference をユーザーが選択し、Reference 元を変更・削除しない | `README.md`, `docs/users-guide.md`, `docs/architecture.md` | FR-DAT-002、FR-DAT-011〜013、ADR-0002 §3.2 | SPI-19 は PARTIAL。production import は未実装 | **設計確定・未実装** | **要求反映済み** | SPI-19 と DAT-08〜15 完了後 |
-| Annotation Workspace は可変、Dataset Revision と Model Version は確定後不変 | `README.md`, `docs/users-guide.md`, `docs/architecture.md` | ADR-0002 §3.1〜3.6、FR-ANN、FR-MOD | 設計文書と SPI-10 PoC のみ | **設計確定・未実装** | **要求反映済み** | ANN-* / TRN-20〜21 完了後 |
+| Project CRUD、診断、削除 preview を UI / Main / IPC で提供する | `docs/users-guide.md`, `docs/architecture.md` | `src/main/projects/`, `src/main/diagnostics/`, `src/main/ipc/project-handlers.ts`, `src/renderer/features/projects/`, `src/renderer/features/settings/` | production source と対象 test が存在する。W0-04 では対象 test を未実行 | **実装済み** | **要求反映済み** | Project / diagnostics 変更時に対象 test と実アプリ受入を再実行 |
+| Copy / Reference をユーザーが選択し、Reference 元を変更・削除しない production import 経路を提供する | `README.md`, `docs/users-guide.md`, `docs/architecture.md` | `src/main/data/import-service.ts`, `src/main/data/import-files.ts`, `src/renderer/features/import/ImportPage.tsx`, ADR-0002 §3.2 | production source と対象 test が存在する。Windows reboot 後と macOS の Reference 実機受入は未実施 | **実装済み** | **要求反映済み** | import 変更時の対象 test、および対応 OS の実機受入 |
+| Annotation Workspace の保存・確認用 schema / repository / IPC と、Dataset Revision 用テーブルは存在する | `README.md`, `docs/users-guide.md`, `docs/architecture.md` | `src/main/db/migrations/006_annotations.sql`, `src/main/annotations/workspace-repository.ts`, `src/main/ipc/annotation-handlers.ts` | ANN-04 / 06 IPC はMain登録・Preload公開済み。migration 006 に Revision 系3テーブルが存在するが、Revision確定serviceとAnnotation editorは未実装 | **実装済み** | **要求反映済み** | ANN-* のUI・Revision確定・Queue引渡し完了時 |
+| Dataset Revision と Model Version は確定後不変とし、確定済み Revision を上位処理へ渡す | `README.md`, `docs/users-guide.md`, `docs/architecture.md` | ADR-0002 §3.1〜3.6、FR-ANN、FR-MOD | Revision table は既存だが、manifest生成・確定service・学習Queue引渡しは未実装 | **設計確定・未実装** | **要求反映済み** | ANN-11〜18 / TRN-20〜21 完了後 |
 | Model Suggestion は Ground Truth と分離し、全候補を人が確認するまで Dataset Revision に含めない | `README.md`, `docs/users-guide.md`, `docs/architecture.md` | FR-AST-009〜015、ADR-0002 §3.3 / §3.7 | production assist と承認済み C7 model は存在しない | **設計確定・未実装** | **要求反映済み** | Gate 2、AST-01〜24、NFR-ANN-005 evidence 完了後 |
 | 自動学習、HPO、追加学習、Model Version、レポートをローカル worker で提供する | `README.md`, `docs/users-guide.md`, `docs/architecture.md` | FR-TRN、FR-MOD、FR-REP、実装計画 Phase I / J | `health` 以外の production worker command は未実装 | **設計確定・未実装** | **構成のみ** | Gate 2 / 3、TRN-* / REP-* 完了後 |
 | カメラ権限は推論開始時だけ要求し、frame / result を既定で保存せず、queue depth 1 で推論する | `README.md`, `docs/users-guide.md`, `docs/architecture.md` | FR-INF-003〜017、ADR-0001 §2.5 / §2.7 | production camera / inference は未実装。SPI-08 は provider smoke のみ | **設計確定・未実装** | **要求反映済み** | INF-* と両 OS permission / performance evidence 完了後 |
@@ -76,45 +78,24 @@
 
 ## 6. 作業ツリー所有権ベースライン
 
-DOCS-001 作成前に次の差分が存在した。DOCS-002 でこれらを「製品版基盤」として識別し、文書タスクの変更と混在させない。
+W0-04 開始時点で `README.md`、`docs/architecture.md`、`docs/implementation-plan.md` に W0-01〜03 の差分があり、`work/20260921-1330-TaskExecutionPlan.md` が未追跡だった。W0-04 はこれらを読み取り専用の前提として扱い、本書だけを変更する。source、test、依存、lock、設定、証跡 JSON は変更しない。
 
-| 区分 | Path | DOCS task での扱い |
-|---|---|---|
-| tracked modified | `CONTRIBUTING.md` | VER-01 差分。DOCS-302 までは追記しない |
-| tracked modified | `docs/implementation-plan.md` | VER-00 差分。DOCS-302 までは追記しない |
-| tracked modified | `package.json` | VER-03 差分。DOCS-305 は version 差分の検証完了後に直列実行 |
-| tracked modified | `src/renderer/layout/AppShell.tsx` | VER-04 差分。文書タスクでは変更しない |
-| tracked modified | `src/renderer/layout/AppShell.test.tsx` | VER-04 差分。文書タスクでは変更しない |
-| tracked modified | `tsconfig.renderer.json` | VER-04 差分。文書タスクでは変更しない |
-| untracked | `scripts/release/verify-product-version.mjs` | VER-02 差分。`scripts/docs/` とは別 owner |
-| untracked | `scripts/release/verify-product-version.test.mjs` | VER-02 差分。`scripts/docs/` とは別 owner |
-| untracked | `src/renderer/product-version.ts` | VER-04 差分。文書タスクでは変更しない |
-| untracked | `src/renderer/product-version.test.ts` | VER-04 差分。文書タスクでは変更しない |
-| untracked | `docs/documentation-task-plan.md` | ドキュメント整備計画 |
-
-## 7. 現セッションの検証結果
+## 7. W0-04 の検証結果
 
 | 検証 | 結果 |
 |---|---|
-| PowerShell | 7.6.5 Core — PASS |
-| Node.js | 24.19.0 — PASS |
-| uv | 0.12.9 — PASS |
-| system npm | 11.17.0 — project exact requirement 12.0.0 に不一致 |
-| Corepack npm 12 解決 | 公開 npm registry への TLS handshake failure。検証には使用しなかった |
-| 承認済み Microsoft package feed から一時 npm 12 bootstrap | **PASS** — metadata version `12.0.0`、artifact SHA-1 `867836fd333dbd272da3705a7c2b32908cbd90c6` 一致、CLI `12.0.0` |
-| `npm test` | **PASS** — product-version 25、documentation 19、Vitest 20、合計 64 tests |
-| `npm run typecheck` | **PASS** — TypeScript project references |
-| `npm run build` | **PASS** — Main、Preload、Renderer。`package.json` と `package-lock.json` の hash 不変 |
-| `uv sync --frozen --offline` | **PASS** — 64 packages を同期 |
-| `uv run --frozen --offline pytest` | **PASS** — 4 passed |
-| `uv run --frozen --offline ruff check src tests` | **PASS** — all checks passed |
-| `node ..\node_modules\pyright\index.js`（`ml` から実行） | **PASS** — 0 errors, 0 warnings。npm は起動していない |
+| `node scripts/docs/verify-documentation.mjs` | **PASS** — exit code 0、required Markdown 8 files / SVG 5 files |
+| `npm run typecheck` | **BLOCKED** — exit code 1、0 test。system npm 11.17.0 が必須 12.0.x と不一致のため、TypeScript 起動前に `EBADDEVENGINES` |
+| `node_modules\.bin\tsc.cmd -b tsconfig.main.json tsconfig.renderer.json` | **PASS** — exit code 0、TypeScript errors 0。上記 script と同一の `npm run typecheck` 相当 command |
+| editor diagnostics（本書） | **PASS** — errors 0 |
+| Node aggregate test / build | **NOT_RUN** — W0-04 の対象外であり PASS と記録しない |
+| Python test / lint / type check | **NOT_RUN** — W0-04 の対象外であり PASS と記録しない |
 
-## 8. DOCS-001 敵対的レビュー
+## 8. W0-04 独立敵対的レビュー
 
-独立レビューの指摘は、一次資料で再現できたものだけを採用した。
+実装者とは別担当が、本書の HEAD・基準日・機能状態、未実行 test の扱い、および W0 の変更範囲をレビューした。
 
 | 指摘 | 再現結果 | 採否・反映 |
 |---|---|---|
-| source と対象 test が存在する行を `検証待ち` としたのは計画 §3.4 の定義と不一致 | 再現。計画はこの条件を `実装済み` と定義している | **採用**。該当する 7 行を `実装済み` へ修正し、test 未実行の事実は Evidence と再確認条件に維持 |
-| product version 実装の文書成熟度 `構成のみ` は不適切 | 再現せず。文書成熟度は source の完成度ではなく、利用可能な文書・手順の成熟度を表す。対象文書は未作成 | **不採用**。理由を記録し、値は維持 |
+| 要求基準を v0.5 Draft に更新した一方、raw / LF-normalized SHA-256 が旧値のまま | 再現。現行 `docs/requirement-definition.md` と `README.md` の値に不一致 | **採用**。raw を `cd060e8740e986271ca32cf1e22f0cad275e7c26f9ead573c9fb667f26f984fa`、LF-normalized を `962f5d7209de1f607ee6cb4d31e68b084409f7b3105612e6e4042d8b893e037f` へ修正 |
+| 修正後の再レビュー | 現行ファイルの実測値および `README.md` と一致 | **閉鎖**。blocking finding 0 |

@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
+import { nativeImage } from 'electron';
+
 import { MAX_IMAGE_BYTES } from '../../shared/contracts/import.js';
 import type { DatabaseConnection } from '../db/database.js';
 import { verifyProjectDirectory, type ProjectDirectoryReceipt } from '../projects/project-directory.js';
@@ -12,9 +14,13 @@ export const SCHEME = 'av-image';
 export const IMAGE_PROTOCOL_MAX_READS = 4;
 /** Payload reservation includes 2x encoded size; excludes DB metadata/consumer-owned copies. */
 export const IMAGE_PROTOCOL_RESERVED_BYTES = 256 * 1024 * 1024;
+export const IMAGE_THUMBNAIL_MAX_EDGE = 256;
+export const IMAGE_THUMBNAIL_MAX_PIXELS = 4_000_000;
+const thumbnailMaxBytes = 1024 * 1024;
+const thumbnailBitmapBytes = IMAGE_THUMBNAIL_MAX_PIXELS * 4;
 const chunkBytes = 64 * 1024;
 const uuid = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
-const address = new RegExp(`^av-image://image/(${uuid})/(${uuid})/(${uuid})(?![\\s\\S])`, 'u');
+const address = new RegExp(`^av-image://(image|thumbnail)/(${uuid})/(${uuid})/(${uuid})(?![\\s\\S])`, 'u');
 const headers = {
   'Cache-Control': 'no-store',
   'X-Content-Type-Options': 'nosniff',
@@ -45,6 +51,50 @@ function mime(bytes: Buffer): string | undefined {
   return undefined;
 }
 
+function dimensions(bytes: Buffer, contentType: 'image/png' | 'image/jpeg'): { width: number; height: number } {
+  if (contentType === 'image/png') {
+    if (bytes.length < 24 || bytes.subarray(12, 16).toString('ascii') !== 'IHDR') throw new Error('Image unavailable.');
+    return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+  }
+  let offset = 2;
+  while (offset + 4 <= bytes.length) {
+    if (bytes[offset] !== 0xff) break;
+    while (offset < bytes.length && bytes[offset] === 0xff) offset += 1;
+    const marker = bytes[offset++];
+    if (marker === undefined || marker === 0xd8 || marker === 0xd9) continue;
+    if (marker === 0xda) break;
+    if (offset + 2 > bytes.length) break;
+    const length = bytes.readUInt16BE(offset);
+    if (length < 2 || offset + length > bytes.length) break;
+    if ([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf].includes(marker)) {
+      if (length < 7) break;
+      return { width: bytes.readUInt16BE(offset + 5), height: bytes.readUInt16BE(offset + 3) };
+    }
+    offset += length;
+  }
+  throw new Error('Image unavailable.');
+}
+
+function thumbnail(bytes: Buffer, contentType: 'image/png' | 'image/jpeg'): Buffer {
+  const expected = dimensions(bytes, contentType);
+  if (expected.width <= 0 || expected.height <= 0
+    || expected.width * expected.height > IMAGE_THUMBNAIL_MAX_PIXELS) throw new Error('Image unavailable.');
+  const decoded = nativeImage.createFromBuffer(bytes);
+  if (decoded.isEmpty()) throw new Error('Image unavailable.');
+  const size = decoded.getSize();
+  if (!Number.isSafeInteger(size.width) || !Number.isSafeInteger(size.height)
+    || size.width !== expected.width || size.height !== expected.height
+    || size.width * size.height > IMAGE_THUMBNAIL_MAX_PIXELS) throw new Error('Image unavailable.');
+  const resized = Math.max(size.width, size.height) <= IMAGE_THUMBNAIL_MAX_EDGE
+    ? decoded
+    : decoded.resize(size.width >= size.height
+      ? { width: IMAGE_THUMBNAIL_MAX_EDGE, quality: 'good' }
+      : { height: IMAGE_THUMBNAIL_MAX_EDGE, quality: 'good' });
+  const output = resized.toPNG();
+  if (output.length === 0 || output.length > thumbnailMaxBytes) throw new Error('Image unavailable.');
+  return output;
+}
+
 function sameProject(before: ProjectDirectoryReceipt): void {
   const after = verifyProjectDirectory(before.rootPath, before.projectId);
   if (after.rootPath !== before.rootPath || after.projectId !== before.projectId
@@ -54,7 +104,7 @@ function sameProject(before: ProjectDirectoryReceipt): void {
     || after.markerIdentity.birthtimeNs !== before.markerIdentity.birthtimeNs) throw new Error('Image unavailable.');
 }
 
-/** Main registers handle before creating a Window; this leaf has no Electron runtime dependency.
+/** Main registers handle before creating a Window; thumbnail decoding uses Electron nativeImage.
  * Match request.url as delivered, never URL-normalize it to grant authority. The
  * transport must preserve the original URL: aliases already normalized BEFORE
  * Request creation cannot be recovered or distinguished by a Request-only API.
@@ -114,7 +164,7 @@ export function createImageProtocol(database: DatabaseConnection): {
       try {
         database.exec(`BEGIN DEFERRED; SAVEPOINT ${savepoint}`);
         readingSnapshot = true;
-        source = findImportImageSource(database, match[1]!, match[2]!, match[3]!);
+        source = findImportImageSource(database, match[2]!, match[3]!, match[4]!);
         readingSnapshot = false;
         database.exec('COMMIT');
       } catch {
@@ -126,7 +176,7 @@ export function createImageProtocol(database: DatabaseConnection): {
       if (database.inTransaction || !database.open) return failure(503);
       if (!source) return failure(404);
       if (!Number.isSafeInteger(source.byteSize) || source.byteSize <= 0 || source.byteSize > MAX_IMAGE_BYTES) return failure(404);
-      allocation = source.byteSize * 2;
+      allocation = source.byteSize * 2 + (match[1] === 'thumbnail' ? thumbnailBitmapBytes + thumbnailMaxBytes : 0);
       if (allocation > IMAGE_PROTOCOL_RESERVED_BYTES - reserved) { allocation = 0; return failure(503); }
       reserved += allocation;
       assertImportImageSourceCurrent(database, source);
@@ -144,6 +194,10 @@ export function createImageProtocol(database: DatabaseConnection): {
       if (bytes.length !== source.byteSize) return failure(404);
       const contentType = mime(bytes);
       if (!contentType) return failure(415);
+      if (match[1] === 'thumbnail') {
+        if (contentType !== 'image/png' && contentType !== 'image/jpeg') return failure(415);
+        bytes = thumbnail(bytes, contentType);
+      }
       let offset = 0;
       const body = new ReadableStream<Uint8Array>({
         start(value) { output = value; },
@@ -162,7 +216,8 @@ export function createImageProtocol(database: DatabaseConnection): {
         },
         cancel() { release(); controller.abort(); },
       }, { highWaterMark: 0 }); // Unread responses continue holding a slot and budget.
-      const response = new Response(body, { headers: { ...headers, 'Content-Type': contentType,
+      const response = new Response(body, { headers: { ...headers,
+        'Content-Type': match[1] === 'thumbnail' ? 'image/png' : contentType,
         'Content-Length': String(bytes.length), 'Accept-Ranges': 'none' } });
       streaming = true;
       return response;

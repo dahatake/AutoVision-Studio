@@ -417,3 +417,54 @@ window閉鎖/破棄/部分登録失敗で所有channelと診断serviceを一度�
 - **失敗の引継ぎ**：共有Coreの移動再検証で1回観測したfile snapshot不一致は原因未確定。観測コードは除去して元test hashへ復元し、その後Main47件と最終分割回帰は成功した。根治済みとはせず、再現結果・Core hash・次に取得する属性を上記担当記録の「Core担当への引継ぎ」に記載した。共有Coreの安全検査を緩めていない。
 
 **A/BとC0〜C7はそれぞれの部品・限定技術接続の範囲で完了。親SEC-07は未完**。自動smokeのOS確認ダイアログ応答はtest doubleであり、実描画・本人による承認・Narratorは未検証。SPA内の詳細離脱は古い応答表示を抑制するだけで、送信済みの保存を取り消したとは扱わない。全loggerのマスク接続、正式Windows受入、全process通信/カメラ監査、本人確認、モデル性能、ほかの未完タスクを免除せず、CHANGELOG/PATCH・commit/tag/releaseも保留する。
+
+## 7. Wave 1「本人確認の解消」の実行記録（2026-09-21）
+
+対象はタスク実行プラン `work/20260921-1330-TaskExecutionPlan.md` のWave 1（W1-01〜W1-03）。本節は**状態の確定だけ**を行い、source・test・依存・lock・証跡JSONを変更していない。未実施を実施済みへ読み替えず、leafの完了を親の完了へ昇格させない。既存の§3表・承認履歴・過去の件数記録も書き換えていない。
+
+### W1-01：UIR-017本人確認 — NOT_RUN保持（UIR-017はBLOCKEDのまま）
+
+実施可否を利用者へ照会したが応答が得られず（利用者不在）、実操作・理解についての回答は取得できなかった。今回はプレビューを起動しておらず、2026-09-07の起動記録を今回の実施として再利用しない。代行・推測で埋めない既存規約に従い、[確認項目](../tests/manual/ui-shell-review.md#本人確認)へ照会日と未取得の事実だけを追記した。§3表のUIR-017行は`BLOCKED（本人確認）`のまま変更していない。照会したこと自体を実施・合格として扱わず、Wave 1の他タスクの完了をもってUIR-017・M1を完了扱いにしない。**W1-01はBLOCKEDを保持する。**
+
+### W1-02：UIR-041Q／UIR-084の現況確定 — 両者とも「未実施」
+
+| ID | 位置づけ | 判定 | 根拠 |
+|---|---|---|---|
+| UIR-041Q | v2 §7.4「手動編集・確定」の確認task（関連実装計画§7.1「参照登録する全タスク」）。FR-UI-001/004/008の受入参照（同§9.1）。実行順は同§5.2のM2行`…→041→ANN-27/28→041Q` | **未実施** | ①本記録§3以降にUIR-041Qの実施記録が無い ②前提のUIR-041が未着手で、`src/renderer/features/annotations/`は`LabelSchemaPage`の3fileだけ。確定経路の`src/main/annotations/confirm-and-queue.ts`も不在 ③UIR-041Qを対象とする結果fileが0件 |
+| UIR-084 | v2 §7.11「回帰・判定」のtask（同§7.1）。FR-UI-001/002の受入参照（同§9.1）。実行順は同§5.2「v3承認後の実行順」の`082→083/084/085→086` | **未実施** | ①本記録に実施記録が無い ②前提のUIR-082が対象とする設定書出し・削除・運用のdomainが未実装で、`tests/e2e/`ディレクトリ自体が不在のため回帰判定の実行基盤が無い ③UIR-084を対象とする結果fileが0件 |
+
+証拠の取得方法：`UIR-041` / `041Q` / `084` をrepository全体（`docs/`・`src/`・`tests/`・`test-results/`・`spikes/`・`build/`）へ検索し、一致したのは関連実装計画・要求定義の参照表とタスク実行プランだけだった。実施記録・結果fileの一致は0件である。判定は「記録が無い」と「前提が存在しない」の両方に基づくため`未確認`ではなく`未実施`とする。**どちらも`完了`にしない。**
+
+関連実装計画§7.1「停止条件と重要な依存」は「UIR-041Q/084も同様」として、UIR-017と同じく担当者の技術測定と**利用者本人の確認**を分けることを求めている。したがって両IDは前提実装が揃った後も、自己点検・DU承認・JSDOM結果を本人の実回答へ代用できない。今回の「未実施」確定は、将来の本人確認を免除するものではない。
+
+### W1-03：親UIR-025を閉じるための残条件と担当Wave
+
+親UIR-025は`UIR-025A`と`UIR-025B`の双方が完了して初めて完了する（関連実装計画§7.1「2026-09-11 UI/UX v3の差分登録」）。`UIR-025A-S`／`UIR-025A-W`と追加技術検証は本記録「UI/UX v3の実行（2026-09-11）」内の[UIR-025A：通常Project接続と実起動の完了](#uir-025a通常project接続と実起動の完了)で完了済みだが、これはleafの完了であり、以下が閉じるまで**親UIR-025は未完**とする。
+
+| # | 残条件 | 内容と出典 | 担当Wave（実行プラン） | 現状 |
+|---|---|---|---|---|
+| 1 | 削除previewのMain実装 | 所有データとReference参照データを区別した件数・容量の取得。CORE-10／UIN-05→06（関連実装計画§7.1） | Wave 2G の `delete-preview.ts` task | 未着手。`src/main/projects/delete-preview.ts`は不在 |
+| 2 | UIR-025B 削除preview接続 | 実previewの全対象件数・容量・所有/Reference境界をUIへ接続。失敗・Project切替後の古いpreviewを使用しない（同上） | Wave 2G の削除確認ダイアログtask | 未着手。**出力file割当が未統一**：UIR-025BはA と同じ既定5file（`AppShell.tsx`／`ProjectWorkspace.tsx`／`SettingsPage.tsx`と2 test）、実行プランのWave 2Gは`DeleteProjectDialog.tsx`を割当てている。着手前に割当を1つへ確定する必要がある |
+| 3 | PRE-03 E2E harness | 実在・build可能なappだけを起動し、一時profile/Projectと確実な終了を検証（関連実装計画§14.3）。CORE-13が消費する | Wave 3 のE2E依存採用・harness task | 未着手。`tests/e2e/`が不在。Playwright採用可否はプランQ-03の承認待ち |
+| 4 | CORE-13A Project E2E受入 | 親UIR-025とPRE-03の後に、previewを含む受入を実施（同§7.1、§7 Phase D） | Wave 3 のProject CRUD E2E task | 未着手。#1〜#3が前提 |
+| 5 | 実削除の接続 | REL-04・UIR-079後のUIN-07→08→09で実削除を接続しCORE-13Dへ合流。ただしCORE-13DはGate 3の新前提にしない（同§7.1） | Wave 2G の削除実行task ＋ Wave 5以降 | 未着手。`src/main/projects/delete-project.ts`は不在 |
+| 6 | 本人確認（通常密度・Narrator・OS picker実操作） | 上記「UIR-025A：通常Project接続と実起動の完了」節が明示的に未完として残した項目 | Wave 1（W1-01と同じ利用者操作lane）／実機到達後に再実施 | **未実施**。W1-01と同じく利用者不在で取得できていない |
+| 7 | 正式製品Gate（Gate 3） | 縦スライス成立を実E2Eから判定（関連実装計画§6） | Wave 3 のGate 3判定 | 未判定。#3・#4が前提 |
+| 8 | 署名（Windowsコード署名証明書 D-16） | 利用者からの証明書提示が必要 | Wave 5以降（Phase M） | 未提示 |
+| 9 | clean install | SPI-03のclean Windows実測。`SKIPPED_BY_USER`を保持し、別名で開発前提へ戻さない | Wave 5以降（Phase M） | 未取得。現hostや別processをclean Windowsの代替としない。SPI-05は上記「Gate 1入力と判定の完了」節のとおり**開発host上のunsigned NSIS PoCとして合格済み**であり、この#9を満たす証拠ではない（同節が production config・正式署名・SBOM・clean host・servicingを対象外と明記） |
+
+#1・#2・#5はWave 2Gで着手できる。#3・#4・#7はWave 3、#8・#9はWave 5以降であり、いずれも本Wave 1では解消しない。#6は利用者操作に依存し、実装では解消できない。
+
+**判定：親UIR-025は`未完（B待ち＋本人確認・出荷Gate未完）`を保持する。** UIR-025A系leafの完了・技術smokeの成功・W1-02の現況確定のいずれも、親UIR-025やM1・Gate 3の完了へ昇格させない。CHANGELOG／PATCH・commit/tag/releaseは引き続き行わない。
+
+### Wave 1の検証記録
+
+| 検証 | 実コマンド | 結果 |
+|---|---|---|
+| 文書整合（変更前baseline） | `node scripts/docs/verify-documentation.mjs` | exit 0（必須Markdown 8件、SVG 5件） |
+| 文書整合（変更後） | `node scripts/docs/verify-documentation.mjs` | exit 0（必須Markdown 8件、SVG 5件） |
+| 文書checker自己test | `node --test scripts/docs/verify-documentation.test.mjs` | exit 0、22/22 PASS |
+| 製品版整合 | `node scripts/release/verify-product-version.mjs` | exit 0（`0.1.0`） |
+| 空白・改行 | `git diff --check` | exit 0 |
+
+本節はMarkdownだけを変更したため、TypeScriptの型検査・Vitest・buildは実行していない。過去runのPASS件数を今回の合格として読み替えない。W1-01が未達のため、Wave 1全体は**未完**として保持する。

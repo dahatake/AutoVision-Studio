@@ -1569,3 +1569,38 @@ DAT-12の完了を、DAT-13全体、通常import orchestration、Annotation Work
 | 学習・外部条件 | JOB-07 training dispatch、未承認modelとGate 2、本人確認、正式署名、clean Windows／package、OS再起動後Reference受入は未完了／BLOCKEDを保持。条件は**免除されていない** |
 
 **今回の編集・検証状態:** 変更は本書への§15.9一節の追記だけ。`work/`、履歴、他docs、メモリ、source、依存・設定・証跡JSONを変更せず、端末command・network・test・buildを実行しない。編集後のエラー診断だけを確認し、**文書checkerと文書test 22件は未実行・親担当の直列実行待ち**とする。親が実行queueを所有し、他testの実行中に重ねない。この追記はその検証・レビューが終わるまで文書検証済みとは扱わない。製品版は引き続き**`0.1.0`**、CHANGELOG／PATCH更新・commit／tag／releaseは行わず、全対象と必要Gate・独立レビュー完了後だけの最終化条件を維持する。
+
+### 15.10 ANN-04／06 IPCとmigration番号の現状確定（2026-09-21）
+
+本小節は、現在のsourceを読み直して確認した**実装実態の確定**だけを追記する。既存の計画表、承認履歴、過去の件数記録、適用済みmigration履歴は書き換えない。新しい要求・Gate・task IDも追加しない。目的は、誤った「未実装」記述に基づく**重複実装と重複migrationの防止**であり、残作業の完了宣言ではない。
+
+**① ANN-04／ANN-06のIPCは実装済みでMainへ登録済み。** §15.9末尾の残件表はこの2つのIPC接続を残件として記録している。同表は当時の記録として保持し、本小節を現在値とする（両者の前後関係は`25dc1b7`時点のsourceからは確定できないため、実装時期を推測して記載しない）。
+
+| 対象 | 確認した実在物 | 現在の境界 |
+|---|---|---|
+| ANN-04 Label Schema IPC | `src/main/ipc/label-schema-handlers.ts`と同`.test.ts`。Main側は`src/main/index.ts`の`registerLabelSchemaHandlers`で登録済み。Preloadは`src/preload/label-schema-api.ts`を`labelSchemas`として公開する | 固定channelは`label:get`／`label:create`／`label:createClass`／`label:updateClass`／`label:update`／`label:deleteClass`／`label:mergeClasses`の7種（`src/shared/contracts/annotation-ipc.ts`）。UI側は`LabelSchemaPage.tsx`のみ実在し、Annotation editor一式は未実装のまま |
+| ANN-06 Workspace IPC | `src/main/ipc/annotation-handlers.ts`と同`.test.ts`。Main側は同`index.ts`の`registerAnnotationHandlers`で登録済み。Preloadは`src/preload/annotation-api.ts`を`annotations`として公開する | 固定channelは`annotation:workspaces`／`annotation:list`／`annotation:get`／`annotation:save`／`annotation:confirm`の5種。IPC境界の成立であり、autosave／Undo UI、人手確認、workspace全体validation、Revision確定、実Queue引渡しの成立ではない |
+| Preloadの公開面 | `src/preload/index.ts`は`contractVersion`に加えて`projects`／`labelSchemas`／`annotations`／`diagnostics`／`jobs`／`imports`の6 APIを公開する | 公開済みAPIの存在であり、各画面が到達済みであることを意味しない |
+
+したがって、ANN-04／ANN-06のhandler・contract・Preload APIを**新規作成しない**。変更が必要な場合は既存fileの担当leafで扱い、別名で再実装しない。
+
+**② Dataset Revision用のテーブルは`006_annotations.sql`に既存。新規migrationを追加しない。** 同fileに次の3テーブルが実在する。
+
+| テーブル | 位置 | 保持する内容 |
+|---|---|---|
+| `dataset_revisions` | `006_annotations.sql:113` | project／workspace単位のrevision番号、`copy`／`reference` mode、manifest JSONとそのSHA-256、`datasets/<id>/manifest.json`に固定した相対path、schema snapshot、split seed、確定時刻、Reference時のみ許す最終検証時刻 |
+| `dataset_items` | `006_annotations.sql:133` | revisionへ固定したitem行。image hash、寸法、source snapshot、annotation JSONとそのhash、provenance、`labeled`／`negative`／`excluded`の区分と`train`／`validation`／`test`のsplit |
+| `workspace_revision_sources` | `006_annotations.sql:161` | workspaceと派生元revisionの対応 |
+
+よって、Dataset Revisionのために`008_revisions.sql`等の**新しいmigrationを追加しない**。未実装なのはschemaではなく上位の実装であり、`src/main/data/revision-manifest.ts`・`revision-repository.ts`・`revision-service.ts`、`src/main/annotations/clone-workspace.ts`・`confirm-and-queue.ts`は現在不在である。既存テーブルを重複定義するmigrationはschema破壊riskがあるため作らない。
+
+**③ 使用済みmigration番号は001〜007。** `src/main/db/migrations/`に実在するのは`001_core.sql`／`002_jobs.sql`／`003_import.sql`／`004_import_generation.sql`／`005_import_rights.sql`／`006_annotations.sql`／`007_annotation_target_history.sql`の7 fileであり、`src/main/index.ts`の同梱配列で`version: 1`〜`version: 7`として連番登録されている。`migrate.ts`は連番でない同梱migrationを起動時に拒否する。次に利用可能な未使用番号は**008**である。§15.9で記録したとおり、旧表の`004_annotations.sql`・`005_suggestions.sql`・`006_training.sql`・`007_inference.sql`等は計画時の予定名として保持し、現在の使用可能番号と扱わない。AST／TRN／INF等の将来migrationは、着手時にその担当が同梱済み履歴と他担当の予約を照合して割り当てる。本追記で将来番号を一括予約・確定したり、歴史的な番号を改番したりしない。
+
+**今回の検証:** 上記①〜③の根拠として、対象testだけを本作業ホストで実行した。件数は各fileの範囲を保ち、製品全体の完了件数へ合算しない。
+
+| 実行コマンド | 結果 |
+|---|---|
+| `node_modules\.bin\vitest.cmd run src/main/ipc/label-schema-handlers.test.ts src/main/ipc/annotation-handlers.test.ts src/main/db/annotation-schema.test.ts src/main/db/annotation-target-history.test.ts` | exit code 0、4 files passed、**137 passed／0 failed**（内訳: annotation-schema 43、annotation-target-history 35、annotation-handlers 34、label-schema-handlers 25） |
+| `node scripts/docs/verify-documentation.mjs` | exit code 0 |
+
+**この追記の範囲と限界:** 変更は本書への§15.10一節の追記だけであり、source・test・依存・lock・設定・証跡JSONを変更しない。上表の137件は当該4 fileの対象回帰であって、Main起動統合、UI、E2E、packaged appの合格ではない。ANN-04／06のIPC実装済みという事実を、Annotation Workspaceの利用経路、Revision確定、学習Queue引渡し、Gate 2のmodel承認、UIR-017の本人確認、正式署名・clean Windows受入の完了へ拡張しない。製品版は引き続き**`0.1.0`**とし、今回CHANGELOG追加・PATCH更新・commit／tag／releaseは行わない。
