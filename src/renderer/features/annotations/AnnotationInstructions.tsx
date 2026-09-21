@@ -14,7 +14,7 @@ const EMPTY_NOTICE = 'この Project の作業指示はまだ設定されてい�
 export function AnnotationInstructions({ instructions }: AnnotationInstructionsProps) {
   const hasInstructions = instructions.trim().length > 0;
   return (
-    <section aria-label="作業指示" data-has-instructions={hasInstructions}>
+    <section aria-label="作業指示">
       <h2>作業指示</h2>
       {hasInstructions
         ? <p style={{ whiteSpace: 'pre-wrap' }}>{instructions}</p>
