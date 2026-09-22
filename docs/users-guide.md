@@ -34,7 +34,7 @@
 | 機能状態: `対象外` | Version 1（MVP）の scope 外 |
 | 文書成熟度: `構成のみ` | 検証項目だけがあり、操作手順として利用できない |
 | 文書成熟度: `要求反映済み` | 要求と設計を説明しているが UI 文言や手順は未検証 |
-| 文書成熟度: `実測済み` | 製品版、OS、実行証拠を記録し、手順を再現済み |
+| 文書成熟度: `実測済み` | 実行証拠を記録し、手順を再現済み。§6〜§10 の現在の実測は**署名前ビルド**であり、署名済み製品版での再実測は未実施（下記「章ごとの状態」を参照） |
 
 ---
 
@@ -66,10 +66,10 @@
 | [7. Copy / Reference、入力形式、データ権利](#7-copy--reference入力形式データ権利) | 実装済み | 実測済み |
 | [8. 画像分類チュートリアル](#8-画像分類チュートリアル) | 実装済み | 実測済み |
 | [9. 物体検出チュートリアル](#9-物体検出チュートリアル) | 実装済み | 実測済み |
-| [10. Label Schema と教師データ作成の詳細](#10-label-schema-と教師データ作成の詳細) | 検証待ち | 要求反映済み |
+| [10. Label Schema と教師データ作成の詳細](#10-label-schema-と教師データ作成の詳細) | 実装済み | 実測済み |
 | 11〜16 | 未更新（本改訂の対象外） | 未更新（本改訂の対象外） |
 
-§6〜§9 の「実測済み」は、**署名前ビルドでの E2E 実測**を指します。署名済み package と OS 標準ダイアログの実機確認は未実施です。§10 は Label Schema 画面（UI-09）の手順を実測していないため据え置きです。
+§6〜§10 の「実測済み」は、**署名前ビルドでの実測**を指します（§6〜§9 は E2E spec、§10 のラベル定義画面は署名前ビルドの実起動）。署名済み package と OS 標準ダイアログの実機確認は未実施です。各章の「最終化条件」に、その章で**まだ実測していない表示・操作**を明記しています。
 
 ---
 
@@ -409,37 +409,35 @@ CSV は `path,label` の見出し行が必要で、`path` はフォルダーか�
 >
 > **根拠:** FR-PRJ、FR-DAT、FR-ANN-001〜014、FR-ANN-101〜107、FR-AST、FR-TRN、FR-REP、FR-INF。取り込み〜Dataset 確定〜学習 Queue の手順は `tests/e2e/annotation-classification.spec.ts` の実行で再現
 >
-> **最終化条件:** 学習の実行・レポート・推論（Gate 2／Gate 4／Gate 5 依存）の実装と、一括適用・クラス分布の手順実測
+> **最終化条件:** 学習の実行・レポート・推論（Gate 2／Gate 4／Gate 5 依存）の実装と、一括適用・クラス分布の**画面への接続**および手順実測
 
-### 目標シナリオ（操作手順ではありません）
+### 目標シナリオ（節全体の検証テンプレート）
 
-以下は要求定義上の完了フローを検証するためのテンプレートです。現在は実行できず、ボタン名、画面遷移、成功表示、所要時間を示しません。DOCS-404 で製品版の開始から終了までを実測した後にだけ操作手順へ置き換えます。
+以下は要求定義上の完了フロー**全体**の検証テンプレートです。本書が操作手順として記載できるのは下記「取り込みから学習 Queue までの操作手順」の範囲だけで、**学習の実行以降（#9〜#12）は未実装**です。各行の evidence 欄に現在の実測状態を示します。DOCS-404 の製品版実測は署名済み package で別途行います。
 
-**開始前提:** Image Classification の Project、利用権を確認できる JPEG / PNG / WebP / BMP / TIFF、十分な空き容量を用意します。Folder 構造または UTF-8 CSV を使用する場合も、実装済み validator で確認できるまでは sample path を固定しません。
+**開始前提:** Image Classification の Project、利用権を確認できる JPEG / PNG / WebP / BMP / TIFF、十分な空き容量を用意します。
 
-| # | 目標状態 | Error / Warning 分岐 | 主な要求 | 製品版／Windows evidence |
+| # | 目標状態 | Error / Warning 分岐 | 主な要求 | 現在の evidence |
 |---|---|---|---|---|
-| 1 | Image Classification Project が作成される | 入力 validation の表示を記録 | FR-PRJ-001〜006 | 未検証 |
-| 2 | 作業フォルダーと Copy / Reference が確定する | 容量不足、参照不可を記録 | FR-DAT-002、NFR-STO-001 | 未検証 |
-| 3 | 入力データの利用・学習権利の確認日時が記録される | 未確認時は取り込みを開始しない | FR-LIC-009 | 未検証 |
-| 4 | 画像または分類データの検証結果が表示される | 1 件でも Error があれば学習を開始しない | FR-DAT-001〜010 | 未検証 |
-| 5 | Project 固有の Label Schema が確定する | 空白名、正規化後重複を拒否 | FR-ANN-003〜004 | 未検証 |
-| 6 | 各画像に一つの class が設定される | 0 件／複数 class、schema 外 class を Error とする | FR-ANN-101〜107 | 未検証 |
-| 7 | Gate 2 後に assist が利用可能な場合だけ全 Model Suggestion が個別処理される | 未処理候補を残して確定しない | FR-AST-001〜015 | 未検証 |
-| 8 | Error 0、Warning 確認後に immutable Dataset Revision が確定する | 中断時は Annotation Workspace を保持 | FR-ANN-011〜014 | 未検証 |
-| 9 | Training Run の Queue、進捗、終了状態が確認される | cancel / failure / interrupted の状態と再実行可否を記録 | FR-TRN-001〜020 | 未検証 |
-| 10 | 分類指標、混同行列、画像別結果が確認される | 欠損画像、低品質 warning を記録 | FR-REP-001〜012 | 未検証 |
-| 11 | 成功 Run から immutable Model Version が選択できる | Succeeded 以外では生成しない | FR-MOD-001〜005 | 未検証 |
-| 12 | カメラ説明と権限同意後に分類推論を開始・停止する | denied、低速、camera unavailable を記録 | FR-INF-001〜019 | 未検証 |
+| 1 | Image Classification Project が作成される | 入力 validation の表示を記録 | FR-PRJ-001〜006 | 署名前ビルドで実測（`project-crud.spec.ts`、[§6](#6-project-と保存場所の設定)） |
+| 2 | 作業フォルダーと Copy / Reference が確定する | 容量不足、参照不可を記録 | FR-DAT-002、NFR-STO-001 | Copy / Reference の選択と参照不可時の再リンクは実測。**容量不足は未実測** |
+| 3 | 入力データの利用・学習権利の確認日時が記録される | 未確認時は取り込みを開始しない | FR-LIC-009 | 署名前ビルドで実測（未チェックでは取り込めない） |
+| 4 | 画像または分類データの検証結果が表示される | 1 件でも Error があれば学習を開始しない | FR-DAT-001〜010 | 署名前ビルドで実測（壊れた file・不正 item の「問題一覧」報告） |
+| 5 | Project 固有の Label Schema が確定する | 空白名、正規化後重複を拒否 | FR-ANN-003〜004 | 署名前ビルドで実測（[§10](#10-label-schema-と教師データ作成の詳細)、重複名の拒否を確認） |
+| 6 | 各画像に一つの class が設定される | 0 件／複数 class、schema 外 class を Error とする | FR-ANN-101〜107 | 署名前ビルドで実測（`annotation-classification.spec.ts`） |
+| 7 | Gate 2 後に assist が利用可能な場合だけ全 Model Suggestion が個別処理される | 未処理候補を残して確定しない | FR-AST-001〜015 | **未実装**（Gate 2 依存） |
+| 8 | Error 0、Warning 確認後に immutable Dataset Revision が確定する | 中断時は Annotation Workspace を保持 | FR-ANN-011〜014 | 署名前ビルドで実測（Error 残存時は確定 button が押せない） |
+| 9 | Training Run の Queue、進捗、終了状態が確認される | cancel / failure / interrupted の状態と再実行可否を記録 | FR-TRN-001〜020 | Queue 登録までを実測。**学習の実行・進捗・終了状態は未実装** |
+| 10 | 分類指標、混同行列、画像別結果が確認される | 欠損画像、低品質 warning を記録 | FR-REP-001〜012 | **未実装** |
+| 11 | 成功 Run から immutable Model Version が選択できる | Succeeded 以外では生成しない | FR-MOD-001〜005 | **未実装** |
+| 12 | カメラ説明と権限同意後に分類推論を開始・停止する | denied、低速、camera unavailable を記録 | FR-INF-001〜019 | **未実装** |
 
 **データ境界:** Copy モード以外では元画像を複製せず、Reference 元を変更しません。Model Suggestion は draft へ反映しても Ground Truth へ自動確定されません。Dataset Revision と Model Version は確定後に上書きしません。
 
-**中断・やり直し:** Annotation Workspace の編集、Queued Run の削除、実行中 Run の cancel、Interrupted Run の再開条件は製品実測後に記載します。未検証の recovery 操作は案内しません。
+**中断・やり直し:** Queued Run の削除、実行中 Run の cancel、Interrupted Run の再開条件は、学習の実装・実測後に記載します。未検証の recovery 操作は案内しません。
 
-**完了確認:** 未確認候補 0、Dataset Revision 確定、Training Run `Succeeded`、Model Version 作成、report 表示、camera 停止を同じ製品 version / OS の evidence で確認します。
+**完了確認:** 未確認候補 0、Dataset Revision 確定、Training Run `Succeeded`、Model Version 作成、report 表示、camera 停止を同じ製品 version / OS の evidence で確認します。現時点で確認できているのは Dataset Revision 確定と Training Run の Queue 登録までです。
 
-> **本節は、教師データ作成画面（UI-10）の分類機能の実装・検証が完了したときに更新します。**
->
 > 要求の詳細は要求定義 §8.3.2（FR-ANN-101〜107）および §8.3.1（FR-ANN-001〜014）を参照してください。
 
 画像分類では、各画像に Label Schema 内のクラスを正確に **1 つだけ** 割り当てます。
@@ -461,7 +459,7 @@ CSV は `path,label` の見出し行が必要で、`path` はフォルダーか�
    - 「現在のクラス：〈クラス名／未割当／Schema 外〉」が表示されます。
 6. **［クラス］** から 1 つ選びます。**1 画像に 1 クラス**です。
    - 解除する場合は **［クラスを解除］** を押します。
-   - 学習対象から外す場合は除外の操作を行います（除外理由を選べます）。
+   - 学習対象から外す場合は **「画像操作」** の **［除外理由］** を選んで除外します。直前の編集は **［元に戻す］**、取り消した編集は **［やり直す］** で戻せます。
    - 編集内容は自動保存され、**「保存状態:」** に 保存中／保存済み／未保存の変更があります／保存失敗 が表示されます。
 7. **［確認済みにする］** を押します。押せるのは、Schema 内のクラスが 1 つ割り当てられ、除外されていない場合だけです。確定すると「この画像は確認済みです。」と表示されます。
 8. すべての画像について 5〜7 を繰り返し、**「表示分の未確認 0 件」** になることを確認します。
@@ -474,9 +472,9 @@ CSV は `path,label` の見出し行が必要で、`path` はフォルダーか�
 
 > 確定した Dataset Revision は変更できません。追加で編集する場合は、確定済み revision から編集可能な Workspace を複製します。
 
-### 一括適用とクラス分布
+### 一括適用とクラス分布（現在は操作できません）
 
-複数選択への一括適用と、クラスごとの件数・偏り警告の表示は実装されていますが、本書では手順を実測していません。手順は実測後に追記します。なお、**確認済みの Ground Truth は一括適用で上書きされません**。
+複数選択への一括適用と、クラスごとの件数・偏り警告の表示、ラベル名検索（1〜9 キー）は、**部品として実装されていますが教師データ作成画面へ接続されていないため、現在の画面では操作できません**（[§10](#10-label-schema-と教師データ作成の詳細)「編集部品の接続状況」）。接続後に手順を記載します。なお、部品の仕様上も**確認済みの Ground Truth は一括適用で上書きされません**。
 
 ### 各画像の状態
 
@@ -513,35 +511,33 @@ Dataset Revision 確定前に次の項目が検証されます（FR-ANN-011）�
 >
 > **根拠:** FR-PRJ、FR-DAT、FR-ANN-001〜014、FR-ANN-201〜209、FR-AST、FR-TRN、FR-REP、FR-INF。取り込み〜Dataset 確定〜学習 Queue の手順は `tests/e2e/annotation-detection.spec.ts` の実行で再現
 >
-> **最終化条件:** 学習の実行・レポート・推論（Gate 2／Gate 4／Gate 5 依存）の実装と、矩形の複製・全選択・重複警告の手順実測
+> **最終化条件:** 学習の実行・レポート・推論（Gate 2／Gate 4／Gate 5 依存）の実装、キャンバス上の矩形の移動・サイズ変更・削除の実測、矩形の複製・すべて選択・重複警告の**画面への接続**および手順実測
 
-### 目標シナリオ（操作手順ではありません）
+### 目標シナリオ（節全体の検証テンプレート）
 
-以下は要求定義上の完了フローを検証するためのテンプレートです。現在は実行できず、矩形 UI、button、shortcut、overlay、成功表示を断定しません。DOCS-405 で製品版の開始から終了までを実測した後にだけ操作手順へ置き換えます。
+以下は要求定義上の完了フロー**全体**の検証テンプレートです。本書が操作手順として記載できるのは下記「取り込みから学習 Queue までの操作手順」の範囲だけで、**学習の実行以降（#8〜#10）は未実装**です。各行の evidence 欄に現在の実測状態を示します。DOCS-405 の製品版実測は署名済み package で別途行います。
 
-**開始前提:** Object Detection の Project、利用権を確認できる対応画像、または COCO JSON と対応画像 root を用意します。fixture、sample path、category mapping の具体値は validator と E2E の実測後に確定します。
+**開始前提:** Object Detection の Project、利用権を確認できる対応画像、または COCO JSON と対応画像 root を用意します。
 
-| # | 目標状態 | Error / Warning 分岐 | 主な要求 | 製品版／Windows evidence |
+| # | 目標状態 | Error / Warning 分岐 | 主な要求 | 現在の evidence |
 |---|---|---|---|---|
-| 1 | Object Detection Project が作成される | 入力 validation の表示を記録 | FR-PRJ-001〜006 | 未検証 |
-| 2 | 未 annotation 画像、または COCO JSON と画像 root の import 検証結果が表示される | file 不在、JSON 構造、category ID の不整合時は取り込みを確定しない。bbox 意味論と provenance は確定前にも検証する | FR-DAT-001〜010、FR-ANN-209 | 未検証 |
-| 3 | non-negative 画像へ矩形を設定する前に、Project 固有の Label Schema と annotation instruction が確認される | 空白名、重複、schema 外 category を拒否。schema 初期化 UI は未確定 | FR-ANN-003〜004、FR-ANN-207 | 未検証 |
-| 4 | axis-aligned 矩形の作成、移動、resize、class 変更、削除の結果が保持される | 0 / NaN / 負値 / 画像外だけの矩形を拒否 | FR-ANN-201〜205 | 未検証 |
-| 5 | 対象物がない画像が未着手と区別され、negative sample として明示確認される | 未確認画像を Revision に含めない | FR-ANN-206 | 未検証 |
-| 6 | Gate 2 後に assist が利用可能な場合だけ各 Model Suggestion が確認される | accept / edit / reject 未処理候補を残して確定しない。open-vocabulary 出力の schema 外 label は `新しい class 候補` として分離する | FR-AST-001〜015 | 未検証 |
-| 7 | Error 0、Warning 確認後に immutable Dataset Revision が確定する | invalid bbox、未確認候補、未確認画像があれば確定しない | FR-ANN-011〜014、FR-ANN-208 | 未検証 |
-| 8 | Training Run の終了状態と成功時の Model Version が確認される | cancel / failure / interrupted と再実行可否を記録 | FR-TRN-001〜021、FR-MOD-001〜005 | 未検証 |
-| 9 | mAP、PR curve、ground truth / prediction、FP / FN が確認される | Reference 切れや画像欠損の表示を記録 | FR-REP-001、FR-REP-003〜008 | 未検証 |
-| 10 | カメラ説明と権限同意後に box、class、model score、実 FPS を確認して停止する | denied、低速、camera unavailable を記録 | FR-INF-001〜019 | 未検証 |
+| 1 | Object Detection Project が作成される | 入力 validation の表示を記録 | FR-PRJ-001〜006 | 署名前ビルドで実測（`project-crud.spec.ts`、[§6](#6-project-と保存場所の設定)） |
+| 2 | 未 annotation 画像、または COCO JSON と画像 root の import 検証結果が表示される | file 不在、JSON 構造、category ID の不整合時は取り込みを確定しない。bbox 意味論と provenance は確定前にも検証する | FR-DAT-001〜010、FR-ANN-209 | 署名前ビルドで実測（`import-detection.spec.ts`、不正 annotation を「問題一覧」へ報告） |
+| 3 | non-negative 画像へ矩形を設定する前に、Project 固有の Label Schema と annotation instruction が確認される | 空白名、重複、schema 外 category を拒否 | FR-ANN-003〜004、FR-ANN-207 | 署名前ビルドで実測（[§10](#10-label-schema-と教師データ作成の詳細)。作業指示は検出キャンバス上部に常時表示） |
+| 4 | axis-aligned 矩形の作成、移動、resize、class 変更、削除の結果が保持される | 0 / NaN / 負値 / 画像外だけの矩形を拒否 | FR-ANN-201〜205 | 作成・クラス変更・微小ドラッグの非作成は署名前ビルドで実測。**移動・resize・削除（キャンバス上のハンドルと ×）は未実測** |
+| 5 | 対象物がない画像が未着手と区別され、negative sample として明示確認される | 未確認画像を Revision に含めない | FR-ANN-206 | 署名前ビルドで実測（`annotation-detection.spec.ts`） |
+| 6 | Gate 2 後に assist が利用可能な場合だけ各 Model Suggestion が確認される | accept / edit / reject 未処理候補を残して確定しない。open-vocabulary 出力の schema 外 label は `新しい class 候補` として分離する | FR-AST-001〜015 | **未実装**（Gate 2 依存） |
+| 7 | Error 0、Warning 確認後に immutable Dataset Revision が確定する | invalid bbox、未確認候補、未確認画像があれば確定しない | FR-ANN-011〜014、FR-ANN-208 | 署名前ビルドで実測（Error 残存時は確定 button が押せない） |
+| 8 | Training Run の終了状態と成功時の Model Version が確認される | cancel / failure / interrupted と再実行可否を記録 | FR-TRN-001〜021、FR-MOD-001〜005 | Queue 登録までを実測。**学習の実行以降は未実装** |
+| 9 | mAP、PR curve、ground truth / prediction、FP / FN が確認される | Reference 切れや画像欠損の表示を記録 | FR-REP-001、FR-REP-003〜008 | **未実装** |
+| 10 | カメラ説明と権限同意後に box、class、model score、実 FPS を確認して停止する | denied、低速、camera unavailable を記録 | FR-INF-001〜019 | **未実装** |
 
 **データ境界:** Copy / Reference の規範は[データ取り込み](#7-copy--reference入力形式データ権利)を参照してください。取り込んだ COCO の元 file と Reference 元を変更しません。Model Suggestion から Ground Truth への自動遷移はなく、negative sample も人が明示確認します。
 
-**中断・やり直し:** draft 矩形、COCO provenance、Queued / Running / Interrupted Run の扱いは製品実測後に記載します。未検証の recovery 操作や lossless round-trip を手順として保証しません。
+**中断・やり直し:** Queued / Running / Interrupted Run の扱いは、学習の実装・実測後に記載します。未検証の recovery 操作や lossless round-trip を手順として保証しません。
 
-**完了確認:** invalid 矩形 0、未確認候補 0、negative sample の明示状態、Dataset Revision 確定、Training Run `Succeeded`、Model Version、report、camera 停止を同じ製品 version / OS の evidence で確認します。
+**完了確認:** invalid 矩形 0、未確認候補 0、negative sample の明示状態、Dataset Revision 確定、Training Run `Succeeded`、Model Version、report、camera 停止を同じ製品 version / OS の evidence で確認します。現時点で確認できているのは Dataset Revision 確定と Training Run の Queue 登録までです。
 
-> **本節は、教師データ作成画面（UI-10）の検出機能の実装・検証が完了したときに更新します。**
->
 > 要求の詳細は要求定義 §8.3.3（FR-ANN-201〜209）を参照してください。
 
 物体検出では、1 画像に axis-aligned の矩形（bounding box）を 0 個以上作成し、各矩形に Label Schema 内のクラスを正確に **1 つ** 割り当てます。
@@ -551,7 +547,7 @@ Dataset Revision 確定前に次の項目が検証されます（FR-ANN-011）�
 以下は `tests/e2e/annotation-detection.spec.ts` の実行で再現した手順です（署名前ビルド、Windows 11 24H2 x64）。**学習の実行そのものは本 version では未実装**で、Queue へ渡すところまでが対象です。
 
 1. 物体検出の Project を作成し、**［取り込む］** タブで **COCO アノテーション** などを取り込みます（[§7](#7-copy--reference入力形式データ権利)）。
-2. **［教師データ］** タブを開き、「画像一覧」から画像を選びます。
+2. **［教師データ］** タブを開き、**「画像一覧・絞り込み」** から画像を選びます。
 3. **「検出キャンバス」** が開きます。
    - 上部に **「作業指示」** が常時表示されます。
    - **［拡大］［縮小］［全体表示］** で表示倍率を変えられます。画像表示領域にフォーカスがある状態では、**矢印キー**で移動、**＋ / −** で拡大縮小できます。
@@ -561,11 +557,10 @@ Dataset Revision 確定前に次の項目が検証されます（FR-ANN-011）�
 5. **画像の上をドラッグ**して矩形を作成します。
    - 矩形は画像の内側に収まるよう調整されます。**画像の外で指を離すと矩形は作成されません。**
    - 小さすぎる矩形（誤クリック相当）は作成されません。
-6. 作成した矩形は **「領域一覧」** に「領域 N（X …, Y …, 幅 …, 高さ …）」として並びます。
+6. 作成した矩形は **「領域一覧」** に「領域 N（X …, Y …, 幅 …, 高さ …）」として並びます。座標は**元画像のピクセル**で保存されます。
    - 行の **［領域 N（…）］** を押すと画像上の矩形が選択されます。
    - **［領域 N のクラス］** で矩形ごとのクラスを変更できます。
-   - 選択中の矩形は画像上に「選択中 〈ID〉」と表示され、右上の **×** で削除できます。
-   - 選択中の矩形は、ハンドルのドラッグで移動・サイズ変更できます。座標は**元画像のピクセル**で保存されます。
+   - 選択中の矩形は画像上に「選択中 〈ID〉」と表示され、右上の **×** で削除できます。ハンドルのドラッグで移動・サイズ変更もできます。これらは画像上（キャンバス内）の操作で、**本書では未実測**です。
 7. 矩形を作り終えたら **［確認済みにする］** を押します。領域が 1 件もない場合、このボタンは押せません。
 8. **対象物が写っていない画像**は、「対象物なしの確認」で区別します。
    - まだ誰も見ていない画像は「未着手（対象物なしの確認はされていません）」と表示されます。**未着手と「対象物なし」は別物です。**
@@ -587,22 +582,20 @@ Dataset Revision 確定前に次の項目が検証されます（FR-ANN-011）�
 
 取り込んだ COCO の bounding box と category を同じエディターで修正できます（FR-ANN-209）。確定 manifest の保存表現は COCO の `[x, y, width, height]` の意味論へ lossless に変換でき、provenance（`import-unmodified` / `import-edited`）が記録されます。元 JSON の byte-for-byte round-trip や再 export の UI を保証する記述ではありません。
 
-矩形の複製・全選択・keyboard shortcut、および同一クラスの高重複の警告は実装されていますが、本書では手順を実測していません。手順は実測後に追記します。**重複した矩形が自動削除・自動統合されることはありません。**
+矩形の複製・すべて選択・keyboard shortcut、および同一クラスの高重複の警告は、**部品として実装されていますが教師データ作成画面へ接続されていないため、現在の画面では操作できません**（[§10](#10-label-schema-と教師データ作成の詳細)「編集部品の接続状況」）。接続後に手順を記載します。**重複した矩形が自動削除・自動統合されることはありません。**
 
 ---
 
 ## 10. Label Schema と教師データ作成の詳細
 
-> **機能状態:** 検証待ち
+> **機能状態:** 実装済み
 >
-> **文書成熟度:** 要求反映済み
+> **文書成熟度:** 実測済み
 >
-> **根拠:** FR-ANN-001〜014、FR-ANN-101〜107、FR-ANN-201〜209、UI-09、UI-10
+> **根拠:** FR-ANN-001〜014、FR-ANN-101〜107、FR-ANN-201〜209、UI-09、UI-10。ラベル定義画面の手順は署名前ビルド（Windows 11 24H2 x64）の実起動で作成・追加・重複拒否・改名・指示文保存・統合・削除まで再現
 >
-> **最終化条件:** ANN-27、ANN-28 と Windows の DOCS-404 / 405 E2E evidence
+> **最終化条件:** 署名済み package での実機確認、ロック時（初回学習開始後）と使用中クラス削除時の表示の実測、補助候補（Gate 2 依存）の手順実測
 
-> **本節は、Label Schema 画面（UI-09）の実装・検証が完了したときに更新します。**
->
 > 要求の詳細は要求定義 §8.3.1（FR-ANN-003〜004、FR-ANN-012）を参照してください。
 
 ### 教師データ作成画面の接続状況（2026-09-22、Gate 3 合格後）
@@ -614,21 +607,27 @@ Dataset Revision 確定前に次の項目が検証されます（FR-ANN-011）�
 - 画像一覧は Workspace の先頭 200 件だけを取得します。総件数と取得件数、未取得分が未確認件数に含まれないことを画面に明示しますが、**201 件目以降を確認する導線はありません**。
 - 補助候補（Model Suggestion）の確認・一括承認は Gate 2 依存のため未実装です。
 - 学習の実行そのものは未実装で、Queue へ渡すところまでが対象です。
+- 一括適用・クラス分布・ラベル検索（1〜9 キー）・矩形の複製／全選択／重複警告は、**部品は存在しますが教師データ作成画面へ接続されていません**。現在の画面では操作できません（下記「画面へ未接続の部品」）。
 
-### 分類編集部品の検証状況（2026-09-21、Wave 2C）
+### 編集部品の接続状況（2026-09-22 時点）
 
-W2-06〜W2-08の分類編集部品にはsourceと対象テストがあります。**以下は部品単体の仕様であり、画面に接続された後の操作手順は上記の§8／§9を参照してください。** Dataset Revisionの確定・学習開始・補助候補の一括承認をこの記述が保証するものではありません。
+**画面に接続済みの部品**（操作手順は[§8](#8-画像分類チュートリアル)・[§9](#9-物体検出チュートリアル)）:
 
-- [分類エディター](../src/renderer/features/annotations/ClassificationEditor.tsx)は、1画像に1クラスを割り当て、置換・解除・除外とundo/redoを既存の保存draft部品へ接続します。解除後の0クラスは無効な未確定下書きとして明示し、学習対象の正解とは扱いません。
-- [ラベル選択](../src/renderer/features/annotations/LabelPicker.tsx)は名前・model aliasの検索、部品が保持する直近9クラス、表示順の1〜9キーを提供します。最近使用は永続履歴ではなく、Schema切替でリセットされます。文字入力欄・IME変換中・修飾キー付き入力では数字ショートカットを発火させません。
-- [一括適用](../src/renderer/features/annotations/ClassificationBulkBar.tsx)は選択された未確認の分類画像だけが対象です。確認済み・除外・未取得・別Workspaceの画像を対象外として件数を表示します。既存IPCの状態・編集version・hash検査で確認済みへの競合更新を拒否し、途中失敗時は保存確認済み件数と失敗対象を表示して後続の書き込みを停止します。一括処理全体のrollbackは行いません。
-- [クラス分布](../src/renderer/features/annotations/ClassDistribution.tsx)は表示中の画像だけの件数・比率と確認済み件数を表示します。除外・未割当・Schema外は比率の分母から外し、別に件数を示します。未取得画像がある場合はWorkspace全体の分布ではないと警告します。警告の目安は0件、1〜2件、最多/最少の非ゼロ件数が10倍以上です。10倍は今回の部品実装で明示した暫定基準であり、要求定義の固定値や学習可否の判定ではありません。
+- [分類エディター](../src/renderer/features/annotations/ClassificationEditor.tsx)は、1画像に1クラスを割り当て、置換・解除・除外とundo/redoを保存draft部品へ接続します。解除後の0クラスは無効な未確定下書きとして明示し、学習対象の正解とは扱いません。
+- [画像一覧・絞り込み](../src/renderer/features/annotations/ImageGallery.tsx)、[画像操作（除外理由・元に戻す・やり直す）](../src/renderer/features/annotations/ItemActions.tsx)、[保存状態](../src/renderer/features/annotations/SaveStatus.tsx)、[検出キャンバス](../src/renderer/features/annotations/DetectionCanvas.tsx)、[領域一覧](../src/renderer/features/annotations/RegionList.tsx)、[対象物なしの確認](../src/renderer/features/annotations/NoObjectButton.tsx)、[Dataset 確定ダイアログ](../src/renderer/features/annotations/ConfirmDatasetDialog.tsx)。
 
-検証対象は[分類エディターのテスト](../src/renderer/features/annotations/ClassificationEditor.test.tsx)、[ラベル選択のテスト](../src/renderer/features/annotations/LabelPicker.test.tsx)、[一括適用のテスト](../src/renderer/features/annotations/ClassificationBulkBar.test.tsx)、[クラス分布のテスト](../src/renderer/features/annotations/ClassDistribution.test.tsx)です。JSDOMでの部品検証と独立レビューを製品E2E・本人確認・Gate合格の代用にはしません。
+**画面へ未接続の部品** — source と部品テストはありますが、**製品画面から到達できません**。操作手順としては案内しません。
 
-Label Schema は、Project で使用するクラスの分類体系です。
+| 部品 | 部品単体の仕様 |
+|---|---|
+| [一括適用](../src/renderer/features/annotations/ClassificationBulkBar.tsx) | 選択された未確認の分類画像だけが対象です。確認済み・除外・未取得・別Workspaceの画像を対象外として件数を表示します。既存IPCの状態・編集version・hash検査で確認済みへの競合更新を拒否し、途中失敗時は保存確認済み件数と失敗対象を表示して後続の書き込みを停止します。一括処理全体のrollbackは行いません |
+| [クラス分布](../src/renderer/features/annotations/ClassDistribution.tsx) | 表示中の画像だけの件数・比率と確認済み件数を表示します。除外・未割当・Schema外は比率の分母から外し、別に件数を示します。未取得画像がある場合はWorkspace全体の分布ではないと警告します。警告の目安は0件、1〜2件、最多/最少の非ゼロ件数が10倍以上です。10倍は部品実装で明示した暫定基準であり、要求定義の固定値や学習可否の判定ではありません |
+| [ラベル選択](../src/renderer/features/annotations/LabelPicker.tsx) | 名前・model aliasの検索、部品が保持する直近9クラス、表示順の1〜9キーを提供します。最近使用は永続履歴ではなく、Schema切替でリセットされます。文字入力欄・IME変換中・修飾キー付き入力では数字ショートカットを発火させません。現在は一括適用からのみ使用されます |
+| [矩形コマンド](../src/renderer/features/annotations/RectangleCommands.tsx) | 複製・すべて選択・選択解除・削除と、同じクラスで重なりの大きい領域の警告を提供します。自動では削除も統合もしません |
 
-Label Schema は端末共通設定ではなく Project 固有です。作成・編集 UI と Project 作成画面が同一か別かは未確定であり、本書は一つの Settings 画面があるとは説明しません。
+検証対象は各部品の colocated test（例：[分類エディターのテスト](../src/renderer/features/annotations/ClassificationEditor.test.tsx)、[ラベル選択のテスト](../src/renderer/features/annotations/LabelPicker.test.tsx)、[一括適用のテスト](../src/renderer/features/annotations/ClassificationBulkBar.test.tsx)、[クラス分布のテスト](../src/renderer/features/annotations/ClassDistribution.test.tsx)）です。JSDOMでの部品検証と独立レビューを製品E2E・本人確認・Gate合格の代用にはしません。
+
+Label Schema は、Project で使用するクラスの分類体系です。端末共通設定ではなく Project 固有で、**［ラベル定義］** 画面（設定画面のカテゴリ「ラベル定義」）で編集します。
 
 ### Schema に含まれる情報
 
@@ -637,11 +636,61 @@ Label Schema は端末共通設定ではなく Project 固有です。作成・�
 - 正常例・境界例・反例（annotation instruction として常時参照可能）
 - 物体検出の場合は、occlusion・画像端の切れ・極小物体・曖昧な境界に関する Project 固有の方針（FR-ANN-207）
 
-### 主な操作（実装完了後に手順を記載予定）
+### ラベル定義画面を開く
 
-- クラスの作成・名前変更・色変更・説明編集
-- クラスの統合（複数クラスを 1 つに結合）
-- 未使用クラスの削除
+以下は署名前ビルド（Windows 11 24H2 x64）の実起動で再現した手順です。
+
+1. Project の作業画面で **［教師データ］** タブを開きます。
+2. タブ内の **［ラベル定義］** を押すと、設定画面のカテゴリ **「ラベル定義」** が開きます。
+3. 見出しは「ラベル定義」で、その下に「Project: 〈Project 名〉 ／ タスク: 画像分類（または 物体検出）」が表示されます。
+4. 画面の状態は 1 行で表示されます。読み込み後は「保存内容を確認しました。」、保存中は「保存中」、保存後は「保存済み」です。未保存の入力があるときは「／ 未保存の変更があります。」が続きます。
+5. **［現在の保存内容を確認］** で保存内容を取り直せます。
+6. 戻るときは **［戻る］** を押します。未保存の入力があるときはボタンが **［未保存の変更を保持して戻る］** になり、**入力中の下書きは破棄されません**。
+
+### Label Schema を作成する
+
+Label Schema が未作成の Project では **［ラベル定義を作成］** だけが表示されます。押すと空の Label Schema が作成され、「作業指示」「新しいクラス」「クラス統合」が表示されます。
+
+### クラスを追加する
+
+1. **「新しいクラス」** に入力します。
+   - **［名前（必須）］**
+   - **［モデル別名（任意）］** — 補助モデル用の model alias
+   - **［色（#rrggbb）］**
+   - **［説明］**
+   - **［例（1行に1件・文字列のみ）］** — 正常例・境界例・反例を 1 行に 1 件
+2. **［クラスを追加］** を押します。状態が「保存済み」になり、そのクラスの編集欄（見出しはクラス名）が追加されます。
+3. 既存クラスと正規化後に同じ名前を追加しようとすると「同じ名前のクラスがあります。全角・半角、前後の空白、大文字・小文字を区別しません。」と表示され、**追加されません**。
+
+### クラスを編集する
+
+1. クラスごとの編集欄で名前・モデル別名・色・説明・例を変更します。
+2. **［クラスを保存］** を押します。**変更していない間は押せません。**
+
+### 作業指示を編集する
+
+1. **「作業指示」** の **［指示文］** に Project 固有の方針（occlusion、画像端の切れ、極小物体、曖昧な境界など）を入力します。
+2. **［指示文を保存］** を押します。変更していない間は押せません。
+3. 保存した指示文は分類エディター・検出キャンバスの上部に常時表示されます。未設定のときは「この Project の作業指示はまだ設定されていません（Label Schema 画面で設定できます）。」と表示されます。
+
+### クラスを統合する
+
+1. **「クラス統合」** には「統合元を統合先へまとめます。自動で統合されることはありません。」と表示されます。
+2. **［統合元］** と **［統合先］** を選び、**［選択したクラスを統合］** を押します。統合元のクラスは一覧から消え、統合先が残ります。
+3. 統合元・統合先に未保存の変更があるときは「統合元・統合先の未保存の変更を先に保存してください。」と表示され、統合は実行されません。
+4. 同じクラスを両方に選んだ場合は「異なる統合元と統合先を選択してください。」と表示されます。
+
+### クラスを削除する
+
+1. 対象クラスの **［クラスを削除］** を押すと、確認ダイアログ **「クラス削除の確認」** が開き「このクラスを削除しますか？このクラスの未保存の変更も破棄されます。」と表示されます。
+2. **［削除する］** で削除、**［キャンセル］** で中止します。
+3. 保存先から別の操作でクラスが消えていた場合、その入力内容は **「削除されたクラスの下書き」** として保持され、「保存先からクラスが削除されています。下書きは保持しています。内容をコピーして新しいクラスとして作成できます。」と表示されます。
+
+**本書で実測していない表示（画面には実装されています）:**
+
+- 使用中のクラスを削除しようとした場合の「このクラスは使用中のため削除できません。クラスは保持されています。」
+- 履歴から参照されている場合の「履歴から参照されているため変更できません。元のクラスは保持されています。」
+- 初回学習開始後の「初回学習開始後はラベル定義を変更できません。閲覧のみ可能です。」（学習の実行が未実装のため現在は到達しません）
 
 ### 制約事項
 
