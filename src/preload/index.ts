@@ -11,6 +11,7 @@ import { createImportApi } from './import-api.js';
 import { createJobApi } from './job-api.js';
 import { createLabelSchemaApi } from './label-schema-api.js';
 import { createProjectApi } from './project-api.js';
+import { createReferenceApi } from './reference-api.js';
 import { createRevisionApi } from './revision-api.js';
 
 const appApi: AppApi = Object.freeze({
@@ -36,6 +37,9 @@ const appApi: AppApi = Object.freeze({
     invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
   }),
   revisions: createRevisionApi({
+    invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
+  }),
+  references: createReferenceApi({
     invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
   }),
 });

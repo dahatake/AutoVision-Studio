@@ -10,17 +10,23 @@ import { z } from 'zod';
 
 import type { Project } from '../../shared/contracts/project.js';
 import {
-  PROJECT_CREATE_CHANNEL, PROJECT_GET_CHANNEL, PROJECT_LIST_CHANNEL, PROJECT_MOVE_CHANNEL,
+  PROJECT_CREATE_CHANNEL, PROJECT_DELETE_CHANNEL, PROJECT_DELETE_PREVIEW_CHANNEL, PROJECT_GET_CHANNEL,
+  PROJECT_LIST_CHANNEL, PROJECT_MOVE_CHANNEL,
   PROJECT_PICK_PARENT_CHANNEL, PROJECT_RECOVER_CHANNEL, PROJECT_UPDATE_CHANNEL,
-  projectCreateInputSchema, projectCreateResponseSchema, projectGetInputSchema, projectGetResponseSchema,
+  projectCreateInputSchema, projectCreateResponseSchema,
+  projectDeleteInputSchema, projectDeletePreviewInputSchema, projectDeletePreviewResponseSchema,
+  projectDeleteResponseSchema, projectGetInputSchema, projectGetResponseSchema,
   projectListInputSchema, projectListResponseSchema, projectMoveInputSchema, projectMoveResponseSchema,
   projectPickParentInputSchema, projectPickParentResponseSchema, projectRecoverInputSchema, projectRecoverResponseSchema,
   projectSnapshotSchema, projectUpdateInputSchema, projectUpdateResponseSchema,
-  type ProjectCreateResponse, type ProjectGetResponse, type ProjectIpcErrorCode, type ProjectListResponse,
+  type ProjectCreateResponse, type ProjectDeletePreviewResponse, type ProjectDeleteResponse,
+  type ProjectGetResponse, type ProjectIpcErrorCode, type ProjectListResponse,
   type ProjectMoveResponse, type ProjectPickParentResponse, type ProjectRecoverResponse,
   type ProjectSnapshot, type ProjectUpdateResponse,
 } from '../../shared/contracts/project-ipc.js';
 import type { DatabaseConnection } from '../db/database.js';
+import { deleteProject } from '../projects/delete-project.js';
+import { previewProjectDeletion } from '../projects/delete-preview.js';
 import type { ProjectFileIdentity } from '../projects/project-directory.js';
 import { assertProjectNotMoving } from '../projects/project-move.js';
 import { findProject, listProjects } from '../projects/project-repository.js';
@@ -423,6 +429,49 @@ export function registerProjectHandlers(
       finally { release?.(); }
     });
     registered.push(PROJECT_RECOVER_CHANNEL);
+
+    // CORE-10/REL-04: preview never writes, and delete requires a separate,
+    // explicitly confirmed call. Blockers are reported, not bypassed.
+    ipcMain.handle(PROJECT_DELETE_PREVIEW_CHANNEL, (event, ...args: unknown[]): ProjectDeletePreviewResponse => {
+      let document: RequestDocument | undefined;
+      try {
+        document = begin(event, args, 1);
+        const input = projectDeletePreviewInputSchema.safeParse(args[0]);
+        if (!input.success) throw new RequestFailure('INVALID_REQUEST');
+        assertCanAwait();
+        readProject(input.data.projectId);
+        const preview = previewProjectDeletion(database, input.data.projectId);
+        const response = projectDeletePreviewResponseSchema.parse({ ok: true, value: preview });
+        assertCurrent(event, document);
+        return response;
+      } catch (error) { return projectDeletePreviewResponseSchema.parse(failure(event, document, error)); }
+    });
+    registered.push(PROJECT_DELETE_PREVIEW_CHANNEL);
+
+    ipcMain.handle(PROJECT_DELETE_CHANNEL, (event, ...args: unknown[]): ProjectDeleteResponse => {
+      let document: RequestDocument | undefined;
+      let release: (() => void) | undefined;
+      try {
+        document = begin(event, args, 1);
+        const input = projectDeleteInputSchema.safeParse(args[0]);
+        if (!input.success) throw new RequestFailure('INVALID_REQUEST');
+        assertCanAwait();
+        release = beginWrite(input.data.projectId);
+        readProject(input.data.projectId);
+        assertCurrent(event, document);
+        const result = deleteProject(database, input.data.projectId);
+        // Retained owned paths are reported as a count: Main never hands the
+        // Renderer a filesystem path.
+        const response = projectDeleteResponseSchema.parse({ ok: true, value: {
+          projectId: result.projectId, deletedRows: result.deletedRows,
+          directory: result.directory, retainedPathCount: result.retainedPaths.length,
+        } });
+        assertCurrent(event, document);
+        return response;
+      } catch (error) { return projectDeleteResponseSchema.parse(failure(event, document, error)); }
+      finally { release?.(); }
+    });
+    registered.push(PROJECT_DELETE_CHANNEL);
   } catch (error) {
     // Push only AFTER handle succeeds. An existing conflicting channel belongs
     // to someone else and must never be removed by partial registration cleanup.

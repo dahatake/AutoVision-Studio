@@ -13,7 +13,8 @@ import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'v
 
 import type { Project } from '../../shared/contracts/project.js';
 import {
-  PROJECT_CREATE_CHANNEL, PROJECT_GET_CHANNEL, PROJECT_LIST_CHANNEL, PROJECT_MOVE_CHANNEL,
+  PROJECT_CREATE_CHANNEL, PROJECT_DELETE_CHANNEL, PROJECT_DELETE_PREVIEW_CHANNEL, PROJECT_GET_CHANNEL,
+  PROJECT_LIST_CHANNEL, PROJECT_MOVE_CHANNEL,
   PROJECT_PICK_PARENT_CHANNEL, PROJECT_RECOVER_CHANNEL, PROJECT_SOURCE_CLEANUP_FAILED_MESSAGE, PROJECT_UPDATE_CHANNEL,
   projectCreateResponseSchema, projectGetResponseSchema, projectListResponseSchema, projectMoveResponseSchema,
   projectPickParentResponseSchema, projectRecoverResponseSchema, projectUpdateResponseSchema,
@@ -41,6 +42,8 @@ const requests = [
   { channel: PROJECT_PICK_PARENT_CHANNEL, args: [{ purpose: 'create' }] },
   { channel: PROJECT_MOVE_CHANNEL, args: [{ projectId: unusedId, parentToken: unusedToken }] },
   { channel: PROJECT_RECOVER_CHANNEL, args: [{ projectId: unusedId }] },
+  { channel: PROJECT_DELETE_PREVIEW_CHANNEL, args: [{ projectId: unusedId }] },
+  { channel: PROJECT_DELETE_CHANNEL, args: [{ projectId: unusedId }] },
 ] as const;
 let directory: string;
 let parent: string;
@@ -136,7 +139,7 @@ describe.skipIf(process.platform !== 'win32')('CORE-07H Project IPC boundary', (
     fs.rmSync(directory, { recursive: true, force: true });
   });
 
-  it('explicitly registers exactly seven operations and disposes only its handlers/listeners once', async () => {
+  it('explicitly registers exactly nine operations and disposes only its handlers/listeners once', async () => {
     const query = vi.spyOn(database, 'prepare');
     const h = harness();
     expectTypeOf<ReturnType<typeof registerProjectHandlers>>().toEqualTypeOf<{ dispose(): void }>();

@@ -2,7 +2,8 @@ import { createHash, randomUUID } from 'node:crypto';
 import { z } from 'zod';
 
 import {
-  MAX_ANNOTATION_JSON_BYTES, MAX_LABEL_SCHEMA_JSON_BYTES, annotationItemSchema, annotationProvenanceSchema,
+  MAX_ANNOTATION_JSON_BYTES, MAX_LABEL_SCHEMA_JSON_BYTES, annotationItemSchema,
+  annotationProvenanceKindSchema, annotationProvenanceSchema,
   annotationSchema, annotationWorkspaceSchema, labelSchemaSnapshotSchema,
   type Annotation, type AnnotationItem, type AnnotationProvenance,
   type AnnotationWorkspace, type LabelSchemaSnapshot,
@@ -271,6 +272,29 @@ const provenanceSelect = `SELECT p.item_id AS itemId,p.target_key AS targetKey,p
   p.source_import_id AS sourceImportId,p.source_image_key AS sourceImageKey,p.source_annotation_key AS sourceAnnotationKey,
   p.source_suggestion_id AS sourceSuggestionId,p.original_json AS originalJson,p.changes_json AS changesJson
   FROM annotation_provenance p`;
+
+/**
+ * W2-22: counts stored provenance rows of one workspace by kind, so the
+ * confirmation dialog can show the real 由来 breakdown instead of another
+ * metric. Read-only aggregation of existing rows; it derives nothing and
+ * reports only kinds that actually occur.
+ */
+export function countWorkspaceProvenanceKinds(database: DatabaseConnection, projectId: string,
+  workspaceId: string): Readonly<Record<string, number>> {
+  const workspace = readWorkspaceHeader(database, projectId, workspaceId);
+  const rows = database.prepare(`SELECT p.kind AS kind, COUNT(*) AS total
+    FROM annotation_provenance p JOIN annotation_items a ON a.id=p.item_id
+    WHERE a.workspace_id=? GROUP BY p.kind ORDER BY p.kind`).all(workspace.id);
+  const counts: Record<string, number> = {};
+  for (const raw of rows) {
+    const row = raw as Record<string, unknown>;
+    const kind = annotationProvenanceKindSchema.parse(row.kind);
+    const total = row.total;
+    if (typeof total !== 'number' || !Number.isSafeInteger(total) || total < 0) return corrupt();
+    counts[kind] = total;
+  }
+  return Object.freeze(counts);
+}
 
 /** Shared strict validation; the bulk path supplies its already-indexed scan image. */
 function validateItemProvenance(item: AnnotationItem, image: ScanImage | undefined,

@@ -27,10 +27,16 @@ import {
 } from '../shared/contracts/job-ipc.js';
 import type { Project } from '../shared/contracts/project.js';
 import {
-  PROJECT_CREATE_CHANNEL, PROJECT_GET_CHANNEL, PROJECT_LIST_CHANNEL, PROJECT_MOVE_CHANNEL,
+  PROJECT_CREATE_CHANNEL, PROJECT_DELETE_CHANNEL, PROJECT_DELETE_PREVIEW_CHANNEL,
+  PROJECT_GET_CHANNEL, PROJECT_LIST_CHANNEL, PROJECT_MOVE_CHANNEL,
   PROJECT_PICK_PARENT_CHANNEL, PROJECT_RECOVER_CHANNEL, PROJECT_UPDATE_CHANNEL,
   projectCreateResponseSchema, projectPickParentResponseSchema,
 } from '../shared/contracts/project-ipc.js';
+import {
+  REVISION_CLONE_CHANNEL, REVISION_CONFIRM_AND_QUEUE_CHANNEL, REVISION_CREATE_CHANNEL,
+  REVISION_VALIDATE_CHANNEL,
+} from '../shared/contracts/revision-ipc.js';
+import { REFERENCE_RELINK_CHANNEL, REFERENCE_STATUS_CHANNEL } from '../shared/contracts/reference-ipc.js';
 import {
   LABEL_GET_CHANNEL, LABEL_CREATE_CHANNEL, LABEL_CREATE_CLASS_CHANNEL, LABEL_UPDATE_CLASS_CHANNEL,
   LABEL_UPDATE_CHANNEL, LABEL_DELETE_CLASS_CHANNEL, LABEL_MERGE_CLASSES_CHANNEL,
@@ -78,7 +84,8 @@ vi.mock('electron', () => ({
 }));
 
 const projectChannels = [PROJECT_LIST_CHANNEL, PROJECT_GET_CHANNEL, PROJECT_CREATE_CHANNEL, PROJECT_UPDATE_CHANNEL,
-  PROJECT_PICK_PARENT_CHANNEL, PROJECT_MOVE_CHANNEL, PROJECT_RECOVER_CHANNEL];
+  PROJECT_PICK_PARENT_CHANNEL, PROJECT_MOVE_CHANNEL, PROJECT_RECOVER_CHANNEL,
+  PROJECT_DELETE_PREVIEW_CHANNEL, PROJECT_DELETE_CHANNEL];
 const diagnosticsChannel = 'diagnostics:collect';
 const jobChannels = [JOB_LIST_CHANNEL, JOB_GET_CHANNEL, JOB_CANCEL_CHANNEL, JOB_SUBSCRIBE_CHANNEL, JOB_UNSUBSCRIBE_CHANNEL];
 const importChannels = [IMPORT_START_CHANNEL, IMPORT_PREVIEW_CHANNEL, IMPORT_COMMIT_CHANNEL, IMPORT_DISCARD_CHANNEL];
@@ -86,10 +93,15 @@ const labelChannels = [LABEL_GET_CHANNEL, LABEL_CREATE_CHANNEL, LABEL_CREATE_CLA
   LABEL_UPDATE_CLASS_CHANNEL, LABEL_UPDATE_CHANNEL, LABEL_DELETE_CLASS_CHANNEL, LABEL_MERGE_CLASSES_CHANNEL];
 const annotationChannels = [ANNOTATION_WORKSPACES_CHANNEL, ANNOTATION_LIST_CHANNEL, ANNOTATION_GET_CHANNEL,
   ANNOTATION_SAVE_CHANNEL, ANNOTATION_CONFIRM_CHANNEL];
-const channels = [...projectChannels, diagnosticsChannel, DIAGNOSTIC_EXPORT_CHANNEL, ...jobChannels, ...importChannels, ...labelChannels, ...annotationChannels];
+const revisionChannels = [REVISION_CREATE_CHANNEL, REVISION_VALIDATE_CHANNEL,
+  REVISION_CONFIRM_AND_QUEUE_CHANNEL, REVISION_CLONE_CHANNEL];
+const referenceChannels = [REFERENCE_STATUS_CHANNEL, REFERENCE_RELINK_CHANNEL];
+const channels = [...projectChannels, diagnosticsChannel, DIAGNOSTIC_EXPORT_CHANNEL, ...jobChannels,
+  ...importChannels, ...labelChannels, ...annotationChannels, ...revisionChannels, ...referenceChannels];
 // Native destruction first invokes each handler's own earlier listener. On an
 // ordinary close/quit, Main instead disposes registrations in registration order.
-const destroyedChannels = [...projectChannels, DIAGNOSTIC_EXPORT_CHANNEL, ...jobChannels, ...importChannels, ...labelChannels, ...annotationChannels, diagnosticsChannel];
+const destroyedChannels = [...projectChannels, DIAGNOSTIC_EXPORT_CHANNEL, ...jobChannels, ...importChannels,
+  ...labelChannels, ...annotationChannels, ...revisionChannels, ...referenceChannels, diagnosticsChannel];
 const diagnosticsFailure = { message: 'Hardware diagnostics unavailable.', code: 'DIAGNOSTICS_UNAVAILABLE' };
 type DiagnosticsService = ReturnType<typeof createDiagnosticsService>;
 type DiagnosticFake = { collect: Mock<DiagnosticsService['collect']>; dispose: Mock<DiagnosticsService['dispose']> };

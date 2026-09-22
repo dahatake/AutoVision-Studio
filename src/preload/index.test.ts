@@ -173,7 +173,7 @@ describe('preload app bridge', () => {
     const api = exposedAppApi();
     expect(Reflect.ownKeys(api)).toEqual([
       'contractVersion', 'projects', 'labelSchemas', 'annotations',
-      'diagnostics', 'jobs', 'imports',
+      'diagnostics', 'jobs', 'imports', 'revisions', 'references',
     ]);
     expect(api.contractVersion).toBe(APP_API_CONTRACT_VERSION);
     expect(Object.isFrozen(api)).toBe(true);
@@ -184,11 +184,14 @@ describe('preload app bridge', () => {
     expect(Reflect.set(api, 'diagnostics', {})).toBe(false);
     expect(Reflect.set(api, 'jobs', {})).toBe(false);
     expect(Reflect.set(api, 'imports', {})).toBe(false);
+    expect(Reflect.set(api, 'revisions', {})).toBe(false);
+    expect(Reflect.set(api, 'references', {})).toBe(false);
   });
 
-  it('exposes exactly seven frozen Project methods without inherited or raw capabilities', () => {
+  it('exposes exactly nine frozen Project methods without inherited or raw capabilities', () => {
     const api = exposedAppApi();
-    expect(Reflect.ownKeys(api.projects)).toEqual(['list', 'get', 'create', 'update', 'pickParent', 'move', 'recover']);
+    expect(Reflect.ownKeys(api.projects)).toEqual(['list', 'get', 'create', 'update', 'pickParent', 'move', 'recover',
+      'deletePreview', 'delete']);
     expect(Object.getPrototypeOf(api.projects)).toBeNull();
     expect(Object.isFrozen(api.projects)).toBe(true);
     for (const method of Object.values(api.projects)) expect(typeof method).toBe('function');
@@ -199,7 +202,7 @@ describe('preload app bridge', () => {
         'require', 'process', 'filesystem', 'childProcess', 'transport', 'channel',
         'fs', 'exec', 'execFile', 'spawn', 'executablePath', 'argsPrefix', 'cwd', 'diskPath', 'dispose',
         'start', 'supervisor', 'subscriptionId', 'unsubscribe', 'removeAllListeners', 'sender',
-        'mediaDevices', 'getUserMedia', 'enumerateDevices', 'preview', 'delete']) {
+        'mediaDevices', 'getUserMedia', 'enumerateDevices', 'preview']) {
         expect(key in surface).toBe(false);
       }
     }
@@ -211,7 +214,7 @@ describe('preload app bridge', () => {
     expect(electronMocks.removeListener).not.toHaveBeenCalled();
     const api = exposedAppApi();
     expect(api.contractVersion).toBe(1);
-    expect(Object.values(api.projects)).toHaveLength(7);
+    expect(Object.values(api.projects)).toHaveLength(9);
     expect(Object.values(api.diagnostics)).toHaveLength(2);
     expect(Object.values(api.jobs)).toHaveLength(4);
     expect(Object.values(api.imports)).toHaveLength(4);

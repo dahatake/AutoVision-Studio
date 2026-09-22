@@ -14,6 +14,7 @@ import { createDatasetRevision } from '../data/revision-service.js';
 import { validateAnnotationWorkspace } from '../annotations/validate-annotation.js';
 import { confirmDatasetAndQueueTraining } from '../annotations/confirm-and-queue.js';
 import { cloneWorkspaceFromRevision } from '../annotations/clone-workspace.js';
+import { countWorkspaceProvenanceKinds } from '../annotations/workspace-repository.js';
 
 class RequestFailure extends Error {
   constructor(readonly code: RevisionIpcErrorCode) { super(code); }
@@ -83,17 +84,21 @@ export function registerRevisionHandlers(
   function register(channel: string, handler: (input: unknown) => unknown): void {
     ipc.handle(channel, (event, ...args: unknown[]) => {
       let document: Document | undefined;
+      // Only the call that actually acquired the exclusion may release it: a
+      // request rejected as BUSY must never clear another one's flag.
+      let acquired = false;
       try {
         document = { frame: event.senderFrame, generation };
         if (!current(event, document) || args.length !== 1) throw new RequestFailure('INVALID_REQUEST');
         if (active || database.inTransaction) throw new RequestFailure('BUSY');
         active = true;
+        acquired = true;
         const result = handler(args[0]);
         if (!current(event, document)) throw new RequestFailure('INVALID_REQUEST');
         return result;
       } catch (error) {
         return failure(error);
-      } finally { active = false; }
+      } finally { if (acquired) active = false; }
     });
     registered.push(channel);
   }
@@ -109,8 +114,11 @@ export function registerRevisionHandlers(
     register(REVISION_VALIDATE_CHANNEL, (raw) => {
       const input = revisionValidateInputSchema.safeParse(raw);
       if (!input.success) throw new RequestFailure('INVALID_REQUEST');
-      return revisionValidateResponseSchema.parse({ ok: true,
-        value: validateAnnotationWorkspace(database, input.data.projectId, input.data.workspaceId) });
+      const summary = validateAnnotationWorkspace(database, input.data.projectId, input.data.workspaceId);
+      // provenanceByKind is the stored 由来 breakdown W2-22 requires; byCode is
+      // the validation-issue histogram. They are distinct and never swapped.
+      const provenanceByKind = countWorkspaceProvenanceKinds(database, input.data.projectId, input.data.workspaceId);
+      return revisionValidateResponseSchema.parse({ ok: true, value: { ...summary, provenanceByKind } });
     });
     register(REVISION_CONFIRM_AND_QUEUE_CHANNEL, (raw) => {
       const input = revisionCreateInputSchema.safeParse(raw);

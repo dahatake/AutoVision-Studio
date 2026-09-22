@@ -80,15 +80,16 @@ function expectFailure(value: unknown, code: ipc.ProjectIpcErrorCode): asserts v
 }
 
 describe('Project preload fixed surface and inputs', () => {
-  it('is lazy, frozen, has no inherited API and exposes exactly seven methods', () => {
+  it('is lazy, frozen, has no inherited API and exposes exactly nine methods', () => {
     const h = harness();
     expectTypeOf(createProjectApi).toEqualTypeOf<(transport: Pick<IpcRenderer, 'invoke'>) => Readonly<ipc.ProjectApi>>();
     expectTypeOf(h.api).toEqualTypeOf<Readonly<ipc.ProjectApi>>();
-    expect(Reflect.ownKeys(h.api)).toEqual(['list', 'get', 'create', 'update', 'pickParent', 'move', 'recover']);
+    expect(Reflect.ownKeys(h.api)).toEqual(['list', 'get', 'create', 'update', 'pickParent', 'move', 'recover',
+      'deletePreview', 'delete']);
     expect(Object.getPrototypeOf(h.api)).toBeNull(); expect(Object.isFrozen(h.api)).toBe(true);
     expect(Object.isFrozen(h.transport)).toBe(false); expect(h.invoke).not.toHaveBeenCalled();
     for (const key of ['constructor', '__proto__', 'toString', 'transport', 'ipcRenderer', 'invoke', 'send', 'on', 'once',
-      'removeListener', 'event', 'channel', 'path', 'identity', 'delete', 'preview', 'request', 'contextBridge']) {
+      'removeListener', 'event', 'channel', 'path', 'identity', 'preview', 'request', 'contextBridge']) {
       expect(key in h.api).toBe(false);
     }
     expect(Reflect.set(h.api, 'get', h.invoke)).toBe(false);

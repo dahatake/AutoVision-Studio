@@ -49,7 +49,7 @@ function expectInvalidSnapshot(value: Record<string, unknown>): void {
 }
 
 describe('Project IPC fixed API and inputs', () => {
-  it('exposes seven literal channels and a readonly API without delete or generic invoke', () => {
+  it('exposes nine literal channels and a readonly API without generic invoke', () => {
     expect(ipc.PROJECT_LIST_CHANNEL).toBe('project:list');
     expect(ipc.PROJECT_GET_CHANNEL).toBe('project:get');
     expect(ipc.PROJECT_CREATE_CHANNEL).toBe('project:create');
@@ -57,7 +57,11 @@ describe('Project IPC fixed API and inputs', () => {
     expect(ipc.PROJECT_PICK_PARENT_CHANNEL).toBe('project:pick-parent');
     expect(ipc.PROJECT_MOVE_CHANNEL).toBe('project:move');
     expect(ipc.PROJECT_RECOVER_CHANNEL).toBe('project:recover');
-    expectTypeOf<keyof ipc.ProjectApi>().toEqualTypeOf<'list' | 'get' | 'create' | 'update' | 'pickParent' | 'move' | 'recover'>();
+    // CORE-10/REL-04 wiring: preview and delete are two separate operations.
+    expect(ipc.PROJECT_DELETE_PREVIEW_CHANNEL).toBe('project:delete-preview');
+    expect(ipc.PROJECT_DELETE_CHANNEL).toBe('project:delete');
+    expectTypeOf<keyof ipc.ProjectApi>().toEqualTypeOf<
+      'list' | 'get' | 'create' | 'update' | 'pickParent' | 'move' | 'recover' | 'deletePreview' | 'delete'>();
     expectTypeOf<ipc.ProjectApi>().toEqualTypeOf<Readonly<ipc.ProjectApi>>();
     expectTypeOf<Parameters<ipc.ProjectApi['list']>>().toEqualTypeOf<[]>();
     expectTypeOf<ipc.ProjectApi['get']>().toEqualTypeOf<(input: ipc.ProjectGetInput) => Promise<ipc.ProjectGetResponse>>();

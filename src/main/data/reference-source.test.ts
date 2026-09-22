@@ -44,6 +44,16 @@ const migrations: readonly Migration[] = [
   { version: 4, sql: readFileSync(new URL('../db/migrations/004_import_generation.sql', import.meta.url), 'utf8') },
 ];
 const projectId = '01234567-89ab-4cde-8f01-23456789abcd';
+
+/** Worker threads expose process.env with the OS's raw key casing, so a
+ * case-sensitive read of SystemRoot misses it even when the variable is set. */
+function resolveSystemRoot(): string | undefined {
+  const direct = process.env.SystemRoot;
+  if (typeof direct === 'string' && direct.length > 0) return direct;
+  const key = Object.keys(process.env).find((name) => name.toLowerCase() === 'systemroot');
+  const value = key === undefined ? undefined : process.env[key];
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
 const otherProjectId = '11234567-89ab-4cde-8f01-23456789abcd';
 const jobId = 'ae45cf74-c9f9-4c49-88b9-0523b1ac7383';
 const importId = '9b2db431-04e9-488b-b4c2-3859fd26cb6e';
@@ -363,7 +373,7 @@ function afterFixtureWrite(prefix: string, action: () => void): void {
 
 beforeAll(async () => {
   if (process.platform !== 'win32') return;
-  const systemRoot = process.env.SystemRoot;
+  const systemRoot = resolveSystemRoot();
   if (!systemRoot) throw new Error('SystemRoot is required for the local-volume fixture.');
   volumeExecutable = win32.join(systemRoot, 'System32', 'mountvol.exe');
   fixtureDriveRoot = win32.parse(await fs.realpath(tmpdir())).root;
@@ -842,7 +852,7 @@ describe.skipIf(process.platform !== 'win32')('DAT-12 Reference source lifecycle
     const image = await imageAt(sourcePath);
     const first = await captureReferenceSource(image);
     let second: ReferenceImportSource;
-    vi.stubEnv('SystemRoot', win32.join(process.env.SystemRoot!, 'recaptured'));
+    vi.stubEnv('SystemRoot', win32.join(resolveSystemRoot()!, 'recaptured'));
     try { second = await captureReferenceSource({ ...image, key: 'image:1' }); }
     finally { vi.unstubAllEnvs(); }
     currentVolumeProbe.mockClear();

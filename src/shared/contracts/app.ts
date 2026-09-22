@@ -4,6 +4,7 @@ import type { HardwareDiagnostics } from './diagnostics.js';
 import type { ImportApi } from './import-ipc.js';
 import type { JobApi } from './job-ipc.js';
 import type { ProjectApi } from './project-ipc.js';
+import type { ReferenceApi } from './reference-ipc.js';
 import type { RevisionApi } from './revision-ipc.js';
 
 export const APP_BRIDGE_KEY = 'autoVision' as const;
@@ -22,6 +23,7 @@ export interface AppApi {
   readonly jobs: JobApi;
   readonly imports: ImportApi;
   readonly revisions: RevisionApi;
+  readonly references: ReferenceApi;
 }
 
 declare global {

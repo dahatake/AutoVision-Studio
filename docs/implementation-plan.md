@@ -1604,3 +1604,265 @@ DAT-12の完了を、DAT-13全体、通常import orchestration、Annotation Work
 | `node scripts/docs/verify-documentation.mjs` | exit code 0 |
 
 **この追記の範囲と限界:** 変更は本書への§15.10一節の追記だけであり、source・test・依存・lock・設定・証跡JSONを変更しない。上表の137件は当該4 fileの対象回帰であって、Main起動統合、UI、E2E、packaged appの合格ではない。ANN-04／06のIPC実装済みという事実を、Annotation Workspaceの利用経路、Revision確定、学習Queue引渡し、Gate 2のmodel承認、UIR-017の本人確認、正式署名・clean Windows受入の完了へ拡張しない。製品版は引き続き**`0.1.0`**とし、今回CHANGELOG追加・PATCH更新・commit／tag／releaseは行わない。
+
+---
+
+### 15.11 Gate 3 判定：縦スライスは**不成立（FAIL）**（2026-09-22）
+
+本小節は Wave 3（W3-01〜W3-09）の実測結果に基づく **Gate 3 の判定記録**である。既存の計画表・承認履歴・過去の件数記録・適用済み migration 履歴は書き換えない。新しい要求・Gate・task ID も追加しない。
+
+#### ① 判定
+
+**Gate 3 は不合格である。** Project → Import → Annotation → Revision → Queued の縦スライスは**成立していない**。成立したのは Project → Import までであり、Annotation 以降は**製品 UI から到達できない**。
+
+したがって、実行プラン W3-09 の DoD に従い、**Training / assist の実装を開始しない。**
+
+#### ② E2E 実行環境と実測結果
+
+E2E は packaging 前ビルド（`dist/main/index.js`）を Electron 標準の `--user-data-dir` で隔離起動する。**製品コードに test 専用の分岐は追加していない。**
+
+| 実行コマンド | 結果 |
+|---|---|
+| `npm ci` | exit 0 |
+| `npm run build` | exit 0（main 552.13 kB ／ preload 114.95 kB ／ renderer 403.64 kB） |
+| `npm run verify:version` | exit 0（`Product version 0.1.0 verified.`） |
+| `npm run verify:docs` | exit 0（必須 Markdown 8 file、SVG 5 file） |
+| `npx playwright test`（全 spec） | exit code 1、**8 passed ／ 4 failed ／ 2 skipped**（全 14 test、4.4 分） |
+
+E2E の内訳は次のとおり。**skipped を合格に数えない。failed を「未実装だから対象外」として除外しない。**
+
+| spec | passed | failed | skipped |
+|---|---|---|---|
+| `tests/e2e/project-crud.spec.ts` | 1 | 1 | 0 |
+| `tests/e2e/import-classification.spec.ts` | 4 | 0 | 1 |
+| `tests/e2e/import-detection.spec.ts` | 3 | 1 | 1 |
+| `tests/e2e/annotation-classification.spec.ts` | 0 | 1 | 0 |
+| `tests/e2e/annotation-detection.spec.ts` | 0 | 1 | 0 |
+
+#### ③ 縦スライスの到達点
+
+| 段階 | 判定 | 実証拠 |
+|---|---|---|
+| Project 作成 | **PASS** | 実 picker を経て 2 Project を作成し、workspace へ遷移。タスク種別が個別に保持される |
+| Project 永続 | **PASS** | アプリを完全終了して同一 profile で再起動しても 2 件が保持され、相互に干渉しない |
+| Project 削除 | **FAIL** | 一覧の削除ボタンが `disabled`（`aria-label="…の削除対象を確認（未実装）"`） |
+| Import（分類） | **PASS** | クラス別フォルダー／CSV ラベル／ラベルなしフォルダーを実 Python scan worker 経由で取り込み、件数一致。権利未確認では確定 button が `disabled`、確認後に `enabled`。picker キャンセルで検査が始まらない。壊れた file は報告される |
+| Import（検出） | **PASS** | COCO 取り込みでクラス 2 件・エラー 0 件を確認。不正 annotation（未知 image id／未知 category id／画像外 bbox）は「問題一覧」へ報告され、無言で捨てられない |
+| Reference 再起動後アクセス | **PASS（限定）** | `参照` 取り込み後にアプリを再起動し、製品の context-isolated bridge 経由で workspace と item 件数を再取得できた |
+| Reference relink | **FAIL** | UI・IPC のいずれにも操作子が存在しない |
+| Annotation（分類・検出） | **FAIL** | 教師データタブに editor が存在しない |
+| Revision 確定 | **未到達** | Annotation が成立しないため実行できない |
+| Training Run = Queued | **未到達** | 同上 |
+
+#### ④ 不合格の直接原因（実在確認済み）
+
+| # | 阻害 | 根拠（source） | 影響する task |
+|---|---|---|---|
+| B-1 | **Annotation UI が製品シェルへ未接続** | `src/renderer/layout/ProjectWorkspace.tsx` は `annotations` タブに固定文言「画像表示、分類ラベル・矩形編集、保存、人手確認・Dataset確定、補助ジョブは未実装です。」の placeholder panel を描画し、`AnnotationPage` を mount しない。`AnnotationPage` と `ConfirmDatasetDialog` は自身の `.test.tsx` からしか参照されていない | W3-06、W3-07、W3-09 |
+| B-2 | **Project 削除／preview が bridge 未公開** | `src/shared/contracts/project-ipc.ts:6` に `delete/preview must not be exposed before CORE-10/REL-04 and their wiring.` と明記され、`ProjectApi` に `delete` / `deletePreview` が無い。`src/main/projects/delete-preview.ts`・`delete-project.ts` と `DeleteProjectDialog.tsx` は存在するが接続されていない | W3-03 |
+| B-3 | **Reference relink が bridge 未公開** | `relinkReferenceSource` は `src/main/data/reference-source.ts` にあるが、`src/renderer` と `src/preload` に relink 参照が 1 件も無い | W3-05、W3-08 の L-01 |
+
+B-1〜B-3 はいずれも **Wave 2 側の未完了**であり、Wave 3 の E2E で新たに作り込んだ欠陥ではない。本小節は原因を記録するだけで、Wave 2 の task 表・担当・DoD を書き換えない。
+
+#### ⑤ E2E で実施できなかった項目（合格に数えない）
+
+| 項目 | 状態 | 理由と既存の代替検証 |
+|---|---|---|
+| 取り込み時の容量不足 | **未実施（skipped）** | `preflightImportCapacity` は `fs.statfs` で実ボリュームを読むため、E2E からディスク状態を偽らずに不足を誘発できない。計算と `IMPORT_CAPACITY` の文言は `src/main/data/import-capacity.test.ts` が対象範囲で検証する |
+| Reference 原本の byte 再読込（再起動後） | **未実施（skipped）** | `av-image://` protocol と `readVerifiedReferenceImage` は存在するが、B-1 により画像表示面が mount されておらず、image URL を返す Renderer API も無いため製品経路から到達できない。読込自体は `src/main/data/reference-image.test.ts` が対象範囲で検証する |
+| OS 標準 picker の実機確認、OS 再起動後の Reference アクセス、relink 実機確認 | **未実施（NOT RUN）** | 自動 E2E は `dialog.showOpenDialog` を試験側で差し替えるため検証対象外。手順書を `tests/manual/windows-file-picker.md`（W3-08）として作成した。**本手順の結果を SPI-19 の PASS へ読み替えない。** L-01（relink）は B-3 により現状 `BLOCKED` |
+
+#### ⑥ 既存単体試験のベースライン（Wave 3 着手前の実測）
+
+Wave 3 の source 変更前、HEAD `7f32bed`・worktree クリーンの状態で `npm test` を実行した結果を、判定の前提として記録する。
+
+| 実行コマンド | 結果 |
+|---|---|
+| `npm test` | exit code 1、**112 file 中 20 file 失敗**、**4595 test 中 252 failed ／ 4195 passed ／ 150 skipped**、Unhandled Rejection 1 件、所要 759.38 秒 |
+
+この 252 件は Wave 3 の追加物に起因しない既存の状態である。**Gate 3 を合格にできない独立した理由**でもあり、本小節はこれを解消済みとして扱わない。原因の切り分けは Wave 3 の範囲外であり、担当 leaf を別途要する。
+
+#### ⑦ 実行環境に関する記録
+
+本 repository の `package.json` は `devEngines.packageManager` に `npm@12.0.x`（`onFail: error`）を指定している。判定日の作業端末の既定 npm は `11.17.0` であり、そのままでは `npm` を用いる全 script が `EBADDEVENGINES` で失敗した。**`package.json` の engines 宣言は変更せず**、`npm@12.0.0` を作業用の一時領域へ導入し PATH 優先で使用して上記の実測を得た。engines の緩和・削除は行っていない。
+
+#### ⑧ Wave 3 各 task の到達状態
+
+| task | 状態 | 根拠 |
+|---|---|---|
+| W3-01 E2E 基盤の依存採用 | **完了** | `@playwright/test@1.63.0` を exact lock。推移依存は `playwright` / `playwright-core` の 2 件のみで全件 Apache-2.0、install script 無し、`npm audit` 0 件、`npm ci` exit 0。記録は `docs/dependency-adoption/e2e-framework.md` |
+| W3-02 E2E harness と fixture | **完了** | `tests/e2e/harness.ts`、`tests/fixtures/project.ts`。packaging 前ビルドを起動し、close 後に当該 profile の `electron.exe` が 0 件であることを毎回検証する。製品コードに test 専用分岐なし |
+| W3-03 Project CRUD E2E | **未達（B-2）** | 作成・再起動後保持・非干渉は PASS。削除が実行不能 |
+| W3-04 取り込み E2E（分類） | **完了（容量不足のみ未実施）** | 4 passed ／ 1 skipped。⑤ 参照 |
+| W3-05 取り込み E2E（検出） | **未達（B-3）** | 3 passed ／ 1 skipped ／ 1 failed |
+| W3-06 Annotation E2E（分類） | **未達（B-1）** | spec を作成し、mount 不在で失敗することを実測 |
+| W3-07 Annotation E2E（検出） | **未達（B-1）** | 同上 |
+| W3-08 Reference 実機受入 | **未実施** | 手順書のみ作成。実施記録欄は空欄。空欄を PASS と解釈しない |
+| W3-09 Gate 3 判定 | **完了（判定結果は不合格）** | 本小節 |
+
+#### ⑨ この追記の範囲と限界
+
+本小節は Gate 3 の判定記録であり、Wave 2 の未完了 task を完了へ書き換えない。E2E の 8 passed は上表の範囲に限られ、製品全体の合格・packaged app の受入・Gate 2 の model 承認・UIR-017 の本人確認・正式署名・clean Windows 受入の完了を意味しない。製品版は引き続き **`0.1.0`** とし、今回 CHANGELOG 追加・PATCH 更新・commit／tag／release は行わない。
+
+> **後続**: §15.11 の B-1／B-2／B-3 は §15.12 で解消した。**本小節は 2026-09-22 の第1回判定の記録として保持し、書き換えない。** 現在値は §15.12 を参照する。
+
+---
+
+### 15.12 Gate 3 再判定：縦スライス**成立（PASS）**（2026-09-22）
+
+§15.11 で不合格の直接原因として記録した B-1／B-2／B-3 を解消し、Gate 3 を再判定した。本小節は §15.11 を書き換えず、その後続の現在値を記録する。新しい要求・Gate・task ID は追加しない。
+
+#### ① 判定
+
+**Gate 3 は合格である。** Project → Import → Annotation → Revision → Queued の縦スライスが、packaging 前ビルドの実起動・実 IPC・実 SQLite・実 Python scan worker を通して**端から端まで成立**することを実測した。
+
+ただし下記 ④ の未実施項目と ⑤ の既存単体試験の状態は解消していない。**これらを合格に数えない。**
+
+#### ② 解消した阻害と対策
+
+| # | 阻害（§15.11） | 対策 | 実在物 |
+|---|---|---|---|
+| B-1 | Annotation UI が製品シェルへ未接続 | 既存 leaf（`ImageGallery`／`ClassificationEditor`／`DetectionCanvas`／`RectangleLayer`／`RectangleTransformer`／`RegionList`／`NoObjectButton`／`ConfirmDatasetDialog`／`useAnnotationDraft`）を 1 画面へ結線する `AnnotationWorkspacePage` を新設し、`ProjectWorkspace` の `annotations` タブへ mount した。**新しい契約・channel・保存経路は作っていない**（既存 `annotations` / `labelSchemas` / `revisions` IPC のみを使用） | `src/renderer/features/annotations/AnnotationWorkspacePage.tsx`、`src/renderer/layout/ProjectWorkspace.tsx`、`src/renderer/layout/AppShell.tsx` |
+| B-2 | Project 削除／preview が bridge 未公開 | CORE-10/REL-04 の wiring として `project:delete-preview` / `project:delete` の 2 channel を追加し、既存 `previewProjectDeletion` / `deleteProject` へ接続。preview は**書き込まず**、削除は preview ダイアログの明示チェック後にのみ実行される。Main は保持された所有 path を**件数だけ**返し、path を Renderer へ渡さない | `src/shared/contracts/project-ipc.ts`、`src/main/ipc/project-handlers.ts`、`src/preload/project-api.ts`、`src/renderer/layout/AppShell.tsx` |
+| B-3 | Reference relink が bridge 未公開 | `reference:status` / `reference:relink` の 2 channel を新設し、既存 `verifyReferenceSource` / `relinkReferenceSource` へ接続。**picker は Main が開く**ため、Renderer は Project ID と保存済み `imageKey` しか指定できない。候補はサイズと SHA-256 が一致する場合だけ受理される | `src/shared/contracts/reference-ipc.ts`、`src/main/ipc/reference-handlers.ts`、`src/preload/reference-api.ts`、`src/renderer/features/annotations/AnnotationWorkspacePage.tsx` |
+
+**付随して修正した製品欠陥（1件）**: `RectangleLayer` の描画面 `draw-surface` が `fillEnabled={false}` で Konva のヒット領域を持たず、**実 canvas では矩形を作成できなかった**。透明 fill を与えてヒット領域を回復した（`src/renderer/features/annotations/RectangleLayer.tsx`）。既存単体試験は react-konva 全体を mock して handler を直接呼ぶため、この欠陥を検出できていなかった。これは W3-07 の DoD（矩形作成）に直結するため対策範囲に含めた。
+
+#### ③ 再判定の実測結果
+
+| 実行コマンド | 結果 |
+|---|---|
+| `npm run build` | exit 0 |
+| `npm run typecheck` | exit 0（`tsconfig.main` / `tsconfig.renderer` / `tsconfig.e2e` の 3 project） |
+| `npm run verify:version` | exit 0 |
+| `npm run verify:docs` | exit 0 |
+| `npm run test:e2e`（全 spec） | exit 0、**13 passed ／ 0 failed ／ 1 skipped**（全 14 test、4.4 分） |
+
+| spec | passed | failed | skipped |
+|---|---|---|---|
+| `tests/e2e/project-crud.spec.ts` | 2 | 0 | 0 |
+| `tests/e2e/import-classification.spec.ts` | 4 | 0 | 1 |
+| `tests/e2e/import-detection.spec.ts` | 5 | 0 | 0 |
+| `tests/e2e/annotation-classification.spec.ts` | 1 | 0 | 0 |
+| `tests/e2e/annotation-detection.spec.ts` | 1 | 0 | 0 |
+
+#### ④ 縦スライスの到達点（§15.11 との差分）
+
+| 段階 | §15.11 | 現在 | 実証拠 |
+|---|---|---|---|
+| Project 作成・永続 | PASS | **PASS** | 2 Project を作成し、完全終了→再起動後も件数・タスク種別を保持。相互に干渉しない |
+| Project 削除 | FAIL | **PASS** | 削除 preview が所有データと参照データを区別して表示し、明示確認チェックなしでは削除 button が `disabled`。削除後は一覧から消え、再起動後も消えたまま。他 Project は残る |
+| Import（分類） | PASS | **PASS** | folder／CSV／unlabeled、壊れた file の報告、権利未確認 gate、picker キャンセル |
+| Import（検出） | PASS | **PASS** | COCO 取り込み（クラス 2件・エラー 0件）、不正 annotation 3種を「問題一覧」へ報告 |
+| Reference 再起動後アクセス | PASS（限定） | **PASS** | 再起動後に workspace と item を再取得 |
+| Reference 原本の byte 再読込 | 未実施 | **PASS** | 再起動後、`av-image://` 経由で gallery の thumbnail が `naturalWidth > 0` で復号される。Main は配信前に size と SHA-256 を再検証する |
+| Reference relink | FAIL | **PASS** | 原本移動 → 「参照元を確認」が件数と理由を報告 → **別ファイルは「一致しません」で拒否** → 同一内容のファイルで復旧 |
+| Annotation（分類） | FAIL | **PASS** | 取り込み → 画像ごとに 1 クラス割当 → 確認済み化 → **未確認 0 件** |
+| Annotation（検出） | FAIL | **PASS** | 矩形をドラッグ作成 → 確認済み化。annotation を持たない画像は**「未着手」と区別して「対象物なし」を明示確定** |
+| Revision 確定 | 未到達 | **PASS** | 確定ダイアログが件数・provenance 内訳・未処理候補を表示し、Error がある間は確定を block |
+| Training Run = Queued | 未到達 | **PASS** | 確定後に「学習ジョブ `<id>` は Queued です。」を表示。分類・検出の双方で成立 |
+
+#### ⑤ 現在も未実施・未解消の項目（合格に数えない）
+
+| 項目 | 状態 | 記録 |
+|---|---|---|
+| 取り込み時の容量不足 | **未実施（skipped）** | `preflightImportCapacity` は `fs.statfs` で実ボリュームを読むため、ディスク状態を偽らずに E2E から不足を誘発できない。`src/main/data/import-capacity.test.ts` が計算と `IMPORT_CAPACITY` の文言を対象範囲で検証する |
+| OS 標準 picker の実機確認、OS 再起動後の Reference アクセス、署名前 package での実行 | **未実施（NOT RUN）** | 自動 E2E は `dialog.showOpenDialog` を試験側で差し替えるため対象外。手順書は `tests/manual/windows-file-picker.md`（W3-08）。relink の実施項目は `BLOCKED` から L-01／L-02 の**未実施**へ更新した。**本手順の結果を SPI-19 の PASS へ読み替えない** |
+| 既存単体試験の赤 | **未解消** | 下記 ⑥ |
+
+#### ⑥ 既存単体試験の状態（実測）
+
+| 時点 | 実行 | 結果 |
+|---|---|---|
+| Wave 3 着手前（HEAD `7f32bed`） | `npm test` | **252 failed ／ 4195 passed ／ 150 skipped**、所要 759 秒 |
+| B-1〜B-3 対策前 | `vitest run` | 202 failed ／ 4245 passed ／ 150 skipped |
+| B-1〜B-3 対策後 | `vitest run` | **167 failed ／ 4189 passed ／ 150 skipped** |
+
+本作業の契約変更（Project API 7→9 メソッド、AppApi へ `references` 追加）によって期待値が古くなった試験は、**実装の変更内容に合わせて期待値を更新した**（`src/main/index.test.ts`、`src/preload/index.test.ts`、`src/preload/project-api.test.ts`、`src/main/ipc/project-handlers.test.ts`、`src/shared/contracts/project-ipc.test.ts`、`src/renderer/layout/AppShell.test.tsx`）。このうち `src/main/index.test.ts` は**対策前から 13 件失敗しており**（期待 channel 一覧に revision の 4 channel が欠けていた）、今回 **76/76 PASS** へ回復した。
+
+残る 167 件の切り分け結果:
+
+| 分類 | 内容 | 根拠 |
+|---|---|---|
+| **負荷起因の flaky** | 全体並列実行でのみ失敗する。`src/main/jobs/worker-supervisor.test.ts` は全体実行で 7 件失敗するが、**単独実行では 2 回連続で 109/109 PASS**。`src/main/ipc/project-handlers.test.ts` も全体実行で 2 件失敗し、**単独実行では 62/62 PASS** | 単独実行の実測 |
+| **既存の実環境依存失敗** | `image-protocol` / `import-files` / `reference-image` / `project-move` / `safe-path` 等。`Error: STACK_TRACE_ERROR` と実ファイルシステム操作に起因する。`src/main/projects/project-move.test.ts` は**単独実行でも 5 件失敗**する（全体実行では 34 件） | 単独実行の実測 |
+
+**いずれも本作業が変更した module の試験ではない**（`image-protocol.ts`・`import-files.ts`・`reference-access.ts`・`project-move.ts`・`safe-path.ts`・`worker-supervisor.ts` は一切編集していない）。本小節はこれらを解消済みとして扱わない。原因の切り分けと修正は Wave 3 の範囲外であり、担当 leaf を別途要する。
+
+#### ⑦ レビュー指摘による是正（2026-09-22 敵対的レビュー）
+
+本小節の初版に対する敵対的レビューで検出した Critical を是正した。記録は [`work/20260922-0840-AdversarialReview.md`](../work/20260922-0840-AdversarialReview.md)。
+
+| 指摘 | 是正内容 |
+|---|---|
+| 確定ダイアログの「provenance 内訳」に、provenance ではなく**検証エラーコードの度数分布**（`byCode`）を渡していた | `countWorkspaceProvenanceKinds`（`src/main/annotations/workspace-repository.ts`）で `annotation_provenance.kind` を実集計し、`revision:validate` 応答へ `provenanceByKind` として追加して渡すよう修正。E2E で `import-edited: 4` のような**実 kind** が表示され、`unconfirmed` 等の検証コードが表示されないことを検証した |
+| item 切替時に前の item のエディターを表示したまま新しい item を取得しており、**別画像を確認済みにしてしまう**恐れがあった | `selectedId` 変更時に `detail` を即時 clear |
+| relink 失敗を一律「選んだファイルは元の内容と一致しません」と表示しており、**DB 結果が不確定な `AggregateError` も不一致に偽装**していた | 候補拒否の既知メッセージのみ `MISMATCH`、それ以外（特に `AggregateError`）は `OPERATION_FAILED` へ分離 |
+| 一覧の「全 N 件／未確認 N 件」が 1 ページ（200 件）分の件数で、**201 件目以降を過小報告**していた | 総件数と表示件数を分離表示し、未取得分が未確認件数に含まれない旨を明示 |
+| 削除の失敗表示に Project 選択用の文言を流用していた | 削除 preview／削除実行それぞれの専用文言を追加。`OPERATION_FAILED` は「削除された可能性がある」不確定として表示 |
+| `reference:relink` が native dialog を閉じた後、**書き込み前に sender を再検証していなかった** | `project-handlers.ts` と同じく書き込み直前に再検証 |
+| 検出エディターの `<select>` が非一意のハードコード DOM id | `useId()` へ変更 |
+
+**残る既知の不足（合格に数えない）**:
+
+- `reference:status` は Reference entry 数に**上限を設けず**逐次検証する。件数が多い Project では main process を長時間占有する。打ち切りを入れると「全件確認した」と言えなくなるため、正確さを優先した設計として保持する。
+- `src/renderer/features/annotations/AnnotationWorkspacePage.tsx` の一覧は先頭 **200 件**のみを取得する。201 件目以降を確認する導線は無い（表示上は未取得である旨を明示）。
+- `src/renderer/features/annotations/AnnotationPage.tsx`（W2-02 の骨組み）は B-1 の結線後、**どこからも mount されない**。削除は当該 task の担当判断に委ねる。
+
+#### ⑧ レビュー指摘の残タスク消化と、そこで発見した欠陥（2026-09-22）
+
+§15.12 ⑦ で「残る既知の不足」としていた **新規 module の colocated unit test 欠如**を解消した。
+
+| 追加 file | 内容 | 結果 |
+|---|---|---|
+| `src/main/ipc/reference-handlers.test.ts` | channel 登録・dispose、外部 sender／別 frame／navigate 済み document の拒否、引数個数・未知 key・path 付き payload の拒否、存在しない import への **picker 非開示**、Reference import 0 件の報告、排他、picker 無しの登録拒否 | 9 passed |
+| `src/renderer/features/annotations/AnnotationWorkspacePage.test.tsx` | 総件数と表示件数の分離表示、**provenance 内訳が `provenanceByKind` であり `byCode` でないこと**、item 切替時に前 item のエディターが残らないこと、読込失敗時に古い内容を残さないこと、Reference panel の非表示 | 5 passed |
+
+**この test が発見した実欠陥（修正済み）**: `reference-handlers.ts` と `revision-handlers.ts` の `finally { active = false }` は、**`BUSY` として拒否された要求まで排他フラグを解放**していた。結果として、進行中の検証があるにもかかわらず後続要求が共有 DB 接続上で処理されうる状態だった。`acquired` フラグを導入し、**実際に排他を取得した呼び出しだけが解放する**よう修正した。`revision-handlers.ts` は本レビュー以前から同じ欠陥を持っていたが、同一の guard を隣で修正しながら既知の欠陥を残すのは不適切であるため併せて是正した。
+
+**なお残る不足**: `reference-handlers.test.ts` は Reference import を実際に持つ DB fixture を用意していないため、**`MISMATCH` と `OPERATION_FAILED` の振り分け（§15.12 ⑦ の Critical 是正）は E2E でのみ検証**している。`AggregateError`（DB 結果が不確定）の経路は自動試験で未到達である。→ **⑨ A で解消した。**
+
+#### ⑨ 残タスクの全消化（2026-09-22、W3-08 を除く）
+
+§15.12 ⑧ 時点で残っていた項目を、W3-08（実機受入）を除きすべて実行した。記録は [`work/20260922-0840-AdversarialReview.md`](../work/20260922-0840-AdversarialReview.md) §7。
+
+**A. 未整備だった unit test の追加**
+
+| 追加 file | 件数 |
+|---|---|
+| `src/main/ipc/revision-handlers.test.ts` | 6 |
+| `src/main/ipc/reference-relink.test.ts` | 8 |
+| `src/renderer/features/annotations/SaveStatus.test.tsx` | 3 |
+| `src/renderer/features/annotations/NoObjectButton.test.tsx` | 7 |
+| `src/renderer/features/annotations/ClassDistribution.test.tsx` | 7 |
+
+`reference-relink.test.ts` は実ファイル・実 SHA-256・実 SQLite の Reference import fixture を用意し、§15.12 ⑦ で Critical として是正した **`MISMATCH` と `OPERATION_FAILED` の振り分け**を単体で検証する。`AggregateError`（DB 結果が不確定）が `OPERATION_FAILED` へ分類されることも含め、⑧ で「自動試験未到達」としていた経路を解消した。
+
+**B. 既存単体試験の失敗（167 件）の切り分けと是正**
+
+2 つの独立した原因を特定し、いずれも是正した。
+
+| # | 原因 | 是正 | 効果 |
+|---|---|---|---|
+| 1 | **`process.env.SystemRoot` を case-sensitive に読んでいた**。worker thread の `process.env` は OS の生キー（`SYSTEMROOT`）を持つ plain object であるため解決できず、`mountvolExecutable()` が `access('unsafe')` で**誤って拒否**していた。`reference-generation.test.ts` は suite 全体が起動できず 29 件が skip 扱いだった | `src/main/data/reference-access.ts` に case-insensitive な解決を追加（既存の検証は一切緩めていない）。同じ読み方をしていた `reference-generation.test.ts` / `reference-source.test.ts` も是正 | 167 → **71** 件、skip 150 → 8 件 |
+| 2 | **vitest の既定 `testTimeout`（5 秒）が実ファイルシステム／実 SQLite／実子プロセスを使う Main suite に対して短すぎた**。失敗はいずれも所要 5.0〜5.3 秒で、負荷時のみ発生していた | `vitest.config.ts` に `testTimeout: 30_000` / `hookTimeout: 30_000` を設定 | 71 → **5** 件 |
+
+原因 1 は**製品コードの欠陥**である。Electron の main thread では Node が env を case-insensitive に解決するため出荷時の動作に影響はないが、worker 上では機能を誤って拒否する。
+
+残る 5 件（`worker-supervisor` 3、`project-operation-lock` 1、`reference-source` 1）は、**単独実行では 3 file 239 件すべて PASS** する並列負荷依存のタイミング依存アサーションである。製品コードの欠陥ではないため、アサーションを緩めず既知事項として記録する。
+
+**C. 計測結果**
+
+| 時点 | 結果 |
+|---|---|
+| Wave 3 着手前 | 252 failed ／ 4195 passed ／ 150 skipped |
+| §15.12 ⑧ 時点 | 167 failed ／ 4189 passed ／ 150 skipped |
+| 本節時点 | **5 failed ／ 4490 passed ／ 8 skipped**（`npx vitest run`） |
+
+**D. Wave 4（users-guide）**
+
+W4-01〜W4-06 を実施し、`docs/users-guide.md` の §6〜§9 を **署名前ビルドの E2E で再現した実手順**へ置換、§10 に接続状況と制約を追記、冒頭に章ごとの状態一覧を追加した。実測していない操作（Project 設定の保存・移動、一括適用、クラス分布、矩形の複製・全選択・重複警告、容量不足時の表示）は**手順として書かず、未実測であることを明示**した。`npm run verify:docs` は exit 0。
+
+#### ⑩ この追記の範囲と限界
+
+本小節は Gate 3 の再判定記録である。E2E の 13 passed は上表の範囲に限られ、packaged app の受入・Gate 2 の model 承認・UIR-017 の本人確認・正式署名・clean Windows 受入の完了を意味しない。Gate 3 合格は **Training / assist の実装着手が可能になったこと**だけを示し、Gate 4／Gate 5 の判定を先取りしない。製品版は引き続き **`0.1.0`** とし、今回 CHANGELOG 追加・PATCH 更新・commit／tag／release は行わない。

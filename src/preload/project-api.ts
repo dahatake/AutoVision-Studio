@@ -2,9 +2,12 @@ import type { IpcRenderer } from 'electron';
 import type { z } from 'zod';
 
 import {
-  PROJECT_CREATE_CHANNEL, PROJECT_GET_CHANNEL, PROJECT_LIST_CHANNEL, PROJECT_MOVE_CHANNEL,
+  PROJECT_CREATE_CHANNEL, PROJECT_DELETE_CHANNEL, PROJECT_DELETE_PREVIEW_CHANNEL, PROJECT_GET_CHANNEL,
+  PROJECT_LIST_CHANNEL, PROJECT_MOVE_CHANNEL,
   PROJECT_PICK_PARENT_CHANNEL, PROJECT_RECOVER_CHANNEL, PROJECT_UPDATE_CHANNEL,
-  projectCreateInputSchema, projectCreateResponseSchema, projectGetInputSchema, projectGetResponseSchema,
+  projectCreateInputSchema, projectCreateResponseSchema,
+  projectDeleteInputSchema, projectDeletePreviewInputSchema, projectDeletePreviewResponseSchema,
+  projectDeleteResponseSchema, projectGetInputSchema, projectGetResponseSchema,
   projectListInputSchema, projectListResponseSchema, projectMoveInputSchema, projectMoveResponseSchema,
   projectPickParentInputSchema, projectPickParentResponseSchema, projectRecoverInputSchema, projectRecoverResponseSchema,
   projectUpdateInputSchema, projectUpdateResponseSchema, type ProjectApi,
@@ -12,7 +15,7 @@ import {
 
 // CORE-07P only. UIR-019 owns contextBridge registration and the real transport.
 export function createProjectApi(transport: Pick<IpcRenderer, 'invoke'>): Readonly<ProjectApi> {
-  // Local codec composition; only the seven fixed callers below can invoke it.
+  // Local codec composition; only the nine fixed callers below can invoke it.
   async function request<Response extends z.ZodType>(
     channel: string, inputSchema: z.ZodType, responseSchema: Response,
     args: unknown[], argumentCount: 0 | 1,
@@ -71,6 +74,13 @@ export function createProjectApi(transport: Pick<IpcRenderer, 'invoke'>): Readon
     },
     async recover(...args: unknown[]) {
       return request(PROJECT_RECOVER_CHANNEL, projectRecoverInputSchema, projectRecoverResponseSchema, args, 1);
+    },
+    async deletePreview(...args: unknown[]) {
+      return request(PROJECT_DELETE_PREVIEW_CHANNEL, projectDeletePreviewInputSchema,
+        projectDeletePreviewResponseSchema, args, 1);
+    },
+    async delete(...args: unknown[]) {
+      return request(PROJECT_DELETE_CHANNEL, projectDeleteInputSchema, projectDeleteResponseSchema, args, 1);
     },
   };
   // No transport, event hooks, generic RPC or inherited method surface.

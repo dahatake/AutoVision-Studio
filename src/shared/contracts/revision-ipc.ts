@@ -93,6 +93,8 @@ export const revisionValidationSummarySchema = directJson.pipe(z.strictObject({
     code: z.string(),
   })),
   byCode: z.record(z.string(), z.number().int().min(0)),
+  /** Stored `annotation_provenance.kind` counts. Never the issue histogram. */
+  provenanceByKind: z.record(z.string(), z.number().int().min(0)),
 })).readonly();
 export const revisionValidateResponseSchema = response(revisionValidationSummarySchema);
 export const revisionConfirmAndQueueResponseSchema = directJson.pipe(z.discriminatedUnion('ok', [

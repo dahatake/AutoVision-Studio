@@ -1,9 +1,13 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import type { Project } from '../../shared/contracts/project';
+import type { AnnotationApi, LabelSchemaApi } from '../../shared/contracts/annotation-ipc';
 import type { ImportApi, ImportResult } from '../../shared/contracts/import-ipc';
 import type { JobApi } from '../../shared/contracts/job-ipc';
+import type { ReferenceApi } from '../../shared/contracts/reference-ipc';
+import type { RevisionApi } from '../../shared/contracts/revision-ipc';
 import { SystemIcon } from '../components/SystemIcon';
+import { AnnotationWorkspacePage } from '../features/annotations/AnnotationWorkspacePage';
 import { ImportPage } from '../features/import/ImportPage';
 import { workflowTabs, type SettingsCategoryId, type WorkflowTabId } from '../routes';
 import { WorkflowTabs } from './WorkflowTabs';
@@ -13,6 +17,10 @@ export interface ProjectWorkspaceProps {
   visible?: boolean;
   importApi?: ImportApi | null;
   jobApi?: JobApi | null;
+  annotationApi?: AnnotationApi | null;
+  labelSchemaApi?: LabelSchemaApi | null;
+  revisionApi?: RevisionApi | null;
+  referenceApi?: ReferenceApi | null;
   onBackToProjects: () => void;
   // true only when actual settings navigation is accepted/enqueued; false for rejection/no-op.
   // Synchronous contract: exceptions propagate after this request's opener is cleared.
@@ -62,6 +70,10 @@ export function ProjectWorkspace({
   visible = true,
   importApi,
   jobApi,
+  annotationApi,
+  labelSchemaApi,
+  revisionApi,
+  referenceApi,
   onBackToProjects,
   onOpenSettings,
 }: ProjectWorkspaceProps) {
@@ -179,7 +191,23 @@ export function ProjectWorkspace({
           hidden={activeTab !== id}
         >
           {id === 'import' && importApi ? <ImportPage project={project} api={importApi}
-            jobs={jobApi ?? undefined} onImported={onImported} /> : activeTab === id && (
+            jobs={jobApi ?? undefined} onImported={onImported} />
+            : id === 'annotations' && annotationApi && labelSchemaApi && revisionApi ? (
+              <>
+                <AnnotationWorkspacePage project={project} annotations={annotationApi}
+                  labelSchemas={labelSchemaApi} revisions={revisionApi} references={referenceApi}
+                  visible={activeTab === id} />
+                {imported?.projectId === project.id && <div role="status">
+                  <p>取り込み記録：{imported.count.toLocaleString('ja-JP')}件 ／ Workspace：{imported.workspaceId}</p>
+                  {imported.cleanupWarning && <p>一時データの後処理に注意が必要です。取り込みを再実行しないでください。</p>}
+                </div>}
+                <button id={settingsOpenerIds.labels} type="button" className="app-shell__text-link"
+                  onClick={() => openSettings('labels')}>
+                  <SystemIcon name="settings" />
+                  <span>ラベル定義</span>
+                </button>
+              </>
+            ) : activeTab === id && (
             <>
               <h2>{unfinishedPanels[id].heading}</h2>
               <p>{unfinishedPanels[id].description}</p>

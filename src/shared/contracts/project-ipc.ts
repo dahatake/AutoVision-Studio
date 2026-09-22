@@ -2,8 +2,10 @@ import { z } from 'zod';
 
 import { createProjectSchema, projectIdSchema, projectSchema, updateProjectSchema } from './project.js';
 
-// CORE-07C: fixed operations only. Registration/transport belong to H/P;
-// delete/preview must not be exposed before CORE-10/REL-04 and their wiring.
+// CORE-07C: fixed operations only. Registration/transport belong to H/P.
+// delete/preview are exposed here as part of the CORE-10/REL-04 wiring
+// (W2-26..W2-28); they remain two distinct, explicit operations and the
+// Renderer can never name a path or a channel.
 export const PROJECT_LIST_CHANNEL = 'project:list' as const;
 export const PROJECT_GET_CHANNEL = 'project:get' as const;
 export const PROJECT_CREATE_CHANNEL = 'project:create' as const;
@@ -11,6 +13,8 @@ export const PROJECT_UPDATE_CHANNEL = 'project:update' as const;
 export const PROJECT_PICK_PARENT_CHANNEL = 'project:pick-parent' as const;
 export const PROJECT_MOVE_CHANNEL = 'project:move' as const;
 export const PROJECT_RECOVER_CHANNEL = 'project:recover' as const;
+export const PROJECT_DELETE_PREVIEW_CHANNEL = 'project:delete-preview' as const;
+export const PROJECT_DELETE_CHANNEL = 'project:delete' as const;
 
 // Normalize before the existing UUID validator, including uppercase MAX UUID.
 // Do not change the legacy DTO or duplicate its UUID rules in the IPC layer.
@@ -39,6 +43,10 @@ export const projectMoveInputSchema = z.strictObject({
   projectId: projectIpcIdSchema, parentToken: projectParentTokenSchema,
 }).readonly();
 export const projectRecoverInputSchema = projectGetInputSchema;
+export const projectDeletePreviewInputSchema = projectGetInputSchema;
+// Deleting requires the Project ID that the user actually confirmed in the
+// preview dialog. No path, no "delete all", no wildcard.
+export const projectDeleteInputSchema = projectGetInputSchema;
 
 // H owns ephemeral capabilities: bind each native selection to the requesting
 // WebContents/main-frame document, purpose, and (for move) Project ID plus its
@@ -116,6 +124,50 @@ export const projectPickParentResponseSchema = projectResponse(projectParentSele
 export const projectMoveResponseSchema = projectResponse(projectMoveValueSchema);
 export const projectRecoverResponseSchema = projectResponse(projectMoveValueSchema);
 
+const nonNegative = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
+const countAndBytes = z.strictObject({ count: nonNegative, bytes: nonNegative }).readonly();
+export const projectDeleteBlockerSchema = z.strictObject({
+  code: z.enum([
+    'DATASET_REVISION_IMMUTABLE', 'ANNOTATION_HISTORY_IMMUTABLE', 'FROZEN_WORKSPACE_IMMUTABLE',
+    'CONFIRMED_PROVENANCE_IMMUTABLE', 'LOCKED_LABEL_SCHEMA_IMMUTABLE', 'ACTIVE_JOB',
+  ]),
+  count: nonNegative,
+  message: z.string(),
+}).readonly();
+// An unmeasured directory reports no numbers at all: reporting 0 would state a
+// count nobody measured.
+export const projectDirectoryUsageSchema = z.discriminatedUnion('status', [
+  z.strictObject({ status: z.literal('measured'), files: nonNegative, bytes: nonNegative,
+    ownership: z.enum(['verified', 'unverified']) }),
+  z.strictObject({ status: z.literal('partial'), files: nonNegative, bytes: nonNegative,
+    ownership: z.enum(['verified', 'unverified']) }),
+  z.strictObject({ status: z.literal('missing') }),
+  z.strictObject({ status: z.literal('unreadable') }),
+]).readonly();
+export const projectDeletePreviewSchema = z.strictObject({
+  projectId: projectIpcIdSchema,
+  name: z.string(),
+  workspacePath: z.string(),
+  owned: z.strictObject({
+    labelSchemas: nonNegative, annotationWorkspaces: nonNegative, annotationItems: nonNegative,
+    datasetRevisions: nonNegative, datasetItems: nonNegative, trainingRuns: nonNegative,
+    otherJobs: nonNegative, copyImports: nonNegative,
+    copiedImages: countAndBytes, directory: projectDirectoryUsageSchema,
+  }).readonly(),
+  referenced: z.strictObject({ imports: nonNegative, images: countAndBytes }).readonly(),
+  blockers: z.array(projectDeleteBlockerSchema).readonly(),
+  unmeasuredCategories: z.array(z.string()).readonly(),
+}).readonly();
+export const projectDeleteResultSchema = z.strictObject({
+  projectId: projectIpcIdSchema,
+  deletedRows: z.record(z.string(), nonNegative),
+  directory: z.enum(['removed', 'missing', 'retained']),
+  /** Count only: owned paths left behind are never sent to the Renderer. */
+  retainedPathCount: nonNegative,
+}).readonly();
+export const projectDeletePreviewResponseSchema = projectResponse(projectDeletePreviewSchema);
+export const projectDeleteResponseSchema = projectResponse(projectDeleteResultSchema);
+
 export type ProjectListInput = z.infer<typeof projectListInputSchema>;
 export type ProjectGetInput = z.infer<typeof projectGetInputSchema>;
 // The legacy create description default is retained; parsed input has a string.
@@ -136,6 +188,14 @@ export type ProjectUpdateResponse = z.infer<typeof projectUpdateResponseSchema>;
 export type ProjectPickParentResponse = z.infer<typeof projectPickParentResponseSchema>;
 export type ProjectMoveResponse = z.infer<typeof projectMoveResponseSchema>;
 export type ProjectRecoverResponse = z.infer<typeof projectRecoverResponseSchema>;
+export type ProjectDeletePreviewInput = z.infer<typeof projectDeletePreviewInputSchema>;
+export type ProjectDeleteInput = z.infer<typeof projectDeleteInputSchema>;
+export type ProjectDeleteBlockerDto = z.infer<typeof projectDeleteBlockerSchema>;
+export type ProjectDirectoryUsageDto = z.infer<typeof projectDirectoryUsageSchema>;
+export type ProjectDeletePreviewDto = z.infer<typeof projectDeletePreviewSchema>;
+export type ProjectDeleteResultDto = z.infer<typeof projectDeleteResultSchema>;
+export type ProjectDeletePreviewResponse = z.infer<typeof projectDeletePreviewResponseSchema>;
+export type ProjectDeleteResponse = z.infer<typeof projectDeleteResponseSchema>;
 
 export interface ProjectApi {
   readonly list: () => Promise<ProjectListResponse>;
@@ -145,4 +205,24 @@ export interface ProjectApi {
   readonly pickParent: (input: ProjectPickParentInput) => Promise<ProjectPickParentResponse>;
   readonly move: (input: ProjectMoveInput) => Promise<ProjectMoveResponse>;
   readonly recover: (input: ProjectRecoverInput) => Promise<ProjectRecoverResponse>;
+  readonly deletePreview: (input: ProjectDeletePreviewInput) => Promise<ProjectDeletePreviewResponse>;
+  readonly delete: (input: ProjectDeleteInput) => Promise<ProjectDeleteResponse>;
+}
+
+export function parseProjectDeletePreviewResponse(
+  value: unknown, expected: ProjectDeletePreviewInput,
+): ProjectDeletePreviewResponse {
+  const response = projectDeletePreviewResponseSchema.parse(value);
+  if (response.ok && response.value.projectId !== expected.projectId) {
+    throw new Error('Invalid delete preview correlation.');
+  }
+  return response;
+}
+
+export function parseProjectDeleteResponse(value: unknown, expected: ProjectDeleteInput): ProjectDeleteResponse {
+  const response = projectDeleteResponseSchema.parse(value);
+  if (response.ok && response.value.projectId !== expected.projectId) {
+    throw new Error('Invalid delete correlation.');
+  }
+  return response;
 }

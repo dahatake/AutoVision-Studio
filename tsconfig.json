@@ -14,6 +14,7 @@
   "files": [],
   "references": [
     { "path": "./tsconfig.main.json" },
-    { "path": "./tsconfig.renderer.json" }
+    { "path": "./tsconfig.renderer.json" },
+    { "path": "./tsconfig.e2e.json" }
   ]
 }

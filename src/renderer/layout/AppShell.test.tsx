@@ -57,6 +57,8 @@ function apiFor() {
     pickParent: vi.fn<ProjectApi['pickParent']>().mockResolvedValue(ok({ status: 'selected', token, displayPath: parentPath })),
     move: vi.fn<ProjectApi['move']>().mockResolvedValue(failed),
     recover: vi.fn<ProjectApi['recover']>().mockResolvedValue(failed),
+    deletePreview: vi.fn<ProjectApi['deletePreview']>().mockResolvedValue(failed),
+    delete: vi.fn<ProjectApi['delete']>().mockResolvedValue(failed),
   };
 }
 function deferred<T>() {
@@ -118,7 +120,8 @@ function installBridge(projects: ProjectApi = api) {
     get projects() { return readProjects(); }, get labelSchemas() { return readLabelSchemasMock(); },
     get annotations() { return {} as any; }, get diagnostics() { return readDiagnostics(); },
     get imports() { return readImports(); }, get jobs() { return readJobs(); },
-    get revisions() { return { create: vi.fn(), validate: vi.fn(), confirmAndQueue: vi.fn(), clone: vi.fn() }; } };
+    get revisions() { return { create: vi.fn(), validate: vi.fn(), confirmAndQueue: vi.fn(), clone: vi.fn() }; },
+    get references() { return { status: vi.fn(), relink: vi.fn() }; } };
   readBridge = vi.fn(() => bridge);
   Object.defineProperty(window, APP_BRIDGE_KEY, { configurable: true, get: readBridge });
 }
@@ -460,7 +463,7 @@ describe('AppShell (UIR-025A-W)', () => {
     expect(appHeader()).toHaveTextContent('Project 未選択'); expect(next.get).not.toHaveBeenCalled();
   });
 
-  it('preserves this and factory closures for all seven public methods, with mutations only on explicit actions', async () => {
+  it('preserves this and factory closures for all nine public methods, with mutations only on explicit actions', async () => {
     const saved = changed(a, { name: '保存した名前' });
     const moved = changed(saved, { workspacePath: 'F:\\現在のDB保存先' });
     api.update.mockResolvedValue(ok(saved)); api.move.mockResolvedValue(ok({ ...moved, cleanupStatus: 'completed' }));
@@ -473,10 +476,14 @@ describe('AppShell (UIR-025A-W)', () => {
       pickParent(input) { expect(this).toBe(receiver); return api.pickParent(input); },
       move(input) { expect(this).toBe(receiver); return api.move(input); },
       recover(input) { expect(this).toBe(receiver); return api.recover(input); },
+      deletePreview(input) { expect(this).toBe(receiver); return api.deletePreview(input); },
+      delete(input) { expect(this).toBe(receiver); return api.delete(input); },
     };
     installBridge(receiver); const user = userEvent.setup(); render(<AppShell />);
     await enter(user, a, true);
-    for (const method of ['create', 'update', 'pickParent', 'move', 'recover'] as const) expect(api[method]).not.toHaveBeenCalled();
+    for (const method of ['create', 'update', 'pickParent', 'move', 'recover', 'deletePreview', 'delete'] as const) {
+      expect(api[method]).not.toHaveBeenCalled();
+    }
     fireEvent.change(nameField(), { target: { value: saved.project.name } });
     await user.click(screen.getByRole('button', { name: 'Project情報を保存' }));
     await user.click(screen.getByRole('button', { name: '移動先の親フォルダーを選択' }));

@@ -164,7 +164,8 @@ describe('ProjectListPage', () => {
     const values = [snapshot(1, { name: '同じ名前' }), snapshot(2, { name: '同じ名前' })];
     const original = structuredClone(values), listApi = apiFor(values), actions = callbacks();
     const forbidden = vi.fn(() => { throw new Error('Not a list operation'); });
-    const api = { ...listApi, get: forbidden, create: forbidden, update: forbidden, move: forbidden, pickParent: forbidden, recover: forbidden } satisfies ProjectApi;
+    const api = { ...listApi, get: forbidden, create: forbidden, update: forbidden, move: forbidden,
+      pickParent: forbidden, recover: forbidden, deletePreview: forbidden, delete: forbidden } satisfies ProjectApi;
     vi.stubGlobal('autoVision', { projects: { list: forbidden } });
     const onDeletePreview = vi.fn<(value: ProjectSnapshot) => void>();
     const { container } = render(<ProjectListPage api={api} {...actions} onDeletePreview={onDeletePreview} />);

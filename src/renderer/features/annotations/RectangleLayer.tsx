@@ -90,7 +90,10 @@ export function RectangleLayer({
     <Group name="rectangle-layer">
       <Rect
         name="draw-surface" x={0} y={0} width={imageSize.width} height={imageSize.height}
-        fillEnabled={false} listening
+        // A fully transparent fill draws nothing on screen but still gives Konva
+        // a hit region. Without a fill the surface is invisible to the hit graph
+        // and no real pointer event ever reaches these handlers.
+        fill="rgba(0,0,0,0)" listening
         onMouseDown={onSurfaceDown} onMouseMove={onSurfaceMove} onMouseUp={onSurfaceUp}
       />
       {rectangles.map((rectangle) => (

@@ -114,8 +114,23 @@ function windowsFilePath(value: unknown): { readonly stored: string; readonly io
   return Object.freeze({ stored: value, io: win32.normalize(path) });
 }
 
+/**
+ * Worker threads receive `process.env` as a plain object carrying the OS's raw
+ * key casing, so a case-sensitive read can miss `SystemRoot` even though the
+ * variable is set. Resolve it the way the main thread already does; every
+ * validation below is unchanged, so an absent or unsafe value still refuses.
+ */
+function systemRootValue(): unknown {
+  const direct: unknown = process.env.SystemRoot;
+  if (typeof direct === 'string') return direct;
+  for (const key of Object.keys(process.env)) {
+    if (key.toLowerCase() === 'systemroot') return process.env[key];
+  }
+  return direct;
+}
+
 function mountvolExecutable(): string {
-  const value = process.env.SystemRoot;
+  const value = systemRootValue();
   if (process.platform !== 'win32' || typeof value !== 'string' || value.length > 32_767 || !scalar(value)) access('unsafe');
   const path = value.replaceAll('/', '\\');
   const root = win32.parse(path).root;

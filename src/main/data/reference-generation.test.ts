@@ -35,6 +35,15 @@ const createdAt = '2026-09-12T05:30:00.123Z';
 const relinkAt = '2026-09-12T05:31:00.123Z';
 let localVolume = '';
 
+/** Worker threads expose process.env with the OS's raw key casing, so a
+ * case-sensitive read of SystemRoot misses it even when the variable is set. */
+function systemRoot(): string {
+  const key = Object.keys(process.env).find((name) => name.toLowerCase() === 'systemroot');
+  const value = key === undefined ? undefined : process.env[key];
+  if (typeof value !== 'string' || value.length === 0) throw new Error('SystemRoot is required for this fixture.');
+  return value;
+}
+
 function transaction<T>(database: DatabaseConnection, action: () => T): T {
   database.exec('BEGIN IMMEDIATE');
   try {
@@ -116,7 +125,7 @@ describe.skipIf(process.platform !== 'win32')('DAT-12 B2 Reference import genera
   let inserted: DataImport;
 
   beforeAll(() => {
-    localVolume = childProcess.execFileSync(win32.join(process.env.SystemRoot!, 'System32', 'mountvol.exe'),
+    localVolume = childProcess.execFileSync(win32.join(systemRoot(), 'System32', 'mountvol.exe'),
       [win32.parse(realpathSync.native(tmpdir())).root, '/L'], {
         shell: false, windowsHide: true, encoding: 'utf8', timeout: 5_000, maxBuffer: 4_096,
       });

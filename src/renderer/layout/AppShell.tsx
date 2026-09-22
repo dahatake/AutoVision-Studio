@@ -1,20 +1,26 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { APP_API_CONTRACT_VERSION, type AppApi } from '../../shared/contracts/app';
-import type { LabelSchemaApi } from '../../shared/contracts/annotation-ipc';
+import type { AnnotationApi, LabelSchemaApi } from '../../shared/contracts/annotation-ipc';
 import { diagnosticExportResultSchema, type DiagnosticExportResult } from '../../shared/contracts/diagnostic-export';
 import { hardwareDiagnosticsSchema, type HardwareDiagnostics } from '../../shared/contracts/diagnostics';
 import type { ImportApi } from '../../shared/contracts/import-ipc';
 import type { JobApi } from '../../shared/contracts/job-ipc';
 import {
-  projectGetInputSchema, projectGetResponseSchema, type ProjectApi, type ProjectGetResponse,
-  type ProjectIpcErrorCode, type ProjectSnapshot,
+  parseProjectDeletePreviewResponse, parseProjectDeleteResponse,
+  projectDeleteInputSchema, projectDeletePreviewInputSchema,
+  projectGetInputSchema, projectGetResponseSchema, type ProjectApi,
+  type ProjectDeletePreviewDto, type ProjectDeletePreviewResponse, type ProjectDeleteResponse,
+  type ProjectGetResponse, type ProjectIpcErrorCode, type ProjectSnapshot,
 } from '../../shared/contracts/project-ipc';
+import type { ReferenceApi } from '../../shared/contracts/reference-ipc';
+import type { RevisionApi } from '../../shared/contracts/revision-ipc';
 import { SystemIcon } from '../components/SystemIcon';
 import { LabelSchemaPage } from '../features/annotations/LabelSchemaPage';
 import { DiagnosticsPage, diagnosticsSupport } from '../features/diagnostics/DiagnosticsPage';
 import { JobProvider, JobStatusBar } from '../features/jobs/JobStatusBar';
 import { JobPage } from '../features/jobs/JobPage';
+import { DeleteProjectDialog } from '../features/projects/DeleteProjectDialog';
 import { ProjectForm } from '../features/projects/ProjectForm';
 import { ProjectListPage } from '../features/projects/ProjectListPage';
 import { ProjectSettingsPanel } from '../features/settings/ProjectSettingsPanel';
@@ -35,6 +41,22 @@ const selectionErrors: Record<ProjectIpcErrorCode, string> = {
   OPERATION_FAILED: 'Project の最新情報を確認できません。一覧を再取得するか、選び直してください。',
   STALE_SELECTION: '選択が無効になりました。一覧を再取得して Project を選び直してください。',
 };
+// Deletion needs its own wording: reusing the selection text would hide whether
+// anything was deleted. OPERATION_FAILED never proves that nothing was removed.
+const deletePreviewErrors: Record<ProjectIpcErrorCode, string> = {
+  INVALID_REQUEST: '削除対象を確認できません。一覧を再取得してください。',
+  NOT_FOUND: '対象の Project が見つかりません。一覧を再取得してください。',
+  BUSY: 'ほかの処理が実行中です。完了後に削除対象を確認してください。',
+  OPERATION_FAILED: '削除対象を確認できませんでした。削除は実行していません。一覧を再取得してください。',
+  STALE_SELECTION: '選択が無効になりました。一覧を再取得して選び直してください。',
+};
+const deleteErrors: Record<ProjectIpcErrorCode, string> = {
+  INVALID_REQUEST: '削除要求を確認できません。削除は実行していません。',
+  NOT_FOUND: '対象の Project が見つかりません。すでに削除されている可能性があります。一覧を再取得してください。',
+  BUSY: 'ほかの処理が実行中です。削除は実行していません。完了後に再度実行してください。',
+  OPERATION_FAILED: '削除の結果を確認できませんでした。削除された可能性があります。自動で再試行せず、一覧を再取得して状態を確認してください。',
+  STALE_SELECTION: '選択が無効になりました。削除は実行していません。一覧を再取得してください。',
+};
 
 function screenPath(id: ScreenId) {
   return appRoutes.find((route) => route.screenId === id)!.path;
@@ -46,10 +68,13 @@ function readProjects(bridge: AppApi | null): ProjectApi | null {
   try {
     const projects = bridge?.projects;
     if (!projects) return null;
-    const { list, get, create, update, pickParent, move, recover } = projects;
-    if ([list, get, create, update, pickParent, move, recover].some((method) => typeof method !== 'function')) return null;
+    const { list, get, create, update, pickParent, move, recover, deletePreview } = projects;
+    const remove = projects.delete;
+    if ([list, get, create, update, pickParent, move, recover, deletePreview, remove]
+      .some((method) => typeof method !== 'function')) return null;
     return Object.freeze({ list: list.bind(projects), get: get.bind(projects), create: create.bind(projects),
-      update: update.bind(projects), pickParent: pickParent.bind(projects), move: move.bind(projects), recover: recover.bind(projects) });
+      update: update.bind(projects), pickParent: pickParent.bind(projects), move: move.bind(projects),
+      recover: recover.bind(projects), deletePreview: deletePreview.bind(projects), delete: remove.bind(projects) });
   } catch { return null; }
 }
 
@@ -87,11 +112,46 @@ function readLabelSchemas(bridge: AppApi | null): LabelSchemaApi | null {
   } catch { return null; }
 }
 
+function readAnnotations(bridge: AppApi | null): AnnotationApi | null {
+  try {
+    const source = bridge?.annotations;
+    if (!source) return null;
+    const { workspaces, list, get, save, confirm } = source;
+    if ([workspaces, list, get, save, confirm].some((method) => typeof method !== 'function')) return null;
+    return Object.freeze({ workspaces: workspaces.bind(source), list: list.bind(source), get: get.bind(source),
+      save: save.bind(source), confirm: confirm.bind(source) });
+  } catch { return null; }
+}
+
+function readRevisions(bridge: AppApi | null): RevisionApi | null {
+  try {
+    const source = bridge?.revisions;
+    if (!source) return null;
+    const { create, validate, confirmAndQueue, clone } = source;
+    if ([create, validate, confirmAndQueue, clone].some((method) => typeof method !== 'function')) return null;
+    return Object.freeze({ create: create.bind(source), validate: validate.bind(source),
+      confirmAndQueue: confirmAndQueue.bind(source), clone: clone.bind(source) });
+  } catch { return null; }
+}
+
+function readReferences(bridge: AppApi | null): ReferenceApi | null {
+  try {
+    const source = bridge?.references;
+    if (!source) return null;
+    const { status, relink } = source;
+    if ([status, relink].some((method) => typeof method !== 'function')) return null;
+    return Object.freeze({ status: status.bind(source), relink: relink.bind(source) });
+  } catch { return null; }
+}
+
 export function AppShell() {
   const [api, setApi] = useState<ProjectApi | null>(null);
   const [importApi, setImportApi] = useState<ImportApi | null>(null);
   const [jobApi, setJobApi] = useState<JobApi | null>(null);
   const [labelSchemaApi, setLabelSchemaApi] = useState<LabelSchemaApi | null>(null);
+  const [annotationApi, setAnnotationApi] = useState<AnnotationApi | null>(null);
+  const [revisionApi, setRevisionApi] = useState<RevisionApi | null>(null);
+  const [referenceApi, setReferenceApi] = useState<ReferenceApi | null>(null);
   const [diagnosticsApi, setDiagnosticsApi] = useState<AppApi['diagnostics'] | null>(null);
   const [diagnosticReadout, setDiagnosticReadout] = useState<DiagnosticReadout>({ phase: 'loading' });
   const apiContext = useRef({ initialized: false, active: false, api: null as ProjectApi | null });
@@ -105,6 +165,9 @@ export function AppShell() {
   const [listGeneration, setListGeneration] = useState(0);
   const [leftCreation, setLeftCreation] = useState(false);
   const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
+  const [deletion, setDeletion] = useState<{
+    busy: boolean; preview: ProjectDeletePreviewDto | null; error: string; receipt: string;
+  }>({ busy: false, preview: null, error: '', receipt: '' });
   const mainRef = useRef<HTMLElement>(null);
   const settingsOrigin = useRef<SettingsOrigin | null>(null);
   const pendingCreated = useRef<ProjectSnapshot | null>(null);
@@ -125,6 +188,9 @@ export function AppShell() {
       context.api = readProjects(bridge); setApi(context.api);
       setImportApi(readImports(bridge)); setJobApi(readJobs(bridge));
       setLabelSchemaApi(readLabelSchemas(bridge));
+      setAnnotationApi(readAnnotations(bridge));
+      setRevisionApi(readRevisions(bridge));
+      setReferenceApi(readReferences(bridge));
       try {
         const source = bridge?.diagnostics, method = source?.collect;
         if (typeof method !== 'function') throw new Error();
@@ -281,6 +347,48 @@ export function AppShell() {
     setSelected((current) => current === selected ? snapshot : current);
   }
 
+  /** CORE-10: preview only. Nothing is deleted until the dialog is confirmed. */
+  async function openDeletePreview(snapshot: ProjectSnapshot) {
+    if (!api || !apiContext.current.active || view !== 'list' || settingsOpen) return;
+    const input = projectDeletePreviewInputSchema.safeParse({ projectId: snapshot.project.id });
+    if (!input.success) return;
+    setDeletion({ busy: true, preview: null, error: '', receipt: '' });
+    let response: ProjectDeletePreviewResponse;
+    try { response = parseProjectDeletePreviewResponse(await api.deletePreview(input.data), input.data); }
+    catch { response = { ok: false, error: { code: 'OPERATION_FAILED' } }; }
+    if (!apiContext.current.active || apiContext.current.api !== api) return;
+    if (!response.ok) {
+      setDeletion({ busy: false, preview: null, error: deletePreviewErrors[response.error.code], receipt: '' });
+      return;
+    }
+    setDeletion({ busy: false, preview: response.value, error: '', receipt: '' });
+  }
+
+  async function runDelete() {
+    const preview = deletion.preview;
+    if (!api || !apiContext.current.active || !preview) return;
+    const input = projectDeleteInputSchema.safeParse({ projectId: preview.projectId });
+    if (!input.success) return;
+    setDeletion((current) => ({ ...current, busy: true, error: '' }));
+    let response: ProjectDeleteResponse;
+    try { response = parseProjectDeleteResponse(await api.delete(input.data), input.data); }
+    catch { response = { ok: false, error: { code: 'OPERATION_FAILED' } }; }
+    if (!apiContext.current.active || apiContext.current.api !== api) return;
+    if (!response.ok) {
+      setDeletion((current) => ({ ...current, busy: false, error: deleteErrors[response.error.code] }));
+      return;
+    }
+    // A retained owned path is reported, never presented as a clean deletion.
+    const retained = response.value.retainedPathCount > 0
+      ? `一部の所有ファイルを削除できませんでした（${response.value.retainedPathCount} 件）。`
+      : '';
+    setDeletion({ busy: false, preview: null, error: '',
+      receipt: `Project「${preview.name}」を削除しました。参照元ファイルは削除していません。${retained}` });
+    setSelected((current) => (current?.project.id === preview.projectId ? null : current));
+    setSelection(null);
+    setListGeneration((generation) => generation + 1);
+  }
+
   const { report, failure, phase } = diagnosticReadout;
   const stale = !!report && (phase === 'loading' || (phase === 'failed' && report !== failure));
   const diagnosticStatus = (!diagnosticsApi && phase === 'failed' ? '利用不可（端末診断に接続できません）'
@@ -352,9 +460,15 @@ export function AppShell() {
             </div>}
             {api ? <ProjectListPage api={api} visible={view === 'list' && !settingsOpen} refreshKey={listGeneration} onCreate={startCreate}
               onOpen={(snapshot) => { void selectProject(snapshot, 'workspace'); }}
-              onSettings={(snapshot) => { void selectProject(snapshot, 'settings'); }} />
+              onSettings={(snapshot) => { void selectProject(snapshot, 'settings'); }}
+              onDeletePreview={(snapshot) => { void openDeletePreview(snapshot); }} />
               : <section aria-labelledby="projects-heading"><h1 id="projects-heading">Project 一覧</h1>
                 <button type="button" disabled>Project を作成</button></section>}
+            {deletion.error && <p role="alert">{deletion.error}</p>}
+            {deletion.receipt && <p role="status">{deletion.receipt}</p>}
+            {deletion.preview && <DeleteProjectDialog open preview={deletion.preview} busy={deletion.busy}
+              onDelete={() => { void runDelete(); }}
+              onCancel={() => setDeletion({ busy: false, preview: null, error: '', receipt: '' })} />}
             <section className="app-shell__actions" aria-label="端末診断">
               <p role="status" aria-label="端末診断の状態" aria-live="polite" aria-atomic="true">{diagnosticStatus}</p>
               <span>対応レベル：{support.startsWith('非対応') ? '非対応（理由は詳細）' : support}</span>
@@ -380,6 +494,8 @@ export function AppShell() {
         </div>}
         <ProjectWorkspace project={selected?.project ?? null} visible={Boolean(api) && view === 'workspace' && !settingsOpen}
           importApi={importApi} jobApi={jobApi}
+          annotationApi={annotationApi} labelSchemaApi={labelSchemaApi} revisionApi={revisionApi}
+          referenceApi={referenceApi}
           onBackToProjects={showList} onOpenSettings={(nextCategory) => {
             if (!api || !selected || view !== 'workspace' || settingsOpen) return false;
             openSettings(nextCategory, { baseView: 'workspace', kind: 'workspace' }); return true;
