@@ -14,8 +14,11 @@ Gate 2 lane（モデル承認）の監査・実測・採用処理を実施しま
 
 続けて、補助モデル（C7）の残タスクを実行しました。画像分類の補助モデルでは、TinyCLIP の想定用途を一次資料で確認できなかったため候補から外し、SigLIP の CPU 推論の改善として量子化を 1 案だけ試しましたが、出力の一致と推論性能のどちらも基準に届かず、保留を維持しました。物体検出の補助モデルでは、新しい第一候補 OWL-ViT base patch32 の取得物を配布元の値と照合し、ONNX 変換後の出力が PyTorch と一致することを確認しましたが、CPU での推論性能が基準に届かないため保留としました。補助モデルが 2 役とも未承認のため、補助品質の比較試験は実行していません。承認済みモデルは 2 件のまま、`ready=false` を維持し、Gate 2 は **BLOCKED** のままです。あわせて、モデル一覧の形式を改め、出荷可能（`ready=true`）とするには補助モデル 2 役それぞれの比較試験に合格した記録を必須にしました。
 
+その後、`/work/` の残タスク統合実行計画に沿って、実行の前提条件を確認し、利用者・所有者の操作を必要としない調査を行いました。その結果、Gate 2 の実行前提が 3 件満たされていないため、Gate 2 の処理は開始していません。満たされていない前提は、別セッションが計画を編集していないことの利用者による確認、npm `12.0.0` の用意、計画とノード一覧における状態の記録規則の不足です。画面まわりの残課題（親 UIR-025 の残条件 9 件と、UIR-041Q・UIR-084 の前提）を現在のコードと記録から判定し直した結果は、完了 4 件・未完了 7 件でした。すべての残タスクの状態と、再開に必要な利用者の確認・所有者の判断を記録しています。製品コード、モデル一覧、ADR は変更していません。
+
 ### Added
 
+- 残タスクの実行記録を追加しました。`work/20260924-0306-RemainTaskRun-Baseline.md` には、実行前提の確認結果（PRE-00〜03）、Gate 2 の計画とノード一覧の SHA-256、両者の照合に使った検査 script `work/20260924-0306-PRE03-InventoryCheck.ps1` の結果、計画を編集するセッションへの修正依頼を記録しています。`work/20260924-0300-UirStatusRedetermination.md` は UIR-025 の残条件と UIR-041Q・UIR-084 の前提を判定し直した記録です。`work/20260924-0325-RemainTaskTerminalState.md` と検査 script `work/20260924-0325-TERM01-Check.ps1` は、全ノードと未完了事項 15 件の終端状態の記録です。Gate 2 の終端化の記録がないため、この終端記録は完了条件を満たしていません（検査は exit 1）。
 - 物体検出の補助モデル OWL-ViT base patch32 の一致検証と性能を測る spike `spikes/models/owlvit_assist_parity.py`、結果記録 `spikes/models/owlvit-assist-result.md`、採用記録 `docs/model-governance/owlvit-base-patch32-adoption.md`（保留）を追加しました。一致検証は PyTorch・ONNX Runtime CPU・ONNX Runtime DirectML の 3 経路で合格し、性能は DirectML が基準内、CPU が基準外でした。性能モードは基準未達、または要求した実行基盤で session が作られない場合に非ゼロで終了します。検証用 fixture ではスコア閾値を超える検出が 0 件で、検出単位の一致は未確認であることも記録しています。
 - TinyCLIP の一次資料（モデルカード、配布メタデータ、公開リポジトリの README・LICENSE・学習手順、論文の抜粋）の保存コピー `docs/model-governance/evidence/tinyclip-*` を追加しました。想定用途と対象外用途の記載はなく、蒸留元（OpenCLIP ViT-B/16）の重みの系譜も確認できないため、候補から外しています。
 - C7 残タスクの実行計画・記録（`work/20260923-1437-C7-RemainingTasksExecutionPlan.md`、`work/20260923-1520-OWLViT-ControlledArtifact.md`、`work/20260923-1546-TinyCLIP-PrimarySourceSurvey.md`、`work/20260923-2003-C7-RemainingTasksExecution.md`）を追加しました。
