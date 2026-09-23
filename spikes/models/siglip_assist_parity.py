@@ -22,6 +22,11 @@ fail-closed boundaries kept by this probe:
   reports top-1 agreement with the fixture labels for information only; it makes
   no accuracy or quality claim.
 * Measurement is evidence, not approval. The probe never edits the manifest.
+
+C7C-02 adds one CPU improvement candidate only: the fp32 vision ONNX is
+converted with ``onnxruntime.quantization.quantize_dynamic`` (default settings,
+int8 weights). The int8 model is held to the same score tolerance and top-1
+rule as the fp32 backends and is measured on the CPU provider only.
 """
 
 from __future__ import annotations
@@ -47,6 +52,7 @@ from detection_checkpoint_parity import (
     WARMUP_PASSES,
     measure_latency,
 )
+from onnxruntime.quantization import quantize_dynamic
 from PIL import Image
 from torch import nn
 from transformers import AutoProcessor, SiglipModel
@@ -164,6 +170,13 @@ def main() -> int:
         ),
         "text": export(TextTower(model), input_ids, "input_ids", text_path),
     }
+    vision_int8_path = artifact_dir / "siglip-vision-int8.onnx"
+    quantize_dynamic(vision_path, vision_int8_path)
+    exports["vision_int8"] = {
+        "method": "onnxruntime.quantization.quantize_dynamic (defaults)",
+        "onnx_bytes": vision_int8_path.stat().st_size,
+        "onnx_sha256": sha256_file(vision_int8_path),
+    }
     scale = float(model.logit_scale.exp())
     bias = float(model.logit_bias)
 
@@ -210,6 +223,9 @@ def main() -> int:
             measure_latency(vision_path, CPU_PROVIDER, pixel_values),
             measure_latency(vision_path, DML_PROVIDER, pixel_values),
         ]
+        result["vision_int8"] = [
+            measure_latency(vision_int8_path, CPU_PROVIDER, pixel_values)
+        ]
         result["text_once_per_label_set"] = [
             measure_latency(text_path, CPU_PROVIDER, [input_ids]),
             measure_latency(text_path, DML_PROVIDER, [input_ids]),
@@ -229,17 +245,18 @@ def main() -> int:
     backends: dict[str, np.ndarray] = {"torch": torch_scores}
     providers: dict[str, list[str]] = {}
     repeat: dict[str, bool] = {}
-    for key, provider in (
-        ("onnxruntime-cpu", CPU_PROVIDER),
-        ("onnxruntime-directml", DML_PROVIDER),
+    for key, provider, vision in (
+        ("onnxruntime-cpu", CPU_PROVIDER, vision_path),
+        ("onnxruntime-directml", DML_PROVIDER, vision_path),
+        ("onnxruntime-cpu-int8", CPU_PROVIDER, vision_int8_path),
     ):
         image_embeds, providers[key] = run(
-            vision_path, provider, "pixel_values", [p.numpy() for p in pixel_values]
+            vision, provider, "pixel_values", [p.numpy() for p in pixel_values]
         )
         text_embeds, _ = run(text_path, provider, "input_ids", [input_ids.numpy()])
         backends[key] = sigmoid(image_embeds @ text_embeds.T * scale + bias)
         again, _ = run(
-            vision_path, provider, "pixel_values", [p.numpy() for p in pixel_values]
+            vision, provider, "pixel_values", [p.numpy() for p in pixel_values]
         )
         repeat[key] = bool(np.array_equal(image_embeds, again))
 
@@ -254,6 +271,7 @@ def main() -> int:
         ("torch", "onnxruntime-cpu"),
         ("torch", "onnxruntime-directml"),
         ("onnxruntime-cpu", "onnxruntime-directml"),
+        ("torch", "onnxruntime-cpu-int8"),
     ):
         diff = float(np.abs(backends[left] - backends[right]).max())
         top1 = int(

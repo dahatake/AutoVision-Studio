@@ -666,3 +666,22 @@ SigLIP の `checkpoint` 層 license は存在せず（CA-L1）、`trainingData` 
 | intended / out-of-scope use、安全形式、hash、parity、性能、NFR-ANN-006 | **維持**（緩和しない） |
 
 v0.7 後の候補の再調査は [`work/20260923-1015-NonCommercialModelSurvey.md`](../../work/20260923-1015-NonCommercialModelSurvey.md) に記録した。
+
+## 22. 2026-09-23 — TinyCLIP 一次資料調査
+
+TinyCLIP ViT-8M/16 Text-3M YFCC-15M（`wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M@a2a8c6eaa2549ad66eb7c31b85022bf58273a26c`）を一次資料だけで再確認した。記録は [`work/20260923-1546-TinyCLIP-PrimarySourceSurvey.md`](../../work/20260923-1546-TinyCLIP-PrimarySourceSurvey.md)、保存 copy は [`evidence/tinyclip-*`](evidence/)。
+
+| 項目 | 結果 |
+|---|---|
+| intended / out-of-scope | HF model card、microsoft/Cream `TinyCLIP` folder、arXiv 2309.12314v1 抽出 text の範囲で明示 statement を確認できない。`pipeline_tag: zero-shot-image-classification` と推論例はあるが、adoption-template §8 の intended / out-of-scope 記録を代替しない |
+| teacher provenance | 論文は YFCC-15M training について "we use affinity mimicking and manual weight inheritance to distill OpenCLIP ViT-B/16 [21]" と記載する。[21] は "Open-clip"。直接の teacher は OpenCLIP ViT-B/16 だが、その exact artifact tag / hash と、その checkpoint 自体の初期化・重みの系譜は **`unknown`**。OpenAI CLIP の重みの寄与は否定できず、FR-LIC-015 は**未解決** |
+| 判定 | **除外 / HOLD 維持**。intended / out-of-scope が判断不能のため同梱不可（adoption-template §8）。teacher の重みの系譜も未確認。manifest に登録しない |
+
+## 23. 2026-09-23 — SigLIP の CPU 経路の最小改善（C7C-02）と C7 分類の判定
+
+| 項目 | 結果 |
+|---|---|
+| 試行 | ONNX Runtime の動的量子化を vision ONNX に 1 案だけ適用した。1 回目は実行環境の sandbox で失敗し、sandbox 外のターミナルで再実行した（[`siglip-assist-result.md`](../../spikes/models/siglip-assist-result.md) §7） |
+| 結果 | int8 は parity 不合格（score 最大差 `9.0403e-02` > `1.0e-04`、top-1 12/15）、CPU 性能も不合格（p95 `215.785` ms、`8.33` FPS） |
+| SigLIP の判定 | **保留を維持**（[`siglip-base-patch16-224-adoption.md`](siglip-base-patch16-224-adoption.md) §16） |
+| C7 分類の承認数 | **0 件**。TinyCLIP は §22 のとおり除外 / HOLD 維持 |

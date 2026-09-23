@@ -1,0 +1,29 @@
+# TinyCLIP paper extracted evidence (arXiv 2309.12314v1)
+
+- PDF URL: https://arxiv.org/pdf/2309.12314v1
+- Retrieval date: 2026-09-23
+- PDF byte size: 931044
+- PDF SHA-256: 0283556bdddcde728288d02a8f5e6d867ad7a7181ca680b15d03f0129eda2bfe
+- PDF pages parsed by pypdf: 11
+- Note: This text file contains only excerpts relevant to intended use / out-of-scope and teacher provenance.
+
+## Abstract / model claim excerpt
+
+nggang Wang2, Hongyang Chao1, Han Hu3 1 Sun Yat-sen University,2 Huazhong University of Science & Technology, 3 Microsoft Abstract In this paper, we propose a novel cross-modal distillation method, called TinyCLIP , for large-scale language-image pre-trained models. The method introduces two core tech- niques: affinity mimicking and weight inheritance. Affin- ity mimicking explores the interaction between modalities during distillation, enabling student models to mimic teach- ers’ behavior of learning cross-modal feature alignment in a visual-linguistic affinity space. Weight inheritance transmits the pre-trained weights from the teacher mod- els to their student counterparts to improve distillation effi- ciency. Moreover, we extend the method into a multi-stage progressive distillation to mitigate the loss of informative weights during extreme compression. Comprehensive ex- periments demonstrate the efficacy of TinyCLIP , showing that it can reduce the size of the pre-trained CLIP ViT-B/32 by 50%, while maintaining comparable zero-shot perfor- mance. While aiming for comparable performance, distil- lat
+
+## Experimental setup: inherited model variants and pretraining data
+
+he original CLIP employs a transformer- based model as its text encoder, while its image encoder has two variations, i.e., ViT [9] and modified ResNet [19], covering both transformer-based and CNN-based architec- tures. For weight inheritance, we inherited the weights from two model variants: OpenCLIP ViT-B/32 or ViT-B/16 [21] and CLIP ResNet-50 [46], which are pre-trained on LAION-2B [49] and WIT-400M [46], respectively 1. For distillation, we use OpenCLIP ViT-B/32 [21] pre-trained on LAION-2B [49] as the teacher model, since it achieves a high zero-shot accuracy of 65.6% on ImageNet [7] with a high inference throughput. Besides, we also extend our method to DaViT [8], which is a hybrid architecture. We re-produce Florence-DaViT-5M [72, 8] on LAION-400M as a baseline. Then we distill the same model using affin- ity mimicking and weight inheritance. The teacher model is Florence-DaViT-D3, which is pre-trained on FLD-900M [72] and achieves a top-1 accuracy of 78.0% on ImageNet [7] with 128M parameters. Affinity Mimicking. As defined in Tab. 2, we explore 1The models can be downloaded from OpenCLIP and Op
+
+## YFCC-15M target model teacher excerpt
+
+-art methods. The architecture of text encoder is Transformer [55]. “auto” denotes automatic weight inheritance, and our other models use manual weight inheritance. Flickr30k [44] and MSCOCO retrieval [34] are reported. When performing training on YFCC-15M [53], we use affinity mimicking and manual weight inheritance to distill OpenCLIP ViT-B/16 [21], whose zero-shot performance on ImageNet is 70.2%. By inheriting half of parameters, our TinyCLIP ViT-39M/16 can achieve a zero-shot accuracy of 63.5% on ImageNet, surpassing the original CLIP ViT-B/16 [46] by 25.9%. Furthermore, when compressing the im- age encoder to 10 layers with 256 dimensions and the text encoder to 3 layers with 256 dimensions, TinyCLIP ViT- 8M/16 still surpasses CLIP ViT-B/16 [46] by 3.5% while using 11.3× fewer parameters and running 5.1× faster. When conducting training on LAION-400M [50], we distill three different models, i.e., Florence DaViT [72, 8], CLIP ResNet [46], and OpenCLIP ViT-B/32 [21]. The results in Tab. 1 demonstrate the efficacy of our method. More specifically, our TinyCLIP DaViT-5M achieves up to 5.0% improvement
+
+## Reference [21]
+
+[21] Gabriel Ilharco, Mitchell Wortsman, Ross Wightman, Cade Gordon, Nicholas Carlini, Rohan Taori, Achal Dave, Vaishaal Shankar, Hongseok Namkoong, John Miller, Han- naneh Hajishirzi, Ali Farhadi, and Ludwig Schmidt. Open- clip, July 2021. 1, 2, 5, 6, 7, 8 [22] Chao Jia, Yinfei Yang, Ye Xia, Yi-Ting Chen, Zarana Parekh, Hieu Pham, Quoc Le, Yun-Hsuan Sung, Zhen Li, and Tom Duerig. Scaling up visual and vision-language representation learning with noisy text supervision. In ICML, 2021. 1, 2 [23]
+
+## Search notes
+
+Searched extracted full text for: intended, out-of-scope, out of scope, commercial, educational, ViT-8M/16, YFCC-15M, OpenCLIP, OpenAI, CLIP ViT-B/16, teacher, weight inheritance.
+No explicit section titled "Intended Use" or "Out-of-Scope Use" was found in the extracted paper text.

@@ -12,8 +12,14 @@ Gate 2 lane（モデル承認）の監査・実測・採用処理を実施しま
 
 最後に、所有者の委任に基づき、検出用の基盤重みには実時間推論の基準を適用しない（学習後のモデル版で検証する）と判断し、保留していた検出用の基盤重みを承認してモデル一覧へ登録しました。承認済みモデルは基盤重みの分類・検出の 2 件で、補助モデル 2 役と補助品質の比較試験が未充足のため、`ready=false` を維持し、Gate 2 は **BLOCKED** のままです。
 
+続けて、補助モデル（C7）の残タスクを実行しました。画像分類の補助モデルでは、TinyCLIP の想定用途を一次資料で確認できなかったため候補から外し、SigLIP の CPU 推論の改善として量子化を 1 案だけ試しましたが、出力の一致と推論性能のどちらも基準に届かず、保留を維持しました。物体検出の補助モデルでは、新しい第一候補 OWL-ViT base patch32 の取得物を配布元の値と照合し、ONNX 変換後の出力が PyTorch と一致することを確認しましたが、CPU での推論性能が基準に届かないため保留としました。補助モデルが 2 役とも未承認のため、補助品質の比較試験は実行していません。承認済みモデルは 2 件のまま、`ready=false` を維持し、Gate 2 は **BLOCKED** のままです。あわせて、モデル一覧の形式を改め、出荷可能（`ready=true`）とするには補助モデル 2 役それぞれの比較試験に合格した記録を必須にしました。
+
 ### Added
 
+- 物体検出の補助モデル OWL-ViT base patch32 の一致検証と性能を測る spike `spikes/models/owlvit_assist_parity.py`、結果記録 `spikes/models/owlvit-assist-result.md`、採用記録 `docs/model-governance/owlvit-base-patch32-adoption.md`（保留）を追加しました。一致検証は PyTorch・ONNX Runtime CPU・ONNX Runtime DirectML の 3 経路で合格し、性能は DirectML が基準内、CPU が基準外でした。性能モードは基準未達、または要求した実行基盤で session が作られない場合に非ゼロで終了します。検証用 fixture ではスコア閾値を超える検出が 0 件で、検出単位の一致は未確認であることも記録しています。
+- TinyCLIP の一次資料（モデルカード、配布メタデータ、公開リポジトリの README・LICENSE・学習手順、論文の抜粋）の保存コピー `docs/model-governance/evidence/tinyclip-*` を追加しました。想定用途と対象外用途の記載はなく、蒸留元（OpenCLIP ViT-B/16）の重みの系譜も確認できないため、候補から外しています。
+- C7 残タスクの実行計画・記録（`work/20260923-1437-C7-RemainingTasksExecutionPlan.md`、`work/20260923-1520-OWLViT-ControlledArtifact.md`、`work/20260923-1546-TinyCLIP-PrimarySourceSurvey.md`、`work/20260923-2003-C7-RemainingTasksExecution.md`）を追加しました。
+- `docs/adr/0004-spike-decisions.md` に C7 残タスクの判定（§5.1.14）を、`docs/model-governance/classification-assist.md`（§22・§23）と `docs/model-governance/detection-assist.md`（§22）に候補ごとの結果を追加しました。
 - 非商用の研究・教育目的を前提とした利用可能モデルの再調査記録 `work/20260923-1015-NonCommercialModelSurvey.md` を追加しました。物体検出の補助モデルでは OmDet-Turbo が第一候補、今回の訂正で新たに対象となった OWL-ViT が次点です。画像分類の補助モデルには、すべての要件を満たす候補がまだありません。本調査は採用決定ではなく、取得・変換・一致検証・性能測定は未実施です。
 - Gate 2 残タスクの判断根拠となる、2026-09-23 付けのリポジトリ所有者によるリスク受容の書面 `docs/model-governance/evidence/2026-09-23-owner-risk-acceptance.md` を追加しました。対象は分類用基盤重み（MobileNetV3 Large）と物体検出の補助モデル（Grounding DINO tiny の Hugging Face 配布版）の 2 件に限定し、対象外の成果物と、確認できなかった項目を列挙しています。publisher による許諾の表明ではありません。
 - 分類用基盤重みの一致検証・性能・初期重みとしての精度を測る spike `spikes/models/classification_checkpoint_parity.py` と結果記録 `spikes/models/classification-checkpoint-result.md`、および採用記録 `docs/model-governance/mobilenet-v3-large-imagenet1k-v2-adoption.md`（承認、承認者 dahatake、2026-09-23）を追加しました。初期重みとしての精度は乱数初期化と同点の偶然水準であり、有益性を示すものではないことを記録しています。
@@ -36,6 +42,10 @@ Gate 2 lane（モデル承認）の監査・実測・採用処理を実施しま
 
 ### Changed
 
+- `resources/models/manifest.json` の `releaseStatus.reason` に、C7 残タスクの結果（SigLIP の量子化が出力の一致と CPU 推論性能の基準を満たさなかったこと、TinyCLIP を候補から外したこと、OWL-ViT の CPU 推論性能が基準外であること）を追記しました。登録モデルと `ready=false` は変えていません。
+- `spikes/models/siglip-assist-result.md`（§7）と `docs/model-governance/siglip-base-patch16-224-adoption.md`（§16）に、CPU 推論の改善として試みた量子化（ONNX Runtime の動的量子化）の結果を追記しました。PyTorch との出力の差が許容差を大きく超え（15 枚中 3 枚で最上位の候補が変わる）、CPU の推論性能も基準に届かないため、保留を維持します。同じ手順で再測定できるよう、量子化の経路を spike に残しています。
+- モデル一覧の schema `resources/models/manifest.schema.json` を `2.0.0` に改め、`releaseStatus.ready=true` とするには、補助モデルの分類・検出それぞれについて、補助なしの作業と比べて最終品質が悪化せず作業時間の中央値が短縮したことを示す記録（`releaseStatus.assistQuality`）を必須にしました（NFR-ANN-006 / POC-16）。出荷可能と判定していた既存の条件を狭める変更のため、メジャーを上げています。`resources/models/manifest.json` の `schemaVersion`、`scripts/models/manifest-schema.test.mjs`（否定 test 8 件を追加）、`docs/dependency-policy.md`、`docs/model-governance/adoption-template.md` を合わせて更新しました。
+- 補助品質の測定 harness `spikes/models/assist_benchmark.py` を、新しい schema と循環しないよう `ready=true` を前提条件から外し、補助あり・補助なしの作業記録が同じ gold set の項目だけを 1 回ずつ含むことの検査、記録の型（項目 ID・提案の有無・有限で負でない秒数）の検査、作業時間の中央値の出力を加えました。
 - `docs/implementation-plan.md` の D-15（AutoML の最大 Trial 数・最大時間）を、Windows 実機の測定値に基づく有限予算へ更新しました。分類は最大 Trial 数 20、最大時間が CPU 180 秒・CUDA 120 秒です。検出は利用者の許可を得た暫定測定に基づき、最大 Trial 数 20・CPU 420 秒・CUDA 120 秒としました。実運用規模の予算は未決定のまま保持します。
 - `docs/adr/0004-spike-decisions.md` の `SKIPPED_BY_USER` 一覧に、利用者指示による SPI-17 段階 3（実作業セッションの記録）を追加しました。スキップは合格への読み替えではなく、NFR-ANN-006 の出荷条件は未充足のまま残ります。
 - 検出用 Curated Base Weight（SPI-12 / G2-02）の権利ゲートを、ライセンス決定権限者の判断に基づき充足として設定しました。根拠書面は後日提出予定であり、この設定は publisher によるライセンス表明の存在を意味しません。

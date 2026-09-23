@@ -231,8 +231,8 @@
 | Manual-only の最終 Ground Truth 品質スコア | [記入] |
 | Assisted の最終 Ground Truth 品質スコア | [記入] |
 | 品質悪化の有無 | [記入: **悪化なし（合格）** / 悪化あり（不合格）] |
-| Manual-only の平均 annotation 所要時間 | [記入: 秒/枚] |
-| Assisted の平均 annotation 所要時間 | [記入: 秒/枚] |
+| Manual-only の annotation 所要時間の中央値 | [記入: 秒/枚（POC-16 の判定に使う。平均は参考値）] |
+| Assisted の annotation 所要時間の中央値 | [記入: 秒/枚（同上）] |
 | 時間短縮の達成 | [記入: **達成（合格）** / 達成せず（不合格）] |
 | 試験実施日 | [記入: YYYY-MM-DD] |
 | 試験担当者 | [記入: 担当者氏名] |
@@ -251,7 +251,7 @@
 
 ## 14. リリースマニフェスト対応付け（FR-LIC-010/NFR-INS-007）
 
-`releaseStatus.ready=true`にする場合は、対象releaseの`productVersion`を必ずmanifestへ記録します。`ready=false`の空manifestでは省略できます。
+`releaseStatus.ready=true`にする場合は、対象releaseの`productVersion`を必ずmanifestへ記録します。`ready=false`の空manifestでは省略できます。あわせて、C7分類・C7検出のそれぞれについて §12 の比較試験に合格した記録を`releaseStatus.assistQuality[]`へ記録します（manifest schema `2.0.0`。`recordPath`は §12 を記入した本採用記録）。
 
 | 項目 | 値 |
 |---|---|

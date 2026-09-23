@@ -698,3 +698,16 @@ GitHub release 版（本記録 §1〜§19 の対象）とは**別 artifact** の
 | intended / out-of-scope use、安全形式、hash、parity、性能、NFR-ANN-006 | **維持**（緩和しない） |
 
 v0.7 後の候補の再調査は [`work/20260923-1015-NonCommercialModelSurvey.md`](../../work/20260923-1015-NonCommercialModelSurvey.md) に記録した。
+
+## 22. 2026-09-23 — OWL-ViT base patch32 の技術 gate
+
+v0.7 後の第一候補 `google/owlvit-base-patch32`（revision `cbc355fb364588351c5d51c7f74465e8e7ec6f72`、`model.safetensors` SHA-256 `4dbe0399f0b7d7c8dddf1535a98769cc30743bebc877aea681998c8d984ce52b`）を、[2026-09-23 C7 検出 risk acceptance](evidence/2026-09-23-owner-risk-acceptance-c7-detection.md) artifact D の下で評価した。artifact 照合は [`work/20260923-1520-OWLViT-ControlledArtifact.md`](../../work/20260923-1520-OWLViT-ControlledArtifact.md)、実測は [`owlvit-assist-result.md`](../../spikes/models/owlvit-assist-result.md)、採用記録は [`owlvit-base-patch32-adoption.md`](owlvit-base-patch32-adoption.md)。
+
+| 項目 | 結果 |
+|---|---|
+| artifact・remote code | 7 file の byte size と hash が publisher metadata と一致。safetensors、`auto_map` なし、transformers 本体の実装で load |
+| parity | 生出力（`logits` / `pred_boxes`、`rtol 1e-3` / `atol 1e-4`、3 比較）: **合格**。検出単位（採用する閾値の score 帯）: **未確認**（本 fixture では score `> 0.05` の検出が 0 件で、比較は空） |
+| 性能 | DirectML は合格（p95 `42.3`〜`62.5` ms）。**CPU は不合格**（p95 `918.1`〜`1,569.9` ms、`0.92`〜`1.51` FPS） |
+| 判定 | **保留**。manifest に登録しない |
+
+承認済み検出 C7 は引き続き **0 件**である。

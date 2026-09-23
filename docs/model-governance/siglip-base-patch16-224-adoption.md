@@ -105,3 +105,12 @@ GitHub Advisory Database（2026-09-23 照会）で `transformers==5.17.0`、`saf
 | 保留の理由 | (1) §11 の CPU EP の p95 / throughput が採用基準に不適合。manifest の `support[]` は CPU と DirectML の両方を要求する。(2) §12 の比較試験が未実施。(3) `confidenceThreshold` が未決定。(4) transformers の依存採用判断が未実施 |
 | 権利層 | 充足（risk acceptance、2026-09-22、決定者 dahatake）。本保留は権利判断を取り消さない |
 | 再審査の条件 | CPU 経路で採用基準を満たす実測（量子化等は別途の技術作業）と、§12 の比較試験 |
+
+## 16. 2026-09-23 追補 — C7C-02（CPU 経路の最小改善）の結果
+
+| 項目 | 内容 |
+|---|---|
+| 試行 | ONNX Runtime の動的量子化（`quantize_dynamic`、既定設定）を vision ONNX に 1 案だけ適用する（[`work/20260923-1437-C7-RemainingTasksExecutionPlan.md`](../../work/20260923-1437-C7-RemainingTasksExecutionPlan.md) §6 C7C-02） |
+| 結果 | 1 回目は実行環境（agent の OS sandbox）で量子化が失敗した。sandbox 外のターミナルで再実行し、int8 vision（SHA-256 `2664434a…c9b1`）を測定した（[実測記録](../../spikes/models/siglip-assist-result.md) §7）。parity は torch ↔ ORT CPU int8 の score 最大差 **`9.0403e-02`**（許容差 `1.0e-04`）、top-1 一致 **12/15** で**不合格**。CPU 性能は p95 **`215.785` ms**、**`8.33` FPS** で**不合格** |
+| 他の C7 分類候補 | TinyCLIP は intended / out-of-scope を一次資料で確認できず**除外 / HOLD 維持**（[`classification-assist.md`](classification-assist.md) §22）。SigLIP を置き換える承認候補はない |
+| 判定 | **保留を維持**。計画の最小改善 1 案は parity と性能の両方で不適合であり、§15 の保留理由 (1)〜(4) はいずれも解消していない。manifest に登録しない |

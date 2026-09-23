@@ -27,7 +27,7 @@ Gate 2部は、承認済み分類・検出のCurated Base WeightとAnnotation As
 
 **Gate 2 lane追補（2026-09-22）:** SPI-11〜17とD-15を2回実行し、各入力の現在状態を確定した（§5.1）。SPI-11〜14は既存監査の充足確認と、利用者指示による**候補の再調査および controlled retrieval**を行った。分類のtrain/export parityは**PASS**、検出は**PASS**（既定60 epoch。6/20 epochでは**FAIL**であり、その実測も保持する）、assist品質は段階3が`SKIPPED_BY_USER`かつ承認済みC7が0件のため**NOT_RUN（実測0件）**、D-15は分類のCPU / CUDAと検出のCPUについて有限budgetを確定した。同日夜、利用者dahatakeの提示（license識別子・NOTICE・承認者氏名）によりC6検出1役を承認しmanifestへ登録したが（§5.1.10）、翌日の推論性能実測が採用基準に不適合であったため**保留へ差し戻し登録を取り消した**（§5.1.11）。**承認済みmodelは0件**であり、Gate 2部の**BLOCKED / NOT_COMPLETE**と`releaseStatus.ready=false`・`models: []`は変更しない。
 
-**Gate 2残タスク追補（2026-09-23）:** FR-LIC-016の新設を受け、C6分類（MobileNetV3 Large V2）を**承認**しmanifestへ登録した。C6検出（SSDLite）は、いったん保留とした後、同日のowner裁定D1（C6にPOC-03の実時間推論基準を適用しない）により**承認**・登録した（§5.1.13）。C7分類（SigLIP、CPU性能不適合）、C7検出（Grounding DINO tiny、parity FAIL）は**保留**、SPI-17は**NOT_RUN**である（§5.1.12）。Gate 2部は**BLOCKED / NOT_COMPLETE**、`releaseStatus.ready=false`を維持する。
+**Gate 2残タスク追補（2026-09-23）:** FR-LIC-016の新設を受け、C6分類（MobileNetV3 Large V2）を**承認**しmanifestへ登録した。C6検出（SSDLite）は、いったん保留とした後、同日のowner裁定D1（C6にPOC-03の実時間推論基準を適用しない）により**承認**・登録した（§5.1.13）。C7分類（SigLIP、CPU性能不適合）、C7検出（Grounding DINO tiny、parity FAIL）は**保留**、SPI-17は**NOT_RUN**である（§5.1.12）。同日のC7残タスクでは、TinyCLIPを**除外 / HOLD維持**、SigLIPのCPU改善（量子化）を**parity・性能とも不適合で保留維持**、C7検出の新候補OWL-ViT B/32を**保留**（生出力parity PASS、CPU性能不適合）とした（§5.1.14）。Gate 2部は**BLOCKED / NOT_COMPLETE**、`releaseStatus.ready=false`を維持する。
 
 ---
 
@@ -446,4 +446,18 @@ D-15へ**検出・CUDA「最大Trial数20 / 最大時間120秒」**を記録し�
 - **D1:** C6（学習の初期化に用いる基盤重み）の採用判定にPOC-03の実時間推論基準（100 ms / 10 FPS）を適用しない。根拠は要求定義§5の定義とFR-INF-001（カメラ推論の対象は成功済みModel Version）である。POC-03 / NFR-PERF-004はINF phaseでModel Versionの推論経路に対して検証し、緩和しない。
 - **帰結:** SSDLite320の採用記録を**承認**とし、manifestへ登録した。C6の技術基準（hash・安全load・CPU / DirectML parity・Fine-Tuning後AP@0.5 `0.0603` ≥ 乱数初期化 `0.0104`・D-15・CVE）はすべて通過済みである。
 - **D2:** OWL-ViT / OWLv2のmodel cardが教育目的に言及しないことは、製品のモデル利用条件より狭い用途制限（FR-LIC-003）として扱う。採用する場合は書面承認とアプリ内表示を要する。
+- manifestは承認2件（C6分類・C6検出）、`releaseStatus.ready=false`。Gate 2部は**BLOCKED / NOT_COMPLETE**のままである（C7 2役とSPI-17が未充足）。
+
+#### 5.1.14 C7残タスクの実行（2026-09-23）
+
+実行計画`work/20260923-1437-C7-RemainingTasksExecutionPlan.md`を利用者指示「不明点はデフォルトのプランを採用」で実行した。各ノードは完了条件の検証と敵対的レビューを経ている。
+
+| 役 | 対象 | 実測・調査 | 採用記録の判定 | manifest |
+|---|---|---|---|---|
+| C7 分類 | TinyCLIP ViT-8M/16 Text-3M YFCC-15M | 一次資料（HF model card、microsoft/Cream、arXiv 2309.12314v1）に intended / out-of-scope use の記載がない。teacher は論文上 OpenCLIP ViT-B/16 で、その checkpoint の重みの系譜は未確認（FR-LIC-015 未解決）（`work/20260923-1546-TinyCLIP-PrimarySourceSurvey.md`） | **除外 / HOLD 維持**（adoption-template §8 の「判断不能 → 同梱不可」） | 未登録 |
+| C7 分類 | `google/siglip-base-patch16-224` | 計画の既定案（ONNX Runtime 動的量子化を 1 案だけ）は、1 回目が実行環境の sandbox で失敗し、sandbox 外のターミナルで再実行した。int8 は **parity 不合格**（score 最大差 `9.04e-02`、top-1 12/15）、**CPU p95 `215.8` ms・`8.33` FPS で性能も不合格** | **保留を維持** | 未登録 |
+| C7 検出 | `google/owlvit-base-patch32`（revision `cbc355fb`） | 7 file の hash が publisher metadata と一致、remote code 不要。生出力 parity PASS（`rtol 1e-3` / `atol 1e-4`、CPU・DirectML、5 枚）。ただし fixture では score `> 0.05` の検出が 0 件で検出単位の parity は未確認。DirectML p95 `42.3`〜`62.5` ms は基準内、**CPU p95 `918.1`〜`1,569.9` ms は不適合** | **保留** | 未登録 |
+
+- C7 分類・検出の両方が保留のため、計画 §5 の HOLD branch に従い補助品質 baseline（C7Q-01〜04 / SPI-17）は**実行していない**。利用者の実作業 session も存在しない。
+- manifest schema を `2.0.0` に改訂し、`releaseStatus.ready=true` に C7 分類・検出の比較試験（NFR-ANN-006 / POC-16）の合格記録 `releaseStatus.assistQuality[]` を必須とした。`ready=true` にしていた既存の条件を狭める変更のため、SchemaVer の規則（既存の有効なデータを拒否し得る変更は MODEL を上げる）に従い major を上げた。合わせて `spikes/models/assist_benchmark.py` の前提条件から `ready=true` を外し（schema と循環しないため）、gold set の item id 集合の一致と中央所要時間の出力を加えた。schema と文書間の照合（`modelId`・`recordPath`・SHA-256）の実行は PKG-01 の release verifier の範囲であり、未実装のままである。
 - manifestは承認2件（C6分類・C6検出）、`releaseStatus.ready=false`。Gate 2部は**BLOCKED / NOT_COMPLETE**のままである（C7 2役とSPI-17が未充足）。

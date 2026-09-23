@@ -6,14 +6,16 @@ fail-closed boundaries kept by this harness:
   session on the same gold set. Both sessions must be recorded from real work;
   the harness never generates, estimates or simulates them.
 * An assisted session can only exist once an Annotation Assist Model (C7) is
-  approved. The rights layer of SPI-13 (``classification-assist.md``) and
-  SPI-14 (``detection-assist.md``) is covered by the repository owner's risk
-  acceptance of 2026-09-22, but neither candidate has a measured windows-x64
-  cpu/directml parity or a completed adoption record, so no C7 entry exists in
-  ``resources/models/manifest.json`` and ``releaseStatus.ready`` stays false.
-* Therefore the harness refuses to report a baseline and exits with
-  ``verdict=BLOCKED``. ``--self-test`` only verifies the metric arithmetic on
-  synthetic records; a self-test pass is not a quality baseline.
+  approved, so the harness refuses to report a baseline and exits with
+  ``verdict=BLOCKED`` until the manifest holds an approved C7 entry for both
+  classification and detection. ``releaseStatus.ready`` is not a precondition:
+  the manifest can only become ready after this baseline has passed
+  (``releaseStatus.assistQuality`` in ``manifest.schema.json``).
+* ``--self-test`` only verifies the metric arithmetic on synthetic records; a
+  self-test pass is not a quality baseline.
+* Both sessions must list the same gold-set item ids exactly once. Time is
+  compared by the median per-item seconds (POC-16); the mean is reported for
+  information.
 
 Session record format (JSON Lines, one object per gold-set item)::
 
@@ -27,6 +29,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
+import statistics
 import sys
 from pathlib import Path
 from typing import Any
@@ -43,6 +47,7 @@ class RecordError(ValueError):
 
 def parse_session(lines: list[str], source: str) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
+    seen: set[str] = set()
     for line_number, line in enumerate(lines, start=1):
         if not line.strip():
             continue
@@ -50,11 +55,30 @@ def parse_session(lines: list[str], source: str) -> list[dict[str, Any]]:
         for field in ("item_id", "proposed", "outcome", "seconds"):
             if field not in record:
                 raise RecordError(f"{source}:{line_number} is missing '{field}'")
+        seconds = record["seconds"]
+        if (
+            not isinstance(record["item_id"], str)
+            or not record["item_id"]
+            or not isinstance(record["proposed"], bool)
+            or isinstance(seconds, bool)
+            or not isinstance(seconds, (int, float))
+            or not math.isfinite(seconds)
+            or seconds < 0
+        ):
+            raise RecordError(
+                f"{source}:{line_number} needs a non-empty string item_id, a "
+                "boolean proposed and finite non-negative seconds"
+            )
+        if record["item_id"] in seen:
+            raise RecordError(
+                f"{source}:{line_number} repeats item_id {record['item_id']!r}"
+            )
+        seen.add(record["item_id"])
         if record["outcome"] not in OUTCOMES:
             raise RecordError(
                 f"{source}:{line_number} has unknown outcome {record['outcome']!r}"
             )
-        if bool(record["proposed"]) != (record["outcome"] != "manual"):
+        if record["proposed"] != (record["outcome"] != "manual"):
             raise RecordError(
                 f"{source}:{line_number} mixes proposed={record['proposed']!r} "
                 f"with outcome={record['outcome']!r}"
@@ -87,6 +111,9 @@ def summarise(records: list[dict[str, Any]]) -> dict[str, Any]:
         "counts": counts,
         "total_seconds": round(total_seconds, 3),
         "seconds_per_item": round(total_seconds / total, 3),
+        "median_seconds_per_item": round(
+            statistics.median(float(r["seconds"]) for r in records), 3
+        ),
     }
 
 
@@ -102,8 +129,6 @@ def check_manifest() -> dict[str, Any]:
         for task in REQUIRED_ASSIST_TASKS
     }
     blockers: list[str] = []
-    if not manifest.get("releaseStatus", {}).get("ready", False):
-        blockers.append("resources/models/manifest.json has releaseStatus.ready=false")
     for task, matches in assist.items():
         if not matches:
             blockers.append(f"no approved C7 {task} assist entry in the manifest")
@@ -137,6 +162,7 @@ def self_test() -> list[str]:
         "reject_rate": 1 / 3,
         "total_seconds": 20.0,
         "seconds_per_item": 5.0,
+        "median_seconds_per_item": 5.0,
     }
     for key, value in expected.items():
         actual = summary[key]
@@ -158,12 +184,25 @@ def self_test() -> list[str]:
         {"item_id": "x", "proposed": True, "outcome": "manual", "seconds": 1.0},
         {"item_id": "x", "proposed": True, "outcome": "unknown", "seconds": 1.0},
         {"item_id": "x", "proposed": True, "outcome": "accept"},
+        {"item_id": "x", "proposed": "false", "outcome": "manual", "seconds": 1.0},
+        {"item_id": "", "proposed": False, "outcome": "manual", "seconds": 1.0},
+        {"item_id": "x", "proposed": False, "outcome": "manual", "seconds": -1},
+        {"item_id": "x", "proposed": False, "outcome": "manual", "seconds": "1"},
+        {"item_id": "x", "proposed": False, "outcome": "manual", "seconds": math.nan},
     ):
         try:
             parse_session([json.dumps(bad)], "self-test")
         except RecordError:
             continue
         failures.append(f"malformed record was accepted: {bad}")
+
+    duplicate = {"item_id": "x", "proposed": False, "outcome": "manual", "seconds": 1}
+    try:
+        parse_session([json.dumps(duplicate)] * 2, "self-test")
+    except RecordError:
+        pass
+    else:
+        failures.append("a repeated item_id was accepted")
     return failures
 
 
@@ -214,12 +253,9 @@ def main() -> int:
                 "blockers": gate["blockers"],
                 "manifest_gate": gate,
                 "reason": (
-                    "No Annotation Assist Model (C7) entry exists in the manifest. "
-                    "The rights layer of SPI-13 and SPI-14 is covered by the "
-                    "repository owner's risk acceptance of 2026-09-22, but no "
-                    "candidate has a measured windows-x64 cpu/directml parity or a "
-                    "completed adoption record, so no entry may be written. Without "
-                    "an approved checkpoint no assisted session can be recorded, so "
+                    "The manifest lacks an approved Annotation Assist Model (C7) "
+                    "entry for every required task. Without an approved "
+                    "checkpoint no assisted session can be recorded, so "
                     "coverage / accept / edit / reject / elapsed time stay "
                     "unmeasured."
                 ),
@@ -234,13 +270,18 @@ def main() -> int:
     if args.assisted_session is None or args.manual_session is None:
         parser.error("--assisted-session and --manual-session are both required")
 
-    assisted = summarise(load_session(args.assisted_session))
-    manual = summarise(load_session(args.manual_session))
-    if assisted["items"] != manual["items"]:
+    assisted_records = load_session(args.assisted_session)
+    manual_records = load_session(args.manual_session)
+    assisted_ids = {r["item_id"] for r in assisted_records}
+    manual_ids = {r["item_id"] for r in manual_records}
+    if assisted_ids != manual_ids:
         raise SystemExit(
-            f"gold set mismatch: assisted {assisted['items']} items, "
-            f"manual {manual['items']} items"
+            f"gold set mismatch: {len(assisted_ids - manual_ids)} item ids only in "
+            f"the assisted session, {len(manual_ids - assisted_ids)} only in the "
+            "manual-only session"
         )
+    assisted = summarise(assisted_records)
+    manual = summarise(manual_records)
     json.dump(
         {
             "task": "SPI-17 / G2-07 assist quality baseline",
@@ -251,6 +292,10 @@ def main() -> int:
             "manual_only": manual,
             "seconds_delta_per_item": round(
                 assisted["seconds_per_item"] - manual["seconds_per_item"], 3
+            ),
+            "median_seconds_delta_per_item": round(
+                assisted["median_seconds_per_item"] - manual["median_seconds_per_item"],
+                3,
             ),
         },
         sys.stdout,

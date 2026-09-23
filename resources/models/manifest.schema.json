@@ -3,7 +3,7 @@
   "$id": "manifest.schema.json",
   "title": "AutoVision Studio Release Model Manifest",
   "description": "Declares only fully approved, commercially-licensed C6 (Curated Base Weight) and C7 (Annotation Assist Model) payloads. Fail-closed: unknown license, unverified commercial use, unapproved status, or path traversal causes validation failure. Represents a release manifest, not a model registry or candidate list. An empty models array is valid and expected while G-DEP-07/G-DEP-08 approval gates are pending (docs/dependency-policy.md §12, FR-LIC-004/014).",
-  "$comment": "JSON Schema enforces release composition, approved-entry fields, support coverage, and structural fail-closed rules. The PKG-01 release verifier must additionally verify model ID uniqueness, sourcePath file existence and SHA-256/byteSize, sourcePath-to-payloadPath package mapping, adoption/evidence file existence and SHA-256, required evidence-kind coverage, SPDX expression or canonical license URL validity, approval-record consistency, and confidenceThreshold compatibility with scoreRange.",
+  "$comment": "JSON Schema enforces release composition, approved-entry fields, support coverage, and structural fail-closed rules. The PKG-01 release verifier must additionally verify model ID uniqueness, sourcePath file existence and SHA-256/byteSize, sourcePath-to-payloadPath package mapping, adoption/evidence file existence and SHA-256, required evidence-kind coverage, SPDX expression or canonical license URL validity, approval-record consistency, confidenceThreshold compatibility with scoreRange, and that each releaseStatus.assistQuality entry names a C7 entry of the same task whose approval.recordPath equals recordPath with SHA-256 recordSha256.",
   "type": "object",
   "required": ["schemaVersion", "releaseStatus", "models"],
   "additionalProperties": false,
@@ -13,8 +13,8 @@
     },
     "schemaVersion": {
       "type": "string",
-      "const": "1.0.0",
-      "description": "Must match this schema document version."
+      "const": "2.0.0",
+      "description": "Must match this schema document version. 2.0.0 added releaseStatus.assistQuality, required when ready is true; this rejects ready manifests that were valid under 1.0.0 (SchemaVer: constraint tightening is a MODEL change)."
     },
     "productVersion": {
       "type": "string",
@@ -29,12 +29,21 @@
       "properties": {
         "ready": {
           "type": "boolean",
-          "description": "Set to true only when all required C6/C7 approvals exist and the models array is non-empty."
+          "description": "Set to true only when all required C6/C7 approvals exist, the models array is non-empty, and assistQuality records a passing NFR-ANN-006 comparison for both C7 tasks."
         },
         "reason": {
           "type": "string",
           "minLength": 1,
           "description": "Human-readable explanation of the current gate state."
+        },
+        "assistQuality": {
+          "type": "array",
+          "description": "Passing manual-only versus assisted comparisons (NFR-ANN-006, POC-16). A ready manifest needs at least one per C7 task. Only passing results are allowed; a missing, blocked, unmeasured, or failed comparison is expressed by omitting the entry and keeping ready false.",
+          "items": {
+            "$ref": "#/$defs/assistQualityResult"
+          },
+          "minItems": 1,
+          "uniqueItems": true
         }
       }
     },
@@ -62,6 +71,29 @@
       "then": {
         "required": ["productVersion"],
         "properties": {
+          "releaseStatus": {
+            "required": ["assistQuality"],
+            "properties": {
+              "assistQuality": {
+                "allOf": [
+                  {
+                    "contains": {
+                      "properties": { "task": { "const": "classification" } },
+                      "required": ["task"]
+                    },
+                    "minContains": 1
+                  },
+                  {
+                    "contains": {
+                      "properties": { "task": { "const": "detection" } },
+                      "required": ["task"]
+                    },
+                    "minContains": 1
+                  }
+                ]
+              }
+            }
+          },
           "models": {
             "minItems": 4,
             "allOf": [
@@ -408,6 +440,61 @@
           "format": "date",
           "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
           "description": "ISO 8601 date (YYYY-MM-DD) when the source was retrieved and saved."
+        }
+      }
+    },
+
+    "assistQualityResult": {
+      "type": "object",
+      "description": "One passing NFR-ANN-006 / POC-16 comparison of manual-only and assisted annotation on a representative gold set for one C7 task. The measurement conditions and results are stored in the model adoption record (NFR-ANN-006).",
+      "required": [
+        "task",
+        "modelId",
+        "finalQualityNotWorse",
+        "medianAnnotationTimeReduced",
+        "recordPath",
+        "recordSha256",
+        "measuredDate"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "task": {
+          "type": "string",
+          "enum": ["classification", "detection"]
+        },
+        "modelId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "id of the C7 entry in models measured by this comparison. The release verifier checks that it names a C7 entry with the same task."
+        },
+        "finalQualityNotWorse": {
+          "type": "boolean",
+          "const": true,
+          "description": "The assisted final Ground Truth quality is not worse than manual-only (NFR-ANN-006)."
+        },
+        "medianAnnotationTimeReduced": {
+          "type": "boolean",
+          "const": true,
+          "description": "The assisted median annotation time is shorter than manual-only (POC-16)."
+        },
+        "recordPath": {
+          "type": "string",
+          "pattern": "^docs/model-governance/[A-Za-z0-9_-][A-Za-z0-9._-]*\\.md$",
+          "not": {
+            "const": "docs/model-governance/adoption-template.md"
+          },
+          "description": "Adoption record that stores the measurement conditions and results. The release verifier checks that it equals the approval.recordPath of the entry named by modelId."
+        },
+        "recordSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "Lowercase hex SHA-256 of recordPath, verified by the release verifier."
+        },
+        "measuredDate": {
+          "type": "string",
+          "format": "date",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "description": "ISO 8601 date (YYYY-MM-DD) of the comparison."
         }
       }
     },

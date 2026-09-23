@@ -147,13 +147,29 @@ function createSyntheticModel(category, task) {
   return model;
 }
 
+function createSyntheticAssistQuality(task) {
+  return {
+    task,
+    modelId: `synthetic-c7-${task}`,
+    finalQualityNotWorse: true,
+    medianAnnotationTimeReduced: true,
+    recordPath: 'docs/model-governance/synthetic-test-adoption.md',
+    recordSha256: 'c'.repeat(64),
+    measuredDate: '2024-02-29',
+  };
+}
+
 function createSyntheticManifest() {
   const manifest = {
-    schemaVersion: '1.0.0',
+    schemaVersion: '2.0.0',
     productVersion: '0.0.0',
     releaseStatus: {
       ready: true,
       reason: 'UNPUBLISHED SYNTHETIC structural fixture; no real approvals.',
+      assistQuality: [
+        createSyntheticAssistQuality('classification'),
+        createSyntheticAssistQuality('detection'),
+      ],
     },
     models: roles.map(([category, task]) => createSyntheticModel(category, task)),
   };
@@ -293,6 +309,49 @@ test('requires productVersion when ready=true', () => {
   const manifest = createSyntheticManifest();
   delete manifest.productVersion;
   assertInvalid(manifest, 'required', '');
+});
+
+test('requires a passing assist-quality comparison record when ready=true', () => {
+  const manifest = createSyntheticManifest();
+  delete manifest.releaseStatus.assistQuality;
+  assertInvalid(manifest, 'required', '/releaseStatus');
+});
+
+for (const task of ['classification', 'detection']) {
+  test(`requires the ${task} assist-quality comparison when ready=true`, () => {
+    const manifest = createSyntheticManifest();
+    manifest.releaseStatus.assistQuality = manifest.releaseStatus.assistQuality
+      .filter((result) => result.task !== task);
+    assertInvalid(manifest, 'contains', '/releaseStatus/assistQuality');
+  });
+}
+
+for (const field of ['finalQualityNotWorse', 'medianAnnotationTimeReduced']) {
+  test(`rejects an assist-quality result whose ${field} is false`, () => {
+    const manifest = createSyntheticManifest();
+    manifest.releaseStatus.assistQuality[0][field] = false;
+    assertInvalid(manifest, 'const', `/releaseStatus/assistQuality/0/${field}`);
+  });
+}
+
+test('rejects an assist-quality result with a status field outside the passing record', () => {
+  const manifest = createSyntheticManifest();
+  manifest.releaseStatus.assistQuality[0].verdict = 'BLOCKED';
+  assertInvalid(manifest, 'additionalProperties', '/releaseStatus/assistQuality/0');
+});
+
+test('rejects an assist-quality result that points at the adoption template', () => {
+  const manifest = createSyntheticManifest();
+  manifest.releaseStatus.assistQuality[0].recordPath =
+    'docs/model-governance/adoption-template.md';
+  assertInvalid(manifest, 'not', '/releaseStatus/assistQuality/0/recordPath');
+});
+
+test('does not require assist-quality results while ready=false', () => {
+  const manifest = createSyntheticManifest();
+  manifest.releaseStatus.ready = false;
+  delete manifest.releaseStatus.assistQuality;
+  assertValid(manifest);
 });
 
 test('accepts all four synthetic roles with verified Windows CPU and DirectML', () => {

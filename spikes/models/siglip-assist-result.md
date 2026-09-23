@@ -7,8 +7,8 @@
 | 実行 host | Windows `10.0.29671` / `AMD64` / CPython `3.14.7`、NVIDIA GeForce RTX 4060 Laptop GPU |
 | 対象 script | [`siglip_assist_parity.py`](siglip_assist_parity.py) |
 | 実行環境 | **隔離 spike venv** `vendor/models/_spike/venv`（Git 追跡外）: torch `2.11.0+cpu`、transformers `5.17.0`、onnx `1.22.0`、onnxruntime-directml `1.24.4`。製品 lock は変更していない |
-| parity 判定 | **PASS**（3 比較すべて、反復実行も bit 一致） |
-| 性能判定 | DirectML は採用基準を満たす。**CPU は満たさない**（§5）→ 採用記録の判定は**保留** |
+| parity 判定 | fp32（3 比較）: **PASS**（反復実行も bit 一致）。C7C-02 の int8 候補（torch ↔ ORT CPU int8）: **FAIL**（§7.2。この比較を含む parity mode は exit code `1`） |
+| 性能判定 | DirectML は採用基準を満たす。**CPU は fp32・int8 とも満たさない**（§5、§7.3）→ 採用記録の判定は**保留** |
 
 ---
 
@@ -75,3 +75,46 @@ cd spikes\models
 ## 6. 帰結
 
 manifest の `support[]` は `windows-x64/cpu` と `windows-x64/directml` の**両方**を `verified: true` で要求し、採用記録の性能基準は EP ごとに判定する（[`ssdlite320-mobilenet-v3-large-coco-v1-adoption.md`](../../docs/model-governance/ssdlite320-mobilenet-v3-large-coco-v1-adoption.md) §11 と同じ扱い）。CPU が不適合であるため、実行計画 DQ-08 に従い **manifest に登録しない**。採用記録 [`siglip-base-patch16-224-adoption.md`](../../docs/model-governance/siglip-base-patch16-224-adoption.md) は **保留**とする。
+
+## 7. C7C-02 — CPU 経路の最小改善（2026-09-23）
+
+[`20260923-1437-C7-RemainingTasksExecutionPlan.md`](../../work/20260923-1437-C7-RemainingTasksExecutionPlan.md) §6 C7C-02 の既定案（ONNX Runtime の量子化を 1 案だけ試す）を実行した。
+
+### 7.1 試した 1 案
+
+本 script が export した fp32 `siglip-vision.onnx` に `onnxruntime.quantization.quantize_dynamic(input, output)`（既定設定、int8 weight）を適用した `siglip-vision-int8.onnx`（`93,574,317` byte、SHA-256 `2664434a0a79c4dc473bcef0f6c591c550e7f91fd20178a1669d98f899d1c9b1`）を、fp32 と同じ score 許容差（`1.0e-04`）・top-1 全件一致で parity を、CPU EP で性能を測った。text tower は fp32 のまま。許容差と性能基準は実行前から変えていない。
+
+1 回目の試行は、実行環境（agent の OS sandbox）で `quantize_dynamic` 内部の external data 保存（`onnx.save_model` → `save_external_data`）が `external data path could not be canonicalized: Access is denied.` で失敗し、測定できなかった。実行環境を sandbox の外のターミナルへ変えた後、同じ 1 案を再実行した（以下はその結果）。
+
+### 7.2 Parity（`--mode parity`、exit code `1`）
+
+| 比較 | score 最大差 | top-1 一致 | 判定 |
+|---|---:|---:|---|
+| torch ↔ onnxruntime-cpu（fp32） | `2.3246e-06` | 15/15 | PASS |
+| torch ↔ onnxruntime-directml（fp32） | `2.9802e-06` | 15/15 | PASS |
+| onnxruntime-cpu ↔ onnxruntime-directml（fp32） | `4.1127e-06` | 15/15 | PASS |
+| torch ↔ onnxruntime-cpu-**int8** | **`9.0403e-02`** | **12/15** | **FAIL** |
+
+- fp32 の 3 比較と、fp32 ONNX の SHA-256（`31e7556a…e8e1` / `ccced932…b691`）は §2・§4 の記録値と一致する。
+- int8 は score 許容差を約 900 倍上回り、15 枚中 3 枚で top-1 が変わる。反復推論は int8 も bit 一致（決定論的だが不一致）。
+
+### 7.3 性能（`--mode performance`、同一 process の 1 回）
+
+| 経路 | EP | median | p95 | max | throughput |
+|---|---|---:|---:|---:|---:|
+| vision fp32 | CPU | `141.950` ms | `302.390` ms | `580.036` ms | `5.88` FPS |
+| vision fp32 | DirectML | `17.372` ms | `18.178` ms | `19.212` ms | `57.55` FPS |
+| vision **int8** | CPU | `100.894` ms | **`215.785` ms** | `697.014` ms | **`8.33` FPS** |
+
+- 累積 peak working set は `2,760.8` MB（process 全体）。
+- 本 run の fp32 CPU（p95 `302` ms）は §5 の 2 回（`545`〜`831` ms）より速い。run 間変動は大きいが、いずれも基準外である。
+
+### 7.4 判定
+
+| 採用基準（CPU、画像ごとの vision 経路） | int8 の実測 | 判定 |
+|---|---|---|
+| parity（score ≤ `1.0e-04`、top-1 全件一致） | `9.04e-02`、12/15 | **不合格** |
+| p95 ≤ `100` ms | `215.8` ms | **不合格** |
+| ≥ `10` FPS | `8.33` FPS | **不合格** |
+
+**HOLD 維持。** 最小改善の 1 案は parity と性能の両方で不適合であり、計画 §8 の 4 に従い追加の最適化は試さない。量子化経路は本 script に残し、同じ手順で再測定できるようにした。

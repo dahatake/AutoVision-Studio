@@ -173,6 +173,7 @@ FR-LIC-005 および FR-LIC-015 に基づき、**3 つのレイヤーを独立�
 - 上記のいずれかが **unknown** の場合は同梱しない（fail-closed）。ただし checkpoint 層 license または dataset terms が publisher の一次資料から確認できない場合に限り、**FR-LIC-016 の risk acceptance 経路**（未確認項目の列挙、権限者の書面決定、`LicenseRef-<製品名>` への置き換え、採用記録・アプリ内表示・`THIRD_PARTY_NOTICES` での開示）をすべて満たせば採用できる。技術要件は緩和しない。
 - manifestの`sourcePath`はbuild machine上の`vendor/models/`、`payloadPath`はinstaller内の`resources/models/`を指す。両者は同一binaryであり、manifestに記録した単一のSHA-256とbyteSizeが検証元・同梱後の双方に一致しなければならない（D-09/PKG-01）。
 - `releaseStatus.ready=true`では対象releaseの`productVersion`を必須とする。空または部分承認状態の`ready=false`では省略できる。
+- `releaseStatus.ready=true`では、C7分類・C7検出のそれぞれについて、NFR-ANN-006 / POC-16 の比較試験に合格した記録（`releaseStatus.assistQuality[]`: 対象task、C7 entry の`id`、最終品質が悪化しないこと、中央所要時間が短縮したこと、結果を保存した採用記録の path と SHA-256、測定日）を必須とする（manifest schema `2.0.0`）。未測定・blocked・不合格は entry を書かず、`ready=false`で表す。
 - `docs/model-governance/adoption-template.md`（A-06 成果物）を証拠記録の統一フォームとして使用する。
 
 ### 6.2 Annotation Assist Model checkpoint（C7）— FR-LIC-014 準拠

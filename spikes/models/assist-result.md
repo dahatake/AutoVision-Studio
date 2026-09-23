@@ -96,7 +96,7 @@ ml\.venv\Scripts\python.exe spikes\models\assist_benchmark.py --self-test
 ml\.venv\Scripts\python.exe spikes\models\assist_benchmark.py --assisted-session <assisted.jsonl> --manual-session <manual.jsonl>
 ```
 
-gold set の item 数が両 session で異なる場合は中止する（件数の異なる集合を比較しない）。
+gold set の item id の集合が両 session で異なる場合、または 1 つの session に同じ item id が 2 回以上ある場合は中止する（§9）。
 
 ---
 
@@ -198,3 +198,16 @@ ml\.venv\Scripts\python.exe spikes\models\assist_benchmark.py --self-test  # exi
 ### 8.3 段階 3 の扱いは変わらない
 
 gold set に対する補助あり／手作業のみの実作業 session は、C7 entry が無い限り記録できない。段階 3 は引き続き **`SKIPPED_BY_USER`** であり、**`PASS` へ読み替えない**。`G2-07` の総合判定は **NOT_RUN** のままである。NFR-ANN-006 は出荷条件として未充足である。
+
+## 9. 2026-09-23 — harness の前提条件の修正（manifest schema 2.0.0）
+
+manifest schema 2.0.0 で、`releaseStatus.ready=true` に C7 分類・検出の比較試験の合格記録（`releaseStatus.assistQuality[]`）を必須とした。このため `ready=true` を harness の前提条件にすると、試験を実行できないまま `ready=true` にもできず、状態が進まない。harness を次のとおり直した。
+
+| 変更 | 内容 |
+|---|---|
+| 前提条件 | `releaseStatus.ready=false` を blocker から外した。blocker は承認済み C7 entry（分類・検出）の欠如だけになる。`release_ready` は情報として出力する |
+| 同一 gold set | item 数の一致ではなく、item id の集合の一致を要求する。1 session 内の item id の重複も拒否する（`--self-test` に重複の否定 test を追加） |
+| 所要時間 | POC-16 の判定に使う item あたり秒数の中央値（`median_seconds_per_item`、`median_seconds_delta_per_item`）を出力に加えた。平均（`seconds_per_item`）は参考値として残す |
+| 記録の型 | `item_id` は空でない文字列、`proposed` は JSON の boolean、`seconds` は有限で負でない数値だけを受け付ける（文字列の `"false"`、負の秒数、`NaN` 等を拒否。`--self-test` に否定 test 5 件を追加） |
+
+実行結果（2026-09-23）: `--self-test` は `verdict: PASS`（exit 0）。baseline mode は `verdict: BLOCKED`（exit 2）、blocker は `no approved C7 classification assist entry in the manifest` と `no approved C7 detection assist entry in the manifest` の 2 件。§8 までの記録は当時の実行結果として変更しない。品質非劣化の判定方法は C7Q-01（gold set と基準の事前固定）で決める事項であり、本修正では追加していない。
