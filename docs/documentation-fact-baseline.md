@@ -65,7 +65,7 @@
 | 自動学習、HPO、追加学習、Model Version、レポートをローカル worker で提供する | `README.md`, `docs/users-guide.md`, `docs/architecture.md` | FR-TRN、FR-MOD、FR-REP、実装計画 Phase I / J | `health` 以外の production worker command は未実装 | **設計確定・未実装** | **構成のみ** | Gate 2 / 3、TRN-* / REP-* 完了後 |
 | カメラ権限は推論開始時だけ要求し、frame / result を既定で保存せず、queue depth 1 で推論する | `README.md`, `docs/users-guide.md`, `docs/architecture.md` | FR-INF-003〜017、ADR-0001 §2.5 / §2.7 | production camera / inference は未実装。SPI-08 は provider smoke のみ | **設計確定・未実装** | **要求反映済み** | INF-* と両 OS permission / performance evidence 完了後 |
 | Windows x64 は NSIS EXE、macOS arm64 は flat PKG の自己完結 installer とする | `README.md`, `docs/users-guide.md`, `docs/architecture.md` | FR-INS、ADR-0003 §2 | production installer、正式署名、notarization は未完了 | **設計確定・未実装** | **要求反映済み** | Gate 4、D-16、PKG-* と DOCS-401 / 402 完了後 |
-| 同梱 model は C6 classification / detection と C7 classification / detection の承認済み entry だけを許可する | `README.md`, `docs/users-guide.md`, `docs/architecture.md` | FR-LIC-004 / 014、dependency policy、manifest schema | `resources/models/manifest.json` は `ready=false`, `models=[]` | **設計確定・未実装** | **要求反映済み** | SPI-11〜18、法務 / release approver、Gate 2 完了後 |
+| 同梱 model は C6 classification / detection と C7 classification / detection の承認済み entry だけを許可する | `README.md`, `docs/users-guide.md`, `docs/architecture.md` | FR-LIC-004 / 014、dependency policy、manifest schema | `resources/models/manifest.json` は `ready=false`、承認済み entry は C6 分類・C6 検出の 2 件のみ（2026-09-23） | **設計確定・未実装** | **要求反映済み** | SPI-11〜18、法務 / release approver、Gate 2 完了後 |
 
 ## 5. MVP 対象外
 

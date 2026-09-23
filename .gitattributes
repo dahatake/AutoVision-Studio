@@ -1,3 +1,4 @@
 # Keep audited public assets and source evidence byte-for-byte across checkouts.
 resources/samples/** -text
 docs/sample-data/evidence/** -text
+docs/model-governance/evidence/** -text

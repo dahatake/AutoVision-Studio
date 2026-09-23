@@ -109,7 +109,7 @@ ml/
 └─ uv.lock
 
 resources/models/
-├─ manifest.json            # 実装済み: ready=false, models=[]
+├─ manifest.json            # 実装済み: ready=false, 承認済み C6 分類・検出 2 件
 └─ manifest.schema.json     # 実装済み: approved payload の fail-closed schema
 
 planned: src/main/{db,ipc,projects,jobs,data,models,inference,storage}/
@@ -117,7 +117,7 @@ planned: src/preload/*-api.ts, src/renderer/features/, src/shared/contracts/*
 planned: ml/src/autovision_ml/{commands,assist,training,inference}/
 ```
 
-`src/main` は信頼境界と orchestration、`src/preload` は capability bridge、`src/renderer` は UI、`src/shared/contracts` は境界 contract に限定します。`ml/src/autovision_ml` は ML command と domain logic を持ちますが、Electron や SQLite を知りません。`resources/models/manifest.json` は汎用 model registry ではなく、release に同梱可能な承認済み C6 / C7 payload だけを列挙する正本です。現在 `ready=false` かつ `models=[]` なので、同梱済み model があるとは扱いません。
+`src/main` は信頼境界と orchestration、`src/preload` は capability bridge、`src/renderer` は UI、`src/shared/contracts` は境界 contract に限定します。`ml/src/autovision_ml` は ML command と domain logic を持ちますが、Electron や SQLite を知りません。`resources/models/manifest.json` は汎用 model registry ではなく、release に同梱可能な承認済み C6 / C7 payload だけを列挙する正本です。現在は `ready=false` で、承認済み entry は C6 分類と C6 検出の 2 件だけです（C7 分類・C7 検出は未承認）。release 可能な同梱 model の集合としては扱いません。
 
 production source 以外では、`spikes/` は PoC、root `build/` と `ml/build/` は検証 harness / 生成物、`work/` は時点計画、`docs/adr/` は設計判断です。これらを production capability の証拠にしません。将来 path の正確な task と依存は [`implementation-plan.md`](implementation-plan.md) §7 を参照してください。
 
@@ -184,7 +184,7 @@ Version 1 installer は Windows native build / test lane だけで作成し、�
 | SQLite / Project / jobs | production source なし。planned: `src/main/db/`, `src/main/projects/`, `src/main/jobs/` | **設計確定・未実装** | Main service / repository、transaction | Renderer / worker からの直接書き込み | CORE-* / JOB-* と recovery test |
 | Data / annotation lifecycle | production source なし | **設計確定・未実装** | Main-owned files、immutable Revision contract | 確定済み Revision 上書き、Suggestion 自動承認 | DAT-* / ANN-* と不変性 test |
 | Copy / Reference | `spikes/reference/*-result.md` | **設計確定・未実装**。SPI-19 は `SKIPPED_BY_USER`、保存済み部分結果と OS reboot `NOT_RUN` は履歴 | Project metadata、read-only source access | 参照元の変更・削除、未検証の永続 access | DAT-08〜15。DAT-12/15をSPI-19のPASSへ転用せず、macOS は将来 lane |
-| Assist / approved models | `resources/models/manifest.json`, `manifest.schema.json` | schema は **実装済み**、model は Gate 待ちで空 | approved C6 / C7 entry だけ | runtime download、未監査 model / plugin | Gate 2、SPI-11〜18、PKG-01 |
+| Assist / approved models | `resources/models/manifest.json`, `manifest.schema.json` | schema は **実装済み**、承認済み model は C6 分類・検出の 2 件（C7 は Gate 待ち、`ready=false`） | approved C6 / C7 entry だけ | runtime download、未監査 model / plugin | Gate 2、SPI-11〜18、PKG-01 |
 | Training / Model Version / report | production source なし | **設計確定・未実装** | immutable Revision、Job Worker、一時 artifact | mutable model version、Failed / Cancelled Run からの model 生成 | Gate 2 / 3、TRN-* / REP-* |
 | Camera inference | `spikes/inference/provider-result.md` | production は **設計確定・未実装**。SPI-07/08 は限定 PoC、SPI-09 は `SKIPPED_BY_USER` | user-initiated Windows video permission、Inference Worker、DirectML / CPU fallback | 起動時 permission、audio、frame / result の既定保存 | INF-*、特に INF-13〜15 の製品受入。macOS TCC / CoreML は将来 lane |
 | Python packaging | `ml/packaging/worker-windows.spec`, `spikes/packaging/windows-result.md`, `spikes/packaging/windows-installer-result.md` | SPI-03 は `SKIPPED_BY_USER`。SPI-05は現hostの開発用NSIS resource smokeを **PASS** | PoC-only generated entry / onedir | production worker / freeze完了の主張、clean-host合格への読替え | license gate、PKG-02 の実worker全file検証・freeze |

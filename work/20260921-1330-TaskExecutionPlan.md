@@ -520,3 +520,225 @@ Viteをloopback `127.0.0.1:5177` で起動し、ブラウザーの`addInitScript
 - 版は 0.1.0 のまま。依存／lock／CHANGELOG／commit／tag／release を変更していない（Q-09 の既存規約を維持）。変更 file は [`docs/users-guide.md`](../docs/users-guide.md) と本記録のみ。
 
 - **Wave 4 完了済み ID: W4-01、W4-02（条件付き。容量不足表示は未実測）、W4-03、W4-04、W4-05、W4-06。未着手 ID: なし。** 他 Wave の進捗・完了判定は本記録では行わない。
+
+---
+
+## Gate 2 lane 実行記録
+
+**対象指示:** 2026-09-22 11:42 JST の「`### Gate 2 lane` のタスクを実行、DoD を必ず確認、エラー・停止時は完了済み ID と未着手 ID を報告して停止」。実行範囲は **G2-01〜G2-09** のみで、他 Wave の承認状態・完了判定を書き換えない。
+
+**着手時点の前提:** `G2-01`〜`G2-04` の出力 file（`docs/model-governance/*.md`）は 2026-09-03 の監査で既に存在し、4 役すべてが `HOLD`（CLIP のみ `REJECT`）だった。`G2-05` 以降の `spikes/models/` は存在しなかった。
+
+### 実施内容と DoD 判定
+
+| ID | 実施内容 | DoD 判定 |
+|---|---|---|
+| G2-01 | [`classification-base.md`](../docs/model-governance/classification-base.md) が license／学習データ由来／再配布／intended use／checkpoint hash を一次資料 URL（取得日 2026-09-03）付きで判定し、`HOLD` を保持していることを確認。新規測定なし | **PASS（HOLD 保持）** |
+| G2-02 | [`detection-base.md`](../docs/model-governance/detection-base.md) を同様に確認 | **PASS（HOLD 保持）** |
+| G2-03 | [`classification-assist.md`](../docs/model-governance/classification-assist.md) を同様に確認。SigLIP `HOLD`、OpenAI CLIP `REJECT` | **PASS（HOLD／REJECT 保持）** |
+| G2-04 | [`detection-assist.md`](../docs/model-governance/detection-assist.md) を同様に確認。3 候補とも `HOLD` | **PASS（HOLD 保持）** |
+| G2-05 | [`classification.py`](../spikes/models/classification.py) を新規作成し、beans fixture（MIT）で train → ONNX → CPU 推論差を実測。logit 最大差 `1.5497e-06`（許容 `1.0e-04`）、確率最大差 `5.9605e-07`（許容 `1.0e-05`）、top-1 一致 15/15。結果は [`classification-result.md`](../spikes/models/classification-result.md) | **PASS** |
+| G2-06 | [`detection.py`](../spikes/models/detection.py) を新規作成し、gwhd-2021 fixture（CC BY 4.0）で box／score／label と AP@0.5 差を実測。結果は [`detection-result.md`](../spikes/models/detection-result.md) | **FAIL（実測記録は完了）**。IoU 対応付けした 595 件は box 差 `3.0518e-05`・score 差 `5.9605e-08` で一致するが、検出集合が一致しない（torch のみ 27 件／ONNX のみ 32 件、件数一致 1/5）。2 回実行で再現 |
+| G2-07 | [`assist_benchmark.py`](../spikes/models/assist_benchmark.py) を新規作成。manifest を実読みする fail-closed gate が `BLOCKED`（exit 2）。harness 自己検証は `PASS`（exit 0）。結果は [`assist-result.md`](../spikes/models/assist-result.md) | **未達（NOT_RUN）**。承認済み C7 が 0 件で補助あり session を記録できない。実測欄は空のまま |
+| G2-08 | Windows 実機で Optuna mini-run（8 trial）を実測し、[実装計画](../docs/implementation-plan.md) の D-15 行へ記録 | **条件付き PASS**。分類・CPU・実測 fixture 条件に限り「最大 Trial 数 20」「最大時間 180 秒」を確定。**検出・CUDA/DirectML・実データ規模は未決定（未測定）** |
+| G2-09 | [ADR-0004](../docs/adr/0004-spike-decisions.md) §1 追補・§5.1 新設・§9 参照証拠を更新。[`manifest.json`](../resources/models/manifest.json) は **未編集** | **PASS（BLOCKED 判定・空 manifest 保持）**。4 役すべて未承認のため `ready=true` にしない |
+
+### 実測環境と実行コマンド
+
+Windows `10.0.29671` / `AMD64`、CPython `3.14.7`、torch `2.11.0+cpu`、torchvision `0.26.0+cpu`、onnx `1.22.0`、onnxruntime `1.24.4`、optuna `4.9.0`、`CPUExecutionProvider`、torch thread `1`。
+
+```powershell
+ml\.venv\Scripts\python.exe spikes\models\classification.py --mode parity --artifact-dir <repo 外>   # exit 0
+ml\.venv\Scripts\python.exe spikes\models\detection.py --artifact-dir <repo 外>                      # exit 1（FAIL）
+ml\.venv\Scripts\python.exe spikes\models\assist_benchmark.py --self-test                            # exit 0
+ml\.venv\Scripts\python.exe spikes\models\assist_benchmark.py                                        # exit 2（BLOCKED）
+ml\.venv\Scripts\python.exe spikes\models\classification.py --mode automl-mini-run                   # exit 0
+```
+
+| 検証 | 結果 |
+|---|---|
+| `ruff check` / `ruff format --check`（`spikes\models`） | **exit 0** / **exit 0** |
+| `node scripts\docs\verify-documentation.mjs` | **exit 0**（必須 Markdown 8／SVG 5） |
+| `node scripts\release\verify-product-version.mjs` | **exit 0**（0.1.0） |
+| `node --test scripts\models\manifest-schema.test.mjs` | **35 passed／0 failed、exit 0** |
+| `git diff --check` | **exit 0** |
+| `resources/models/manifest.json` の SHA-256（実行前後） | `7fe41f5bc497d48ffcbbaebaeb5cb02e91dfba0e1a6fe9b66d8cf8928c437a61` で**不変** |
+
+### 途中の失敗も記録する
+
+- 検出学習は batch 2 のとき端数 batch 1 件で BatchNorm が `Expected more than 1 value per channel when training` により失敗した。学習 15 枚を割り切る batch 3 へ変更し、2 件未満の batch で中止する guard を入れた。初回失敗を成功へ置換していない。
+- 独立敵対的レビュー（`g2-review`）で blocking 1 件・non-blocking 5 件を受領し、全件反映した。主なものは、D-15 の最大時間 `600` 秒が未測定の外挿で正当化されていた点（実測で押さえられる `180` 秒へ訂正し、CUDA/DirectML・実データ規模を未決定として明記）と、`average_precision` が VOC 補間になっていなかった点（訂正後 AP を再実測。PASS/FAIL は不変）。詳細は ADR-0004 §5.1.4。
+
+### 本記録で合格へ変更していないもの
+
+- **Gate 2 は BLOCKED のまま。** 承認済み model は 0 件で、`resources/models/manifest.json` は `releaseStatus.ready=false` / `models: []` のまま未編集。`AST` / `TRN` / `REP` / `INF` の実装は開始していない。
+- Gate 1 部の `CONDITIONAL_GO`、`SPI-03` / `SPI-09` / `SPI-19` の `SKIPPED_BY_USER`、Gate 3 の判定、UIR-017 の本人確認をいずれも変更していない。
+- 事前学習 checkpoint を download／load／同梱していない。parity の実測はすべて random 初期化であり、**承認済み weight での parity ではない**。
+- 版は 0.1.0 のまま。依存／lock（`ml/pyproject.toml`、`ml/uv.lock`、`package-lock.json`）／CHANGELOG／commit／tag／release を変更していない。生成した ONNX は repository 外へ出力し、commit していない。
+- 変更 file は `docs/adr/0004-spike-decisions.md`、`docs/implementation-plan.md`（D-15 行のみ）、新規 `spikes/models/`（6 file）、および本記録のみ。
+
+- **Gate 2 lane 完了済み ID: G2-01、G2-02、G2-03、G2-04、G2-05、G2-06（実測完了・判定 FAIL）、G2-08（条件付き）、G2-09。DoD 未達 ID: G2-07（承認済み C7 が 0 件のため実測不能。NOT_RUN として記録）。未着手 ID: なし。** 他 Wave の進捗・完了判定は本記録では行わない。
+
+> 本節は 1 回目実行（2026-09-22 11:42）時点の事実として保持する。`G2-01` / `G2-02` / `G2-03` / `G2-04` / `G2-06` / `G2-07` / `G2-08` の判定は、同日の利用者指示による 2 回目実行（[`20260922-1340-Gate2LaneAdoption.md`](20260922-1340-Gate2LaneAdoption.md)）で更新されている。現在の確定状態は下記「Gate 2 lane 再検証記録」を参照すること。
+
+---
+
+## Gate 2 lane 再検証記録（2026-09-22 23:00 JST・3 回目）
+
+**対象指示:** 2026-09-22 23:01 JST の「`### Gate 2 lane` のタスクを実行、DoD を必ず確認、エラー・停止時は完了済み ID と未着手 ID を報告して停止」。実行範囲は **G2-01〜G2-09** のみで、他 Wave の承認状態・完了判定を書き換えない。
+
+**着手時点の前提:** 1 回目（11:42）と 2 回目（13:40）の成果物が未 commit の作業ツリーに存在した。本実行は**新しい判定を作らず**、各 DoD を成果物と再実行で照合した。`resources/models/manifest.json` は未編集のままである。
+
+### DoD 照合結果
+
+| ID | DoD の要点 | 照合に用いた実在物・再実行 | 判定 |
+|---|---|---|---|
+| G2-01 | 候補の license／学習データ由来／再配布可否／intended use／checkpoint hash を一次資料 URL と取得日付きで判定。不明が残れば `HOLD` 保持 | [`classification-base.md`](../docs/model-governance/classification-base.md) §12（候補 8 件・取得日 2026-09-22）、§12.6 の未確認 9 項目、§12.7 の判定 | **PASS（`HOLD` 保持・承認 0 件）** |
+| G2-02 | 同上 | [`detection-base.md`](../docs/model-governance/detection-base.md) §14（controlled retrieval・実測 SHA-256）、§15（利用者の risk acceptance）、§15.5 | **PASS（権利 gate は利用者決定で充足扱い、技術 gate は parity 未実施のため manifest 未登録）** |
+| G2-03 | 同上 | [`classification-assist.md`](../docs/model-governance/classification-assist.md) §18（SigLIP の hash 一致・safetensors header 解析） | **PASS（`HOLD` 保持・承認 0 件）** |
+| G2-04 | 同上 | [`detection-assist.md`](../docs/model-governance/detection-assist.md) §18（Florence-2／Grounding DINO 2 件） | **PASS（`HOLD` 保持・承認 0 件）** |
+| G2-05 | 権利確認済み fixture で train → ONNX → CPU 推論の出力差を実測記録 | `classification.py --mode parity` を**再実行（exit 0）**。logit 最大差 `1.5497e-06`、確率最大差 `5.9605e-07`、top-1 一致 `15/15` が [`classification-result.md`](../spikes/models/classification-result.md) の記録値と一致 | **PASS（再現確認）** |
+| G2-06 | box／score／label と mAP 差を実測記録 | `detection.py` を**再実行（exit 0）**。既定 60 epoch で未対応検出 `0 / 0`、IoU 対応付け box 差 `3.0518e-05`、label 不一致 `0` を確認。[`detection-result.md`](../spikes/models/detection-result.md) §7.4 の epoch 掃引記録と一致 | **PASS（再現確認。1 回目の FAIL は原因特定済みで解消）** |
+| G2-07 | gold set で coverage／accept／edit／reject／所要時間を手作業のみと比較し実測記録 | `assist_benchmark.py --self-test`（**exit 0 / `PASS`**）と `assist_benchmark.py`（**exit 2 / `BLOCKED`**）を再実行。manifest を実読みする fail-closed gate が承認済み C7 **0 件**で停止することを確認 | **未達。段階 1〜2 は実装・検証済み、段階 3 は `SKIPPED_BY_USER`（利用者指示）。`PASS` へ読み替えない** |
+| G2-08 | Windows 実機 mini-run に基づく有限の最大 Trial 数・最大時間を記録。測定前の数値を置かない | `classification.py --mode automl-mini-run` を**再実行（exit 0）**。1 trial 最大 `4.353` 秒（記録の CPU 実測最大 `7.768` 秒以内）。[実装計画](../docs/implementation-plan.md) D-15 に分類 CPU `180` 秒／CUDA `120` 秒・最大 Trial 数 `20` を記録済み | **条件付き PASS（分類のみ。検出・実データ規模は未決定のまま）** |
+| G2-09 | 4 役すべて承認時のみ `ready=true`。1 役でも未承認なら `BLOCKED` を保持し空 manifest のまま | [`manifest.json`](../resources/models/manifest.json) の SHA-256 が `7fe41f5b…c437a61` で**不変**、`ready=false` / `models: []`。[ADR-0004](../docs/adr/0004-spike-decisions.md) §5.1 が 2 回目実測へ同期済み | **PASS（`BLOCKED` 保持・空 manifest 維持）** |
+
+### 本実行で行った検証（すべて再実行）
+
+実行環境: Windows `10.0.29671` / `AMD64`、CPython `3.14.7`、torch `2.11.0+cpu`、onnx `1.22.0`、onnxruntime `1.24.4`、optuna `4.9.0`。
+
+| 検証 | 結果 |
+|---|---|
+| `spikes\models\detection.py --artifact-dir <repo 外>` | **exit 0**（未対応検出 `0 / 0`） |
+| `spikes\models\classification.py --mode parity --artifact-dir <repo 外>` | **exit 0** |
+| `spikes\models\assist_benchmark.py --self-test` | **exit 0（`PASS`）** |
+| `spikes\models\assist_benchmark.py` | **exit 2（`BLOCKED`・想定どおり）** |
+| `spikes\models\classification.py --mode automl-mini-run` | **exit 0** |
+| `ruff check` / `ruff format --check`（`spikes\models`） | **exit 0** / **exit 0**（6 file） |
+| `node scripts\docs\verify-documentation.mjs` | **exit 0**（必須 Markdown 8／SVG 5） |
+| `node scripts\release\verify-product-version.mjs` | **exit 0**（0.1.1） |
+| `node --test scripts\models\manifest-schema.test.mjs` | **35 passed／0 failed、exit 0** |
+| `git diff --check` | **exit 0** |
+| `resources/models/manifest.json` の SHA-256 | `7fe41f5bc497d48ffcbbaebaeb5cb02e91dfba0e1a6fe9b66d8cf8928c437a61`（**不変**） |
+
+### 本実行で変更していないもの
+
+- **Gate 2 は BLOCKED のまま。** 承認済み model は 0 件で、`manifest.json` は未編集。`AST` / `TRN` / `REP` / `INF` の実装は開始していない。
+- `G2-07` の `SKIPPED_BY_USER` を合格へ読み替えていない。NFR-ANN-006 は出荷条件のまま未充足である。
+- Gate 1 部の `CONDITIONAL_GO`、`SPI-03` / `SPI-09` / `SPI-19` の `SKIPPED_BY_USER`、Gate 3 の判定、UIR-017 の本人確認、他 Wave の完了判定。
+- 版（0.1.1）・依存・lock・CHANGELOG・commit／tag／release。生成した ONNX は repository 外へ出力し commit していない。
+- 本実行で新規に変更した file は**本記録のみ**である。
+
+- **Gate 2 lane 完了済み（DoD 充足）ID: G2-01、G2-02、G2-03、G2-04、G2-05、G2-06、G2-08（条件付き。分類のみ）、G2-09。DoD 未達 ID: G2-07（承認済み C7 が 0 件、かつ段階 3 が利用者指示により `SKIPPED_BY_USER`）。未着手 ID: なし。** 他 Wave の進捗・完了判定は本記録では行わない。
+
+---
+
+## Gate 2 lane 追加作業 — DP-01 / DP-04 の parity 実測（2026-09-22 23:30 JST）
+
+**対象指示:** 「DoD 未達タスクについて、利用者が取るべきアクションと必要な情報を説明し、一緒に完了させる」。説明にあたり残存 blocker を精査した結果、**利用者の入力を一切必要としない項目が 1 つ**あることを確認したため、それを実行した。
+
+### 実行した理由
+
+- 実行環境の onnxruntime `1.24.4` に **`DmlExecutionProvider` が利用可能**であること、`vendor/models/`（Git 追跡外）に SSDLite の実 checkpoint（SHA-256 `a79551df…d65d2`、`14,069,355` byte）が残っていることを確認した。
+- [`detection-base.md`](../docs/model-governance/detection-base.md) §15.4 が挙げる manifest 登録の阻害要因 3 点のうち、**`support[]` の parity 実測（DP-01 / DP-04）だけは権利判断も利用者提示も不要**である。残る 2 点（採用記録・NOTICE 文案、license 識別子・承認者氏名）は利用者からの提示を要する。
+
+### 実測結果
+
+新規 spike [`detection_checkpoint_parity.py`](../spikes/models/detection_checkpoint_parity.py) を作成し、hash gate → `weights_only=True` load → ONNX export（opset 17）→ 3 backend 比較を実施した。
+
+| 比較 | ID | 対応付け | 片側のみ検出 | label 不一致 | box 最大差 | score 最大差 | 判定 |
+|---|---|---:|---:|---:|---:|---:|---|
+| torch ↔ ORT CPU | DP-01 | 294 | 0 / 0 | 0 | `9.9182e-05` | `6.0350e-07` | **PASS** |
+| torch ↔ ORT DirectML | DP-04 | 294 | 0 / 0 | 0 | `1.3733e-04` | `6.4075e-07` | **PASS** |
+| ORT CPU ↔ ORT DirectML | DP-04 | 294 | 0 / 0 | 0 | `1.4496e-04` | `6.1840e-07` | **PASS** |
+
+許容差（box `1.0e-03` / score `1.0e-04`）は SPI-16 と同値を**実行前に固定**しており、結果に合わせて緩めていない。2 回実行で ONNX SHA-256 `6e62517b…e99d9` を含む全指標が一致した。詳細は [`detection-checkpoint-parity-result.md`](../spikes/models/detection-checkpoint-parity-result.md)。
+
+### この実測が意味しないこと
+
+- **承認ではない。** manifest は未編集（SHA-256 `7fe41f5b…c437a61` で不変）、Gate 2 は **BLOCKED** のままである。
+- **精度の主張ではない。** fixture は gwhd-2021 であり COCO checkpoint にとって out-of-domain である。
+- DirectML session は CPU fallback を含みうるため、全 node の GPU 実行を主張しない。
+- YOLOX-Nano の parity、製品後処理を固定した parity（DP-03）、性能実測（POC-16）は未実施である。
+
+### 利用者からの提示が必要な残件
+
+| 対象 | 必要な提示物 | これが無いとどうなるか |
+|---|---|---|
+| C6 検出の manifest 登録 | `licenses.checkpoint.spdx` の識別子、`noticeText` 本文、**承認者氏名**、承認日 | schema が `unknown` 等を拒否するため entry を書けない |
+| C6 分類（G2-01） | risk acceptance の可否、または候補の指定 | 候補 8 件すべてで「checkpoint license 明示」と「学習データ商用可」が両立しない |
+| C7 分類・検出（G2-03 / G2-04） | 同上 | 承認済み C7 が 0 件のままで G2-07 を実施できない |
+| G2-07 段階 3 | gold set の定義と、補助あり／手作業のみの実作業 session（JSON Lines 2 本、同一 item 集合） | `SKIPPED_BY_USER` のまま。NFR-ANN-006 は未充足 |
+| G2-08 の検出 budget | 検出学習を spike で暫定測定してよいかの許可（Gate 4 の前倒し判断） | 学習 1 回分の費用を測れず未決定のまま |
+
+### 検証
+
+| 検証 | 結果 |
+|---|---|
+| `detection_checkpoint_parity.py`（2 回） | **exit 0** / **exit 0** |
+| `ruff check` / `ruff format --check`（`spikes\models`） | **exit 0** / **exit 0**（7 file） |
+| `node scripts\docs\verify-documentation.mjs` | **exit 0** |
+| `node scripts\release\verify-product-version.mjs` | **exit 0**（0.1.1） |
+| `node --test scripts\models\manifest-schema.test.mjs` | **35 passed／0 failed** |
+| `git diff --check` | **exit 0** |
+| `resources/models/manifest.json` の SHA-256 | **不変** |
+
+- **本追加作業の完了 ID: なし（新しい G2 task を作っていない）。解消した blocker: SSDLite の DP-01 / DP-04。DoD 未達のまま残る ID: G2-07。条件付きのまま残る ID: G2-08。** Gate 2 の判定は **BLOCKED** から変更していない。
+
+---
+
+## Gate 2 lane 追加作業 2 — 利用者指示による採用処理（2026-09-23 00:30 JST）
+
+**対象指示:** 2026-09-22 23:33 JST の「(1) C7 にも risk acceptance を出す、(2) 検出 budget の暫定測定を許可、(3) `licenses.checkpoint.spdx` の識別子はアプリケーション名 / `noticeText` は用途に相応しいものを作成 / 承認者氏名は **dahatake**。以上で全ての残タスクを実行。不明点は選択肢とデフォルトを提示」。
+
+### 提示した不明点とデフォルト（デフォルトで実行した）
+
+| ID | 不明点 | デフォルト | 理由 |
+|---|---|---|---|
+| Q-11 | checkpoint license 識別子の具体値 | `LicenseRef-AutoVisionStudio` | SPDX で一覧に無い license を表す正式構文は `LicenseRef-[idstring]`。製品名をそのまま書くと SPDX として解釈できず SBOM 生成が壊れる |
+| Q-12 | C7 を manifest 登録できるか | 登録しない（権利 gate 充足のみ記録） | parity 未実測のまま `verified: true` は捏造。Florence-2 は custom code 実行が DA-B05 未通過、Grounding DINO は構造定義コード不在。SigLIP だけ解決しても 4 役に届かない |
+| Q-13 | C6 分類（G2-01）の扱い | 未登録のまま | risk acceptance の指示対象に C6 分類が含まれない。候補は checkpoint 未取得で技術 gate も未充足 |
+| Q-14 | G2-07 段階 3 | `SKIPPED_BY_USER` 維持 | session の生成は捏造。C7 entry が無い限り harness は fail-closed で停止する |
+| Q-15 | 検出 budget の測定条件 | このPC の CPU で mini-run | 許可は「このPCで測定」。CUDA は repository 外の隔離環境の再構築が必要 |
+| Q-16 | NOTICE の構成 | C5 / C6 / C8 を分離 | `dependency-policy.md` §6.1 と DB-N1 が 3 層の分離を要求 |
+
+### 実施内容
+
+| 項目 | 結果 |
+|---|---|
+| 利用者決定の一次証拠 | [`evidence/2026-09-22-owner-risk-acceptance.md`](../docs/model-governance/evidence/2026-09-22-owner-risk-acceptance.md) を新規作成（SHA-256 `baa0b97f…16c402`）。決定者 **dahatake**、決定日 2026-09-22 |
+| 一次資料の保存 copy | TorchVision `v0.26.0` LICENSE、COCO Terms of Use、torchvision SSDLite model doc の 3 件を `docs/model-governance/evidence/` へ保存し SHA-256 を記録 |
+| 採用記録 | [`ssdlite320-mobilenet-v3-large-coco-v1-adoption.md`](../docs/model-governance/ssdlite320-mobilenet-v3-large-coco-v1-adoption.md) を template に従って新規作成。**承認者 dahatake / 承認日 2026-09-22**。NOTICE 文案は C5（BSD-3-Clause）/ C6（`LicenseRef-AutoVisionStudio`）/ C8（COCO 帰属）を分離 |
+| manifest 登録 | `ssdlite320-mobilenet-v3-large-coco-v1`（C6 検出）を **1 件登録**。`releaseStatus.ready` は **`false` 維持**、`reason` を部分承認の内容へ更新 |
+| C7 の権利 gate | [`classification-assist.md` §19](../docs/model-governance/classification-assist.md) / [`detection-assist.md` §19](../docs/model-governance/detection-assist.md) へ risk acceptance を記録。**manifest entry は作成しない**（parity 未実測・採用記録未作成・Florence-2 は security gate 未通過） |
+| 検出 AutoML budget | `detection.py --mode automl-mini-run` を新設し 2 回実測。1 trial 最大 `14.529` / `19.479` 秒。**D-15 へ「検出・CPU：最大 Trial 数 20 / 最大時間 420 秒」を記録**。loss は 8 trial とも 2 回同値で探索は決定的 |
+| G2-07 | manifest 更新後に gate を再実行。**`BLOCKED`（exit 2）のまま**。`model_entry_count=1`、承認済み C7 `0 / 0` |
+| 回帰 test | `manifest-schema.test.mjs` を **36 件**へ更新（空 manifest 前提の test を部分承認 set の検証へ置換し、`evidence[]` の実在と SHA-256 一致を検証する test を追加）。全件 PASS |
+
+### 途中の失敗も記録する
+
+- 検出 mini-run の初回は `batch_size=2` が選ばれた際に「学習 15 枚 ÷ 2 = 端数 1」で BatchNorm が失敗し **exit 1** となった。端数 1 を生む batch size を実行時に除外する実装へ修正して再実行した。初回失敗を成功へ置換していない。
+- `resources/models/manifest.json` の初版案は JSON の末尾カンマで parse に失敗した。修正後に配置した。
+
+### 本作業で合格へ変更していないもの
+
+- **Gate 2 は BLOCKED のまま。** 4 役のうち承認は C6 検出 1 役のみで、`releaseStatus.ready=false`。`AST` / `TRN` / `REP` / `INF` の実装は開始していない。
+- `G2-07` は **NOT_RUN**。段階 3 の `SKIPPED_BY_USER` を `PASS` へ読み替えていない。NFR-ANN-006 は出荷条件として未充足。
+- 権利 gate の充足は **利用者の risk acceptance** であり、publisher の license 表明・COCO の image-by-image 権利・外部法務の書面判断はいずれも存在しない。一次資料の引用・hash・取得日は書き換えていない。
+- 版は 0.1.1 のまま（未リリースの Unreleased へ追記）。`ml/pyproject.toml`・`ml/uv.lock`・`package-lock.json` の依存内容は変更していない。
+
+### 検証
+
+| 検証 | 結果 |
+|---|---|
+| `detection.py --mode automl-mini-run`（2 回） | **exit 0** / **exit 0** |
+| `assist_benchmark.py --self-test` / `assist_benchmark.py` | **exit 0（PASS）** / **exit 2（BLOCKED）** |
+| `ruff check` / `ruff format --check`（`spikes\models`） | **exit 0** / **exit 0** |
+| `node --test scripts\models\manifest-schema.test.mjs` | **36 passed／0 failed** |
+| `node scripts\docs\verify-documentation.mjs` | **exit 0** |
+| `node scripts\release\verify-product-version.mjs` | **exit 0**（0.1.1） |
+| `git diff --check` | **exit 0** |
+
+- **Gate 2 lane の現在状態: 完了（DoD 充足）ID: G2-01、G2-02、G2-03、G2-04、G2-05、G2-06、G2-08（分類 CPU/CUDA・検出 CPU を確定。検出 CUDA と実データ規模は未決定）、G2-09（部分承認 1 件を登録し `BLOCKED` を保持）。DoD 未達 ID: G2-07（承認済み C7 が 0 件、段階 3 は `SKIPPED_BY_USER`）。未着手 ID: なし。**
+
+> **2026-09-23 追記:** 本 lane の全作業について独立敵対的レビューを実施し、**blocking 2 件・non-blocking 4 件を全件反映**した。反映内容と再検証結果は [`20260923-0025-Gate2LaneFinalization.md`](20260923-0025-Gate2LaneFinalization.md) §4 に記録する。版は **0.1.2** へ更新した。ID 別の判定は本行から変更していない。

@@ -1,5 +1,6 @@
-import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+﻿import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -188,11 +189,90 @@ test('compiles the current manifest schema as JSON Schema draft 2020-12', () => 
   assert.equal(typeof validate, 'function');
 });
 
-test('accepts the actual non-ready manifest with an empty models array', () => {
+// The shipped manifest may only list entries whose adoption record reached the
+// Approved verdict; changing it has to be a deliberate edit here as well.
+const EXPECTED_APPROVED_ENTRIES = 2;
+
+test('accepts the actual non-ready manifest with its current approved set', () => {
   const manifest = readModelJson('manifest.json');
   assert.equal(manifest.releaseStatus.ready, false);
-  assert.deepEqual(manifest.models, []);
+  assert.equal(manifest.models.length, EXPECTED_APPROVED_ENTRIES);
   assertValid(manifest, 'Actual manifest, without synthetic entries');
+});
+
+test('the actual manifest references evidence and approval files that exist with the recorded SHA-256', () => {
+  const manifest = readModelJson('manifest.json');
+  const repositoryFile = (relativePath) =>
+    fileURLToPath(new URL(`../../${relativePath}`, import.meta.url));
+  for (const entry of manifest.models) {
+    assert.ok(
+      existsSync(repositoryFile(entry.approval.recordPath)),
+      `missing adoption record: ${entry.approval.recordPath}`,
+    );
+    for (const evidence of entry.evidence) {
+      const localPath = repositoryFile(evidence.localPath);
+      assert.ok(existsSync(localPath), `missing evidence copy: ${evidence.localPath}`);
+      const digest = createHash('sha256').update(readFileSync(localPath)).digest('hex');
+      assert.equal(
+        digest,
+        evidence.sha256,
+        `evidence SHA-256 mismatch for ${evidence.localPath}`,
+      );
+    }
+  }
+});
+
+test('each actual manifest entry matches the values written in its adoption record', () => {
+  const manifest = readModelJson('manifest.json');
+  for (const entry of manifest.models) {
+    const record = readFileSync(
+      fileURLToPath(new URL(`../../${entry.approval.recordPath}`, import.meta.url)),
+      'utf8',
+    );
+    const expected = [
+      entry.id,
+      entry.sha256,
+      entry.byteSize.toLocaleString('en-US'),
+      entry.downloadUrl,
+      entry.sourcePath,
+      entry.payloadPath,
+      entry.licenses.code.spdx,
+      entry.licenses.checkpoint.spdx,
+      entry.approval.approver,
+      entry.approval.date,
+      ...entry.evidence.flatMap((item) => [item.localPath, item.sourceUrl, item.sha256, item.retrievedDate]),
+      ...entry.licenses.trainingData.flatMap((item) => [item.datasetName, item.termsUrl, item.termsRetrievedDate]),
+      entry.category,
+    ];
+    if (entry.inferenceConfig) {
+      expected.push(String(entry.inferenceConfig.confidenceThreshold));
+    }
+    for (const value of expected) {
+      assert.ok(record.includes(value), `${entry.approval.recordPath} does not state ${value}`);
+    }
+    assert.match(record, /\| 最終判定 \| \*\*承認\*\* \|/u, `${entry.approval.recordPath} is not Approved`);
+  }
+});
+
+// FR-LIC-016(3): a repository-local LicenseRef must say it is not a publisher grant
+// and that the const-true permission fields come from the owner decision.
+test('each actual LicenseRef checkpoint notice discloses the FR-LIC-016 risk acceptance', () => {
+  const manifest = readModelJson('manifest.json');
+  for (const entry of manifest.models.filter((item) => item.licenses.checkpoint.spdx.startsWith('LicenseRef-'))) {
+    const notice = entry.licenses.checkpoint.noticeText;
+    const record = readFileSync(
+      fileURLToPath(new URL(`../../${entry.approval.recordPath}`, import.meta.url)),
+      'utf8',
+    ).replace(/\s+/gu, ' ');
+    for (const phrase of [
+      'does not assert any grant by the publisher',
+      'not from a publisher confirmation (FR-LIC-016)',
+      'Unconfirmed at the time of the decision:',
+    ]) {
+      assert.ok(notice.includes(phrase), `${entry.id} manifest notice lacks: ${phrase}`);
+      assert.ok(record.includes(phrase), `${entry.approval.recordPath} NOTICE lacks: ${phrase}`);
+    }
+  }
 });
 
 test('accepts a partial synthetic approved set when not ready and unversioned', () => {

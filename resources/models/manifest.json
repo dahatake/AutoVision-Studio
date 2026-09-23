@@ -3,7 +3,216 @@
   "schemaVersion": "1.0.0",
   "releaseStatus": {
     "ready": false,
-    "reason": "No C6 or C7 model has completed the full approval workflow. A release-ready manifest requires four independently approved entries: C6 classification, C6 detection, C7 classification, and C7 detection. Every entry must include all required evidence and approver sign-off under FR-LIC-004 or FR-LIC-014. Release gates G-DEP-07 and G-DEP-08 therefore remain closed, and models stays empty until SPI-11 through SPI-17 establish legal, provenance, parity, platform-support, and quality evidence."
+    "reason": "Gate 2 requires approved C6 and C7 entries for both classification and detection and a measured assist quality baseline (SPI-17, NFR-ANN-006). Approved: C6 classification MobileNetV3 Large IMAGENET1K_V2 and C6 detection SSDLite320 MobileNetV3 Large COCO_V1, both under an owner risk acceptance for the rights layer (FR-LIC-016) with measured windows-x64 cpu and directml parity; per the owner ruling D1 of 2026-09-23, the POC-03 real-time criteria are verified on the product Model Version inference path in the INF phase rather than on C6 base weights. Not approved: C7 classification google/siglip-base-patch16-224 is pending (its cpu inference latency p95 545-831 ms failed the adoption record criterion); C7 detection IDEA-Research/grounding-dino-tiny is pending because its ONNX export does not match PyTorch (parity FAIL). The assist quality baseline has not been measured. Gate 2 therefore remains closed."
   },
-  "models": []
+  "models": [
+    {
+      "id": "mobilenet-v3-large-imagenet1k-v2",
+      "category": "C6",
+      "task": "classification",
+      "name": "MobileNetV3 Large",
+      "version": "torchvision 0.26.0 MobileNet_V3_Large_Weights.IMAGENET1K_V2",
+      "downloadUrl": "https://download.pytorch.org/models/mobilenet_v3_large-5c1a4163.pth",
+      "retrievedDate": "2026-09-23",
+      "sourcePath": "vendor/models/mobilenet_v3_large-5c1a4163.pth",
+      "payloadPath": "resources/models/mobilenet_v3_large-5c1a4163.pth",
+      "sha256": "5c1a416349c4cf298f2a6a5e2600ed0ee55e604713578f5e74e6bc8bcaef7997",
+      "byteSize": 22132113,
+      "format": "weights-only-pt",
+      "licenses": {
+        "code": {
+          "spdx": "BSD-3-Clause",
+          "commercialUseConfirmed": true,
+          "redistributionPermitted": true,
+          "noticeText": "TorchVision (https://github.com/pytorch/vision), BSD 3-Clause License. Copyright (c) Soumith Chintala 2016, All rights reserved. The full BSD 3-Clause License text is reproduced in THIRD_PARTY_NOTICES."
+        },
+        "checkpoint": {
+          "spdx": "LicenseRef-AutoVisionStudio",
+          "commercialUseConfirmed": true,
+          "redistributionPermitted": true,
+          "noticeText": "The publisher has not issued a checkpoint-specific license statement for mobilenet_v3_large-5c1a4163.pth. These weights are bundled under LicenseRef-AutoVisionStudio, a repository-local license reference recorded under the risk acceptance of the AutoVision Studio repository owner (dahatake, 2026-09-23). This reference does not assert any grant by the publisher. commercialUseConfirmed, redistributionPermitted and commercialDerivativesPermitted are set from that owner decision, not from a publisher confirmation (FR-LIC-016). Unconfirmed at the time of the decision: the checkpoint-specific license, whether the ImageNet terms of access extend to weights trained on ImageNet, and the image-by-image rights of the ImageNet training images. Under the AutoVision Studio model use condition (requirement definition v0.7), these weights are bundled for non-commercial research and educational purposes only. In this manifest, commercialUseConfirmed and commercialDerivativesPermitted denote permission for that use condition, not for commercial use (TBD-09)."
+        },
+        "trainingData": [
+          {
+            "datasetName": "ImageNet-1K (ILSVRC-2012)",
+            "termsUrl": "https://www.image-net.org/download.php",
+            "termsRetrievedDate": "2026-09-23",
+            "commercialDerivativesPermitted": true,
+            "redistributionConditions": "The ImageNet terms of access limit use of the Database to non-commercial research and educational purposes and do not state conditions for trained weights. Use and redistribution of the derived weights are set by the repository owner risk acceptance of 2026-09-23 (FR-LIC-016), not by the dataset publisher; the bundle is provided for non-commercial research and educational purposes only (requirement definition v0.7). The training images are not redistributed.",
+            "attributionText": "ImageNet-1K (ILSVRC-2012), https://www.image-net.org/. The ImageNet terms of access limit use of the Database to non-commercial research and educational purposes."
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "model-card",
+          "sourceUrl": "https://pytorch.org/vision/0.26/models/generated/torchvision.models.mobilenet_v3_large.html",
+          "localPath": "docs/model-governance/evidence/torchvision-mobilenet-v3-large-model-doc-20260923.html",
+          "sha256": "1bbb88943fcb6b184b80f49a516ebad942b8d51337fa943c7e54dc545872e909",
+          "retrievedDate": "2026-09-23"
+        },
+        {
+          "kind": "other",
+          "sourceUrl": "https://raw.githubusercontent.com/pytorch/vision/v0.26.0/torchvision/models/mobilenetv3.py",
+          "localPath": "docs/model-governance/evidence/torchvision-v0.26.0-mobilenetv3-source-20260923.txt",
+          "sha256": "5444909362734ab54f07ba64cd2d54e90854965d4d1ce6b2b337e055d0fcbb3e",
+          "retrievedDate": "2026-09-23"
+        },
+        {
+          "kind": "training-recipe",
+          "sourceUrl": "https://api.github.com/repos/pytorch/vision/issues/3995",
+          "localPath": "docs/model-governance/evidence/torchvision-issue-3995-recipe-20260923.json",
+          "sha256": "353d7f7887e552c879aa6d7d00b402ac0c37aa1591a0a75b5a4f7268d6e81436",
+          "retrievedDate": "2026-09-23"
+        },
+        {
+          "kind": "other",
+          "sourceUrl": "https://raw.githubusercontent.com/pytorch/vision/v0.26.0/LICENSE",
+          "localPath": "docs/model-governance/evidence/torchvision-v0.26.0-LICENSE.txt",
+          "sha256": "6502f676851cfe25f8af75531dfb32375b7325b73c37e7b43741fa422893e71d",
+          "retrievedDate": "2026-09-22"
+        },
+        {
+          "kind": "dataset-terms",
+          "sourceUrl": "https://www.image-net.org/download.php",
+          "localPath": "docs/model-governance/evidence/imagenet-terms-of-access-20260923.html",
+          "sha256": "275647ff587098083f5c53ccf5aa07a4732ca08b81822964c88e5ab40ad07ad4",
+          "retrievedDate": "2026-09-23"
+        },
+        {
+          "kind": "other",
+          "sourceUrl": "https://github.com/dahatake/AutoVision-Studio/blob/main/docs/model-governance/evidence/2026-09-23-owner-risk-acceptance.md",
+          "localPath": "docs/model-governance/evidence/2026-09-23-owner-risk-acceptance.md",
+          "sha256": "d9e5053be5f53fbc15292b826955382519d33d8163ffb0794f764eb1dce344bf",
+          "retrievedDate": "2026-09-23"
+        }
+      ],
+      "approval": {
+        "recordPath": "docs/model-governance/mobilenet-v3-large-imagenet1k-v2-adoption.md",
+        "status": "Approved",
+        "approver": "dahatake",
+        "date": "2026-09-23"
+      },
+      "intendedUse": {
+        "productUseInScope": true,
+        "outOfScopeProductionUse": false
+      },
+      "support": [
+        {
+          "os": "windows-x64",
+          "executionProvider": "cpu",
+          "verified": true
+        },
+        {
+          "os": "windows-x64",
+          "executionProvider": "directml",
+          "verified": true
+        }
+      ]
+    },
+    {
+      "id": "ssdlite320-mobilenet-v3-large-coco-v1",
+      "category": "C6",
+      "task": "detection",
+      "name": "SSDLite320 MobileNetV3 Large",
+      "version": "torchvision 0.26.0 SSDLite320_MobileNet_V3_Large_Weights.COCO_V1",
+      "downloadUrl": "https://download.pytorch.org/models/ssdlite320_mobilenet_v3_large_coco-a79551df.pth",
+      "retrievedDate": "2026-09-22",
+      "sourcePath": "vendor/models/ssdlite320_mobilenet_v3_large_coco-a79551df.pth",
+      "payloadPath": "resources/models/ssdlite320_mobilenet_v3_large_coco-a79551df.pth",
+      "sha256": "a79551df90c79834bcd3bb3845ef9d966b5449a3a9b2833ae8404778ca5d65d2",
+      "byteSize": 14069355,
+      "format": "weights-only-pt",
+      "licenses": {
+        "code": {
+          "spdx": "BSD-3-Clause",
+          "commercialUseConfirmed": true,
+          "redistributionPermitted": true,
+          "noticeText": "TorchVision (https://github.com/pytorch/vision), BSD 3-Clause License. Copyright (c) Soumith Chintala 2016, All rights reserved. The full BSD 3-Clause License text is reproduced in THIRD_PARTY_NOTICES."
+        },
+        "checkpoint": {
+          "spdx": "LicenseRef-AutoVisionStudio",
+          "commercialUseConfirmed": true,
+          "redistributionPermitted": true,
+          "noticeText": "The publisher has not issued a checkpoint-specific license statement for ssdlite320_mobilenet_v3_large_coco-a79551df.pth. These weights are bundled under LicenseRef-AutoVisionStudio, a repository-local license reference recorded under the risk acceptance of the AutoVision Studio repository owner (dahatake, 2026-09-22). This reference does not assert any grant by the publisher. commercialUseConfirmed, redistributionPermitted and commercialDerivativesPermitted are set from that owner decision, not from a publisher confirmation (FR-LIC-016). Unconfirmed at the time of the decision: the checkpoint-specific license, the image-by-image rights of the COCO training images, and whether the backbone was initialised from ImageNet-pretrained weights. Under the AutoVision Studio model use condition (requirement definition v0.7), these weights are bundled for non-commercial research and educational purposes only. In this manifest, commercialUseConfirmed and commercialDerivativesPermitted denote permission for that use condition, not for commercial use (TBD-09)."
+        },
+        "trainingData": [
+          {
+            "datasetName": "COCO 2017 (train2017)",
+            "termsUrl": "https://cocodataset.org/#termsofuse",
+            "termsRetrievedDate": "2026-09-22",
+            "commercialDerivativesPermitted": true,
+            "redistributionConditions": "COCO annotations are licensed under CC BY 4.0 and require attribution. The COCO Consortium does not own the copyright of the images, whose use is subject to the Flickr Terms of Use. Use and redistribution of the derived weights are set by the repository owner risk acceptance of 2026-09-22 (FR-LIC-016), not by the dataset publisher; the bundle is provided for non-commercial research and educational purposes only (requirement definition v0.7). The training images are not redistributed.",
+            "attributionText": "COCO 2017 (train2017). Annotations (c) COCO Consortium, licensed under Creative Commons Attribution 4.0 International (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/ . The COCO Consortium does not own the copyright of the images; use of the images is subject to the Flickr Terms of Use."
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "model-card",
+          "sourceUrl": "https://pytorch.org/vision/0.26/models/generated/torchvision.models.detection.ssdlite320_mobilenet_v3_large.html",
+          "localPath": "docs/model-governance/evidence/torchvision-ssdlite320-model-doc-20260922.html",
+          "sha256": "a3f29fb8144e7f2f60df7672c56cf9bf418cf94eb444c6c70b4cb8eb2548545e",
+          "retrievedDate": "2026-09-22"
+        },
+        {
+          "kind": "training-recipe",
+          "sourceUrl": "https://raw.githubusercontent.com/pytorch/vision/v0.26.0/references/detection/README.md",
+          "localPath": "docs/model-governance/evidence/torchvision-v0.26.0-references-detection-README-20260923.md",
+          "sha256": "ea3ecad198b6afe8e61f047d7583b2161d07bea04ccaba79d6d7b24753d5f6b7",
+          "retrievedDate": "2026-09-23"
+        },
+        {
+          "kind": "other",
+          "sourceUrl": "https://raw.githubusercontent.com/pytorch/vision/v0.26.0/LICENSE",
+          "localPath": "docs/model-governance/evidence/torchvision-v0.26.0-LICENSE.txt",
+          "sha256": "6502f676851cfe25f8af75531dfb32375b7325b73c37e7b43741fa422893e71d",
+          "retrievedDate": "2026-09-22"
+        },
+        {
+          "kind": "dataset-terms",
+          "sourceUrl": "https://cocodataset.org/dataset/termsofuse.htm",
+          "localPath": "docs/model-governance/evidence/coco-terms-of-use-20260922.html",
+          "sha256": "bd019f88ee44c29b2f19c5b99888cf5bc2e7c16f57b6e52af8ed3a60462e8bdd",
+          "retrievedDate": "2026-09-22"
+        },
+        {
+          "kind": "other",
+          "sourceUrl": "https://github.com/dahatake/AutoVision-Studio/blob/main/docs/model-governance/evidence/2026-09-22-owner-risk-acceptance.md",
+          "localPath": "docs/model-governance/evidence/2026-09-22-owner-risk-acceptance.md",
+          "sha256": "baa0b97f48d3fa996cec57a6024f23f0147e04dee99f7ed01c616e723316c402",
+          "retrievedDate": "2026-09-22"
+        },
+        {
+          "kind": "other",
+          "sourceUrl": "https://github.com/dahatake/AutoVision-Studio/blob/main/docs/model-governance/evidence/2026-09-23-owner-rulings.md",
+          "localPath": "docs/model-governance/evidence/2026-09-23-owner-rulings.md",
+          "sha256": "bcd4c8a55113b88af33c48946b19a486c04e958ad002606d3da1df07edf1eb84",
+          "retrievedDate": "2026-09-23"
+        }
+      ],
+      "approval": {
+        "recordPath": "docs/model-governance/ssdlite320-mobilenet-v3-large-coco-v1-adoption.md",
+        "status": "Approved",
+        "approver": "dahatake",
+        "date": "2026-09-23"
+      },
+      "intendedUse": {
+        "productUseInScope": true,
+        "outOfScopeProductionUse": false
+      },
+      "support": [
+        {
+          "os": "windows-x64",
+          "executionProvider": "cpu",
+          "verified": true
+        },
+        {
+          "os": "windows-x64",
+          "executionProvider": "directml",
+          "verified": true
+        }
+      ]
+    }
+  ]
 }

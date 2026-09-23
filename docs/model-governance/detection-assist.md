@@ -567,3 +567,134 @@ Candidate registry と release manifest を混同しない。manifest は fully 
 モデル・source assertion に関する **verified factual defect は 0 件**だった。レビュー節の初版では資料取得日 `2026-09-03` をレビュー日として転記していたため、現在日時との照合で確認した **recordkeeping defect 1 件**として実施日 `2026-09-04` へ修正した。修正後の追加欠陥は 0 件であり、DA-B01〜DA-B10 は文書欠陥ではなく未解決の正当な blocker と判定した。checkpoint binary の download、payload inspection、model execution、法務判断はレビュー範囲外であり、実施していない。
 
 したがって、**本 research record は HOLD の根拠として commit 可能**である。一方、**checkpoint 採用、manifest 登録、installer 同梱、G-DEP-08 / Gate 2 解除は不可**であり、model-release readiness は **NO** のままとする。
+
+---
+
+## 18. 2026-09-22 — 利用者の採用指示と controlled retrieval の実測
+
+### 18.1 利用者の指示
+
+2026-09-22、本 repository の license decision authority である利用者が **「全て採用」**（Florence-2-base-ft、Grounding DINO Swin-T、Grounding DINO Swin-B の 3 件）と指示した。本記録は、**利用者の指示によって実施が許可された技術検証部分**を実行した結果である。**この指示は publisher の license statement、学習データ terms、法務判断を代替しない。**
+
+### 18.2 controlled retrieval の実行
+
+- 取得日: **2026-09-22**
+- 取得コマンド: `curl.exe -sSL --fail -o vendor\models\<name> <URL>`
+- 保管先: `vendor/models/`（`.gitignore:248` により Git 追跡外）
+- 検証: `hashlib.sha256` の再計算、`.pth` は `torch.load(map_location="cpu", weights_only=True)`、`.safetensors` は header 解析
+
+| artifact | byte size | 実測 SHA-256 | §1 の publisher metadata との照合 |
+|---|---:|---|---|
+| Florence-2-base-ft `model.safetensors` | `463,221,266` | `58757d657ff44051314c8030b68e04cb1bb618ca9a4885418f111f6fb708185a` | **一致**（HF tree API の LFS `oid`） |
+| Grounding DINO Swin-T `groundingdino_swint_ogc.pth` | `693,997,677` | `3b3ca2563c77c69f651d7bd133e97139c186df06231157a64c507099c52bc799` | publisher 値なし（`digest: null`）。**本調査の取得 bytes に対する基準値** |
+| Grounding DINO Swin-B `groundingdino_swinb_cogcoor.pth` | `938,057,991` | `46270f7a822e6906b655b729c90613e48929d0f2bb8b9b76fd10a856f3ac6ab7` | 同上 |
+
+byte size は 3 件とも §1 の記録と一致した。
+
+### 18.3 解消した blocker
+
+| blocker | 従来の状態 | 実測による現在の状態 |
+|---|---|---|
+| DA-B06 | Grounding DINO 2 asset の SHA-256 が `unknown`（GitHub `digest: null`） | **本調査の取得 bytes について確定**。`3b3ca256…bc799` と `46270f7a…c6ab7`。publisher 署名値ではないが、再取得の照合基準として固定できる |
+| DA-B05（一部） | Grounding DINO の loader が `weights_only` を明示せず、restricted-load 互換性が未確認 | **restricted load 成功**。両 asset とも `weights_only=True` で load でき、top-level key は `['model']`、内容は `torch.Tensor` と基本型のみであることを再帰走査で確認した。**checkpoint 側は restricted load と互換**である |
+| Florence-2 の local hash 再計算 `NOT_RUN` | HF tree API の申告値のみ | **再計算済み。publisher metadata と完全一致** |
+| Florence-2 の payload 未検査 | — | **safetensors header を解析し、tensor 666 件・dtype `F16`・`__metadata__` は `{"format": "pt"}` のみ**であることを確認。checkpoint 自体は pickle 経路を含まない形式である |
+
+### 18.4 解消していない blocker
+
+| ID | 内容 | 本 retrieval で変わらない理由 |
+|---|---|---|
+| DA-B01 | exact checkpoint へ適用される license scope・commercial use・installer redistribution | publisher が発行していない |
+| DA-B02 | 全公開 training dataset の exact snapshot・terms・保存 copy/hash・法務判断 | 権利者と法務の判断事項 |
+| DA-B03 | 一次資料の保存 copy と SHA-256 | 本 retrieval は checkpoint binary のみを対象とした |
+| DA-B04 | checkpoint-specific intended use / out-of-scope が `unknown` | publisher の記載が存在しない |
+| DA-B05（残り） | **Florence-2 の custom code**（`trust_remote_code` 経路）の vendor 化・hash・レビュー・offline path | checkpoint は安全形式だが、**Florence-2 は実行に custom code を要する**。そのコードの監査は未実施であり、本 retrieval の対象外 |
+| DA-B07 | Swin-B の README / release / paper provenance の不一致と ODinW-35 の再帰 inventory | publisher の説明が必要 |
+| DA-B08 | OS/EP、ONNX parity、latency/FPS/memory、quality、manual-only 比較 | `G2-07` は利用者指示により段階 3（実作業 session）を `SKIPPED_BY_USER` としたため、NFR-ANN-006 の比較は成立しない |
+| DA-B09 | final NOTICE / SBOM / attribution packet | DA-B01〜DA-B02 の確定後にしか書けない |
+
+### 18.5 manifest を更新できない構造的理由
+
+[`resources/models/manifest.schema.json`](../../resources/models/manifest.schema.json) の `$defs.spdxLicense` は `commercialUseConfirmed` と `redistributionPermitted` をいずれも `"const": true` とし、`spdx` に `unknown` 等の文字列を pattern で拒否する。`$defs.licenseSet` は `code` / `checkpoint` / `trainingData` の 3 層すべてを必須とする。
+
+3 候補とも checkpoint 層 license が `unknown`（DA-B01）であり、学習データ terms も未確定（DA-B02）であるため、entry を作るには存在しない license 表明を書く以外にない。**よって本記録を根拠とする entry は作成しない。**（2026-09-23 時点で manifest の `models` は空である。[`detection-base.md`](detection-base.md) §15.8 を参照。）
+
+### 18.6 本節時点の判定
+
+| 対象 | 技術 gate | 権利 gate | 総合 |
+|---|---|---|---|
+| Florence-2-base-ft | **checkpoint は通過**（hash 一致・安全形式）。**custom code は未監査**（DA-B05） | **未充足** | **採用指示を受領。manifest 登録は不可** |
+| Grounding DINO Swin-T | **通過**（hash 確定・restricted load 互換） | **未充足** | 同上 |
+| Grounding DINO Swin-B | **通過**（hash 確定・restricted load 互換）。provenance 不一致は未解消（DA-B07） | **未充足** | 同上 |
+
+承認済み検出 C7 は引き続き **0 件**、G-DEP-08 と Gate 2 は **BLOCKED** である。
+
+---
+
+## 19. 利用者決定による権利 gate の充足設定（2026-09-22）
+
+2026-09-22、本 repository の license decision authority である利用者 **dahatake** が、**「C7 にも risk acceptance を出す」**と指示した。決定の全文は [`evidence/2026-09-22-owner-risk-acceptance.md`](evidence/2026-09-22-owner-risk-acceptance.md)（SHA-256 `baa0b97f48d3fa996cec57a6024f23f0147e04dee99f7ed01c616e723316c402`）に記録した。
+
+### 19.1 決定の内容
+
+| 項目 | 値 |
+|---|---|
+| 決定者 / 決定日 | **dahatake**（repository owner / license decision authority） / **2026-09-22** |
+| 対象 | `microsoft/Florence-2-base-ft`、Grounding DINO Swin-T、Grounding DINO Swin-B（Detection C7） |
+| 充足扱いとした項目 | DA-B01（checkpoint 固有 license）、DA-B02（学習データ terms と商用条件）、DA-B03（権利判断に関わる一次資料の保存 copy）、DA-B09（NOTICE / SBOM packet）、DA-B10（承認者・承認日） |
+| checkpoint 層の license 識別子 | **`LicenseRef-AutoVisionStudio`** |
+| 根拠書面 | **外部法務の書面判断は存在しない**。repository owner 自身の risk acceptance である |
+| 決定の種別 | **risk acceptance（証拠に基づく確認ではない）** |
+
+### 19.2 本決定の対象外（権利 gate ではない項目）
+
+次は**技術・security gate** であり、本決定では解消しない。
+
+| ID | 内容 | 状態 |
+|---|---|---|
+| DA-B04 | checkpoint 固有の intended use / out-of-scope use | **未確定**。manifest の `intendedUse` は両フィールドとも fail-closed な固定値を要求するため、記載根拠が必要 |
+| DA-B05 | Florence-2 の custom code（`trust_remote_code` 相当）の vendor 固定・hash・review、Grounding DINO の restricted load 経路 | **未解消**。本 repository は publisher の custom code を実行していない |
+| DA-B07 | Swin-B の provenance 不一致と ODinW-35 の再帰 inventory | **未解消** |
+| DA-B08 | OS / EP、ONNX parity、latency / FPS / memory、品質、manual-only 比較 | **未実施** |
+
+### 19.3 それでも manifest entry を作成しない理由
+
+| 要因 | 現状 |
+|---|---|
+| `support[]` の parity 検証（`windows-x64/cpu` と `windows-x64/directml` の 2 件が必須、`verified` は `const: true`） | **未実施**。Florence-2 は ONNX 化に publisher の custom code 実行が必要であり、DA-B05 の security gate を通過していない。Grounding DINO は構造定義コードが本 repository の測定環境に存在しない |
+| 採用記録ファイル（`dependency-policy.md` §6.2） | **未作成** |
+| `intendedUse`（`productUseInScope` は `const: true`、`outOfScopeProductionUse` は `const: false`） | **記載根拠が未確定**（DA-B04） |
+
+### 19.4 本決定後の判定
+
+| 対象 | 技術 gate | 権利 gate | 総合 |
+|---|---|---|---|
+| Florence-2-base-ft | checkpoint の hash・安全形式は通過。**custom code 未監査・parity 未実施** | **充足（dahatake の risk acceptance）** | **権利 gate は解除。manifest 登録は custom code 監査・parity・採用記録待ち** |
+| Grounding DINO Swin-T | hash 確定・restricted load 互換。**parity 未実施** | **充足（同上）** | **権利 gate は解除。manifest 登録は parity・採用記録待ち** |
+| Grounding DINO Swin-B | 同上。provenance 不一致（DA-B07）は未解消 | **充足（同上）** | 同上 |
+
+承認済み検出 C7 は引き続き **0 件**、G-DEP-08 と Gate 2 は **BLOCKED** である。
+
+## 20. 2026-09-23 — Grounding DINO tiny（HF transformers 版）の評価
+
+GitHub release 版（本記録 §1〜§19 の対象）とは**別 artifact** の `IDEA-Research/grounding-dino-tiny`（revision `a2bb814dd30d776dcf7e30523b00659f4f141c71`、`model.safetensors` SHA-256 `1a2412ef99bd74bcd3c2a246fa1e48581f8889a1300c9051974741314fc042f3`）を、[2026-09-23 risk acceptance](evidence/2026-09-23-owner-risk-acceptance.md) artifact B の下で評価した。記録は [`grounding-dino-assist-result.md`](../../spikes/models/grounding-dino-assist-result.md)、採用記録は [`grounding-dino-tiny-adoption.md`](grounding-dino-tiny-adoption.md)。
+
+| 項目 | 結果 |
+|---|---|
+| 安全形式・remote code | safetensors。transformers 本体の実装で load し、remote code を実行しない（DA-B05 の Florence-2 の問題は本 artifact には生じない） |
+| ONNX export | 最小限の export 時置換で成功 |
+| parity | **FAIL**（torch ↔ ORT で検出の大半が対応せず、ORT CPU ↔ DirectML でも 24〜25 件が対応しない） |
+| 判定 | **保留**。manifest に登録しない。GitHub 版 `.pth` の判定（§19.4）は変更しない |
+
+## 21. 2026-09-23 — 要求定義 v0.7（モデル利用条件の訂正）後の読み替え
+
+要求定義 v0.7 で、学習済みモデルの利用条件を「非商用の研究・教育目的」へ訂正した（FR-LIC-002 / 003 / 006 / 014 / 016）。本記録の §1〜§20 は調査時点の記録として変更しない。v0.7 以降の検出 Annotation Assist Modelの権利 gate は次のとおり読み替える。
+
+| 本記録の blocker・条件 | v0.7 以降の扱い |
+|---|---|
+| 商用利用・商用派生物の確認を要求する記述（対象用途、チェックリスト、再審査条件） | **置換**。確認対象は「非商用の研究・教育目的での利用と同梱・再配布」になる |
+| 研究限定・非商用限定であることを理由とする不適合 | **置換**。それだけでは不適合としない。製品の条件より狭い制限（研究のみ等）は FR-LIC-003 の書面承認と表示を要する |
+| checkpoint 固有 license・学習データ terms が確認できないこと | **維持**。FR-LIC-016 の risk acceptance 経路で扱う |
+| intended / out-of-scope use、安全形式、hash、parity、性能、NFR-ANN-006 | **維持**（緩和しない） |
+
+v0.7 後の候補の再調査は [`work/20260923-1015-NonCommercialModelSurvey.md`](../../work/20260923-1015-NonCommercialModelSurvey.md) に記録した。

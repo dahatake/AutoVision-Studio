@@ -3,9 +3,9 @@
 | 項目 | 内容 |
 |---|---|
 | 文書名 | AutoVision Studio 要求定義書 |
-| 文書バージョン | 0.5 Draft |
+| 文書バージョン | 0.7 Draft |
 | 作成日 | 2026-09-02 |
-| 最終更新日 | 2026-09-07（UI改善追補） |
+| 最終更新日 | 2026-09-23（学習済みモデルの利用条件を「非商用の研究・教育目的」へ訂正。同日、FR-LIC-016 を追加し checkpoint ライセンス要件に risk acceptance 経路を新設） |
 | 対象リリース | Version 1（MVP） |
 | 対象リポジトリ | `dahatake/AutoVision-Studio` |
 | ステータス | Windows MVP スコープ確定・実装中 |
@@ -19,7 +19,7 @@ AutoVision Studio は、画像分類（Image Classification）および物体検
 1. ユーザーがモデル構造やハイパーパラメーターを指定せずに学習できること。
 2. 画像、モデル、評価結果を外部サービスへ送信しないこと。
 3. Project 単位でデータ、学習履歴、モデル、推論設定を一貫して管理できること。
-4. 商用製品へ組み込めるライセンス条件を満たすソフトウェアおよびモデルだけを使用すること。
+4. ソフトウェアは商用製品へ組み込めるライセンス条件を満たすものだけを使用し、学習済みモデル（Curated Base Weight、Annotation Assist Model）は**非商用の研究・教育目的**での利用とアプリへの同梱・再配布が許されるものだけを使用すること。学習済みモデルを同梱する配布物は、非商用の研究・教育目的に限って提供する。
 5. OS 別のインストーラー 1 つだけで導入でき、完了後に追加セットアップなしですぐ利用できること。
 
 本書で「必須」と記載した要求は MVP の受入条件である。「推奨」は、原則として実装するが、MVP から除外する場合に理由と代替策の記録を必要とする。「将来」は macOS 対応時に再検証する保持要求であり、Version 1 の実装・Gate・受入条件には含めない。
@@ -38,11 +38,11 @@ AutoVision Studio は、画像分類（Image Classification）および物体検
 | Windows のローカル実行 | 実現可能 | CPU は常時フォールバックにでき、DirectX 12 GPU では DirectML、対応環境では Windows ML を使用できる [S1][S4]。 |
 | macOS のローカル実行 | 将来対応 | Apple Silicon の MPS 学習と CoreML Execution Provider 推論は技術候補である [S3][S5]。Version 1 の実装・試験・配布対象には含めない。 |
 | 100 ms 間隔のカメラ推論 | 条件付きで実現可能 | 軽量モデル、固定入力形状、アクセラレーター、最新フレーム優先制御が必要。すべての PC で 10 FPS を保証することはできない。 |
-| 商用利用可能性 | 条件付きで実現可能 | OSS 本体が permissive license でも、学習済み重みと学習元データには別条件があり得る [S14]。出荷前の重み単位の監査が必須である。 |
+| ライセンス・利用条件の適合性 | 条件付きで実現可能 | ソフトウェアは permissive license の構成とする。OSS 本体が permissive license でも、学習済み重みと学習元データには別条件があり得る [S14]。重みごとに、非商用の研究・教育目的での利用と再配布が許されることを出荷前に監査する。 |
 | Cloud を使用しない動作 | 実現可能 | モデル、ランタイム、依存物を同梱し、外向き通信を禁止する。Windows ML の実行プロバイダー自動取得等には依存しない。 |
 | 自己完結インストーラー | 実現可能 | Version 1 は署名済み Windows EXE を使用する [S33]。macOS flat PKG の調査 [S35] は将来対応の入力として保持する。アプリ、runtime、基盤重みを同梱するため配布物は大きくなる。 |
 | 画面上での教師データ作成 | 実現可能 | 画像分類のタグ選択と物体検出の矩形作成・移動・サイズ変更・削除は、Microsoft および既存アノテーション製品で実装例がある [S37][S40][S41]。 |
-| 既存モデルによる初期ラベル・矩形補助 | 条件付きで実現可能 | 分類タグや検出矩形の prelabeling は確立したパターンである [S37][S38][S39][S42]。ただし誤提案を前提に人間の確認・修正を必須とし、同梱 checkpoint の商用利用と再配布を別途承認する。 |
+| 既存モデルによる初期ラベル・矩形補助 | 条件付きで実現可能 | 分類タグや検出矩形の prelabeling は確立したパターンである [S37][S38][S39][S42]。ただし誤提案を前提に人間の確認・修正を必須とし、同梱 checkpoint の非商用の研究・教育目的での利用と再配布を別途承認する。 |
 
 ### 2.2 成立に必須の条件
 
@@ -52,7 +52,7 @@ AutoVision Studio は、画像分類（Image Classification）および物体検
 4. 学習済み基盤重みごとに、重みのライセンス、学習元データの条件、再配布条件を法務またはリリース責任者が承認すること。
 5. 学習時間と精度はデータ件数、画像解像度、クラス数、ハードウェアに依存するため、固定時間または固定精度を製品全体では保証しないこと。
 6. クリーンな Windows 11 x64 環境で、ネットワークおよび開発用 runtime なしのインストール・初回起動試験に合格すること。
-7. 分類補助モデルおよび物体検出補助モデルについて、checkpoint 単位の商用利用・再配布・学習データ由来の監査とローカル実機 PoC を完了すること。
+7. 分類補助モデルおよび物体検出補助モデルについて、checkpoint 単位の利用条件（非商用の研究・教育目的への適合）・再配布・学習データ由来の監査とローカル実機 PoC を完了すること。
 8. モデルの補助出力を自動的に正解へ昇格させず、人が確認したアノテーションだけを学習に使用すること [S37][S38]。
 
 ### 2.3 教師データ作成・モデル支援の調査結果
@@ -408,25 +408,26 @@ Azure Machine Learning の資料 [S37][S38] は UI と human-in-the-loop の設�
 | FR-INF-018 | カメラ切断、権限変更、モデル読込失敗、EP 初期化失敗からクラッシュせず停止し、再選択または CPU 再試行を案内する。 | 必須 |
 | FR-INF-019 | 学習と推論が同じアクセラレーターを競合する場合、推論開始前に警告し、学習の中断または CPU 推論を選べる。 | 必須 |
 
-### 8.8 ライセンス・商用利用管理
+### 8.8 ライセンス・利用条件管理
 
 | ID | 要求 | 優先度 |
 |---|---|---|
 | FR-LIC-001 | アプリに同梱するコード、バイナリ、モデル構造、学習済み重み、データ、フォント、アイコンごとにライセンスと再配布条件を記録する。 | 必須 |
-| FR-LIC-002 | MIT、BSD-2/3-Clause、Apache-2.0、PSF-2.0、Public Domain、または明示的に商用利用と再配布を許す契約を原則許可する。 | 必須 |
-| FR-LIC-003 | GPL/AGPL 等の copyleft、研究限定、非商用限定、用途制限付き部品は、製品全体の配布条件との適合を法務が個別承認しない限り同梱しない。 | 必須 |
+| FR-LIC-002 | ソフトウェアは、MIT、BSD-2/3-Clause、Apache-2.0、PSF-2.0、Public Domain、または明示的に商用利用と再配布を許す契約を原則許可する。学習済みモデルは、これらに加えて、**非商用の研究・教育目的**での利用とアプリへの同梱・再配布を明示的に許す license または terms を許可する。Curated Base Weight は、製品内の Fine-Tuning に必要な改変・派生物の作成も許されていることを要する。 | 必須 |
+| FR-LIC-003 | GPL/AGPL 等の copyleft 部品、ソフトウェアの研究限定・非商用限定・用途制限付き部品、および製品のモデル利用条件（非商用の研究・教育目的）より狭い用途制限（例: 研究目的だけを許し教育目的を許さない、再配布を禁止する、利用者を特定組織に限る）を持つ学習済みモデルは、製品全体の配布条件との適合を**法務または repository license decision authority**（`docs/dependency-policy.md` §2.1）が個別に書面承認しない限り同梱しない。承認して同梱する場合は、その狭い制限をアプリ内表示（FR-LIC-012）と `THIRD_PARTY_NOTICES` に明示する。学習済みモデルが非商用限定・研究目的限定であることは、それだけでは除外理由としない。 | 必須 |
 | FR-LIC-004 | Curated Base Weight ごとに、名称、版、取得 URL、SHA-256、重みライセンス、学習データ由来、データ条件、NOTICE、承認者、承認日を manifest に持つ。model card、repository README、training recipe/script、dataset card/terms 等、各判断を裏付ける取得日付き一次資料 URL と保存 copy/hash を添付する。 | 必須 |
 | FR-LIC-005 | ライブラリのコードライセンスだけを根拠に学習済み重みを承認しない。TorchVision も重みにはデータ由来の別条件があり得ると明記している [S14]。 | 必須 |
-| FR-LIC-006 | ImageNet の配布データは非商用研究・教育目的に限定されるため [S19]、ImageNet 由来重みを自動的に商用利用可能と判定しない。法務承認なしに既定重みとして同梱しない。 | 必須 |
-| FR-LIC-007 | COCO annotations は CC BY 4.0 だが画像著作権は COCO Consortium が保有せず、画像ごとの条件に従うため [S18]、COCO 学習済み重みも由来確認なしに承認しない。 | 必須 |
+| FR-LIC-006 | ImageNet の access terms は Database の利用を非商用の研究・教育目的に限定する [S19]。本製品のモデル利用条件はこの範囲に収まるため、ImageNet 由来であることだけを理由に重みを除外しない。ただし terms は派生重みの利用・再配布を明記しないため、その扱いを採用記録に記録し、**法務または repository license decision authority の書面承認**（FR-LIC-016 の risk acceptance を含む）なしに既定重みとして同梱しない。 | 必須 |
+| FR-LIC-007 | COCO annotations は CC BY 4.0 だが画像著作権は COCO Consortium が保有せず、画像ごとの条件に従うため [S18]、COCO 学習済み重みも由来確認なしに承認しない。画像ごとの条件を確認できない場合は FR-LIC-016 の risk acceptance 経路による。 | 必須 |
 | FR-LIC-008 | Open Images を基盤重み作成に使う場合、annotations の CC BY 4.0、画像の表示上 CC BY 2.0、個別画像の再確認義務、帰属表示を満たす [S20]。 | 必須 |
 | FR-LIC-009 | ユーザー入力データについて、権利を有することの確認を初回取り込み時に表示し、確認日時を Project に記録する。アプリは法的権利を自動保証しない。 | 必須 |
 | FR-LIC-010 | ビルドごとに固定 dependency lock、SBOM、license report、`THIRD_PARTY_NOTICES` を生成し、禁止ライセンスまたは unknown があれば出荷を失敗させる。 | 必須 |
 | FR-LIC-011 | 実行時にインターネットからモデル、コード、Execution Provider を自動ダウンロードしない。追加物は署名済みオフライン配布物として監査する。 | 必須 |
-| FR-LIC-012 | アプリ内から第三者ライセンス、基盤重みの由来、必要な attribution を閲覧できる。 | 必須 |
+| FR-LIC-012 | アプリ内から第三者ライセンス、基盤重みの由来、必要な attribution、および同梱モデルの利用条件（非商用の研究・教育目的に限る旨と、FR-LIC-003 で承認したより狭い制限）を閲覧できる。 | 必須 |
 | FR-LIC-013 | CUDA/cuDNN を同梱する場合、採用版の NVIDIA SDK Agreement と supplement を承認し、CUDA は Attachment A に列挙された redistributable、cuDNN は許可された runtime `.dll` だけをアプリの一部として配布する [S30][S31]。開発ツール、未列挙部品、pre-release SDK は同梱しない。 | 必須 |
-| FR-LIC-014 | Annotation Assist Model ごとに、code と checkpoint を分けて名称、版、取得 URL、SHA-256、各ライセンス、model card の intended/out-of-scope use、全公開学習 dataset と各 terms、再配布条件、NOTICE、承認者、承認日を manifest に持つ。判断根拠となる取得日付き一次資料 URL と保存 copy/hash を添付する。いずれかが unknown、研究限定、非商用、製品用途対象外の場合は同梱しない。 | 必須 |
+| FR-LIC-014 | Annotation Assist Model ごとに、code と checkpoint を分けて名称、版、取得 URL、SHA-256、各ライセンス、model card の intended/out-of-scope use、全公開学習 dataset と各 terms、再配布条件、NOTICE、承認者、承認日を manifest に持つ。判断根拠となる取得日付き一次資料 URL と保存 copy/hash を添付する。いずれかが unknown、製品のモデル利用条件（非商用の研究・教育目的）に適合しない、または製品用途対象外の場合は同梱しない。研究限定・非商用限定であることは、それだけでは除外理由としない（より狭い制限は FR-LIC-003 による）。ただし **checkpoint 層ライセンスまたは学習データ terms を確認できない場合に限り**、FR-LIC-016 の risk acceptance 経路を適用できる。製品用途が一次資料で明示的に対象外とされている checkpoint には適用しない（FR-LIC-015）。 | 必須 |
 | FR-LIC-015 | repository code が permissive license であることだけを根拠に checkpoint を承認しない。OpenAI CLIP は code が MIT でも model card が deployed use を out-of-scope とするため [S46][S47]、本製品の既定 Annotation Assist Model から除外する。 | 必須 |
+| FR-LIC-016 | checkpoint 層のライセンスまたは学習データ terms を publisher の一次資料から確認できない Curated Base Weight / Annotation Assist Model は、次を**すべて**満たす場合に限り、repository license decision authority（`docs/dependency-policy.md` §2.1）の risk acceptance により同梱できる。(1) 一次資料調査を実施し、確認できた事実と**確認できなかった項目を列挙**して採用記録に残す（推測で補わない）。(2) 権限者が氏名・役割・決定日付きで書面決定し、その記録を採用記録から参照する。(3) manifest の該当 license 層に `LicenseRef-<製品名>` 形式の repository ローカル識別子を用い、**publisher による許諾表明ではない**旨を `noticeText` に明記する。schema が `const: true` を課す `commercialUseConfirmed` / `redistributionPermitted` / `commercialDerivativesPermitted` については、その値が**権限者の決定に基づくものであり publisher の確認ではない**ことを同じ `noticeText` で宣言する。schema の field 名を改訂するまで（TBD-09）、`commercialUseConfirmed` と `commercialDerivativesPermitted` は製品のモデル利用条件（非商用の研究・教育目的）での利用・派生の許可を表すものとして扱い、その旨を `noticeText` に明記する。manifest に `unknown` 等の未確定語彙を書かない（FR-LIC-010 は維持する）。(4) アプリ内ライセンス表示（FR-LIC-012）と `THIRD_PARTY_NOTICES` に、risk acceptance である事実と未確認項目を表示する。(5) SHA-256、安全形式、ONNX parity、実行基盤互換、性能などの**技術要件は緩和しない**。一次資料が製品のモデル利用条件での利用（非商用の研究・教育目的）または deployed use を**明示的に禁止している、または intended use から明示的に除外（out-of-scope）している** checkpoint には本経路を適用しない（FR-LIC-015。OpenAI CLIP がこれに該当する）。本経路は外部法務の意見を代替せず、配布主体が変わる場合は再審査する。 | 必須 |
 
 ### 8.9 ローカルデータ・セキュリティ
 
@@ -738,17 +739,19 @@ flowchart LR
 ### 13.2 モデル候補選定方針
 
 1. 初回学習用の候補集合は製品内の許可リストに固定する。
-2. 分類は軽量 CNN と商用条件が明示された self-supervised backbone を比較する。
+2. 分類は軽量 CNN と利用条件が明示された self-supervised backbone を比較する。
 3. 検出は 10 FPS を優先し、SSDLite/YOLOX-Nano 相当の小型構造を優先する。
 4. 基盤重みは次のいずれかだけを許可する。
-   - 重み自体に商用利用・再配布可能な明示ライセンスがある。
+   - 重み自体に、非商用の研究・教育目的での利用・再配布（Curated Base Weight は改変・派生物の作成を含む）を許す明示ライセンスがある。
    - 製品チームが権利確認済みデータからローカルで作成し、配布権を保有する。
+   - checkpoint 層ライセンスまたは学習データ terms を確認できない場合に、FR-LIC-016 の risk acceptance を記録している。
+   - 製品のモデル利用条件より狭い用途制限（研究目的のみ等）を持つが、FR-LIC-003 に基づき書面承認され、その狭い条件を配布物とアプリ内表示に明示している。
 5. ImageNet/COCO の名称だけを根拠に重みを許可しない。
 6. 精度だけでなく、ONNX変換成功率、Windows演算対応、p95 latency、サイズ、メモリを選定指標にする。macOS演算対応は将来版で独立評価する。
 
 ### 13.3 Annotation Assist Model 候補評価
 
-現時点では、**商用製品への同梱を最終承認した Annotation Assist Model はない**。次表は技術調査結果であり、`候補` は採用決定を意味しない。
+現時点では、**同梱を最終承認した Annotation Assist Model はない**。次表は技術調査結果であり、`候補` は採用決定を意味しない。
 
 | 候補 | 検証できた能力 | ライセンス・利用条件の調査結果 | 判定 |
 |---|---|---|---|
@@ -758,14 +761,14 @@ flowchart LR
 | Grounding DINO | paper は category name/referring expression から arbitrary object を検出する open-set detector と説明する [S48]。公式 repository は image/text 入力、box/phrase 出力、CPU-only mode を説明する [S49]。 | repository code は Apache-2.0 [S49]。公式 checkpoint 表は O365、GoldG、Cap4M、COCO、OpenImage、ODinW-35、RefCOCO 等を学習元として挙げるが、review 済み資料では release checkpoint の独立した再配布条件を確認できていない [S49]。 | **Schema 名から矩形を出す技術候補、未承認。** |
 | OpenAI CLIP | paper と repository は、画像と text label の類似度による zero-shot classification を示す [S45][S46]。 | repository code は MIT だが [S46]、model card は commercial/non-commercial を問わず deployed use を out-of-scope とし、固定 taxonomy での thorough in-domain testing、英語限定、bias への注意を記載する [S47]。 | **本製品の同梱候補から除外。能力比較の参考のみ。** |
 
-SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要件を満たす別 checkpoint を再調査する。分類用・検出用の各 1 checkpoint が FR-LIC-014、NFR-ANN-006、POC-16 を通過するまで、モデル支援を含む MVP のリリース判定を `Go` にしない。
+SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要件を満たす別 checkpoint を再調査する。分類用・検出用の各 1 checkpoint が FR-LIC-014（FR-LIC-016 の risk acceptance 経路を含む）、NFR-ANN-006、POC-16 を通過するまで、モデル支援を含む MVP のリリース判定を `Go` にしない。
 
 ## 14. リスクと対策
 
 | ID | リスク | 影響 | 対策・出荷条件 |
 |---|---|---|---|
-| R-01 | 学習済み重みのライセンスがコードライセンスと異なる | 商用出荷不可 | 重み単位 manifest、法務承認、hash 固定。unknown は build failure。 |
-| R-02 | ImageNet/COCO 由来の権利が曖昧 | 商用利用上の紛争 | 無承認で同梱しない。権利確認済み重みまたは監査済み Open Images 等から自社作成。 |
+| R-01 | 学習済み重みのライセンスがコードライセンスと異なる | 出荷不可 | 重み単位 manifest、法務承認、hash 固定。unknown は build failure。 |
+| R-02 | ImageNet/COCO 由来の権利が曖昧 | 利用条件・再配布上の紛争 | 無承認で同梱しない。権利確認済み重みまたは監査済み Open Images 等から自社作成。 |
 | R-03 | 未確認 annotation のまま学習が開始される | 教師データ不足または品質低下 | Annotation Workspace で未確認状態を表示し、FR-ANN-011 の確定 gate により学習開始を拒否する。 |
 | R-04 | CPU-only で AutoML が長時間化 | UX 悪化、完了不能 | mini-run 見積り、軽量候補、Hyperband、早期停止、GPU 推奨表示。 |
 | R-05 | CUDA の未対応演算または OOM | Run 失敗 | 候補別互換試験、batch 自動縮小、CPU fallback、checkpoint。MPSは将来macOSリスクとして再評価する。 |
@@ -781,7 +784,7 @@ SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要�
 | R-15 | upgrade 中断で既存アプリまたは Project migration が破損する | アプリ起動不能、データ損失 | 事前バックアップ、transactional install、rollback、旧版起動確認を必須試験とする。 |
 | R-16 | 誤った Model Suggestion にユーザーが引きずられる | 誤ラベルの体系的混入 | 候補/確定レイヤー分離、能力限界表示、accept/edit/reject、undo、blind audit を行う [S37][S52]。 |
 | R-17 | 汎用モデルが業務固有 class を知らない | 候補なし、誤った class 名や box | 手動 Label Schema、model alias、Project model への段階移行、低 score の非表示、`不明` 扱いを行う [S38][S47]。 |
-| R-18 | 補助 checkpoint の code license だけを見て商用利用可と誤認する | 配布停止、法的リスク | code/checkpoint/model card/training data を分離した FR-LIC-014 と release gate を適用する。 |
+| R-18 | 補助 checkpoint の code license だけを見て製品のモデル利用条件を満たすと誤認する | 配布停止、法的リスク | code/checkpoint/model card/training data を分離した FR-LIC-014 と release gate を適用する。 |
 | R-19 | 自動生成 label 名の同義語・表記揺れ | class 分裂と不整合 | 新規 class 候補を自動作成せず、正規化後の重複検査、名前変更、統合、固定 class ID を使用する。 |
 | R-20 | 補助モデルがメモリと installer 容量を増大させる | OOM、導入時間増加 | base-size 候補、background worker、batch 自動縮小、CPU fallback、OS 別圧縮を評価し、実機 PoC を通す。 |
 
@@ -797,7 +800,7 @@ SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要�
 | POC-06 オフライン | ネットワーク無効状態で初回起動後の全主要フローを完了し、通信キャプチャの外向き通信が 0 件である。 |
 | POC-07 権限 | Windowsで未決定、許可、拒否、途中切断を試験し、クラッシュしない。macOS固有状態は将来対応で試験する。 |
 | POC-08 ONNX parity | 候補ごとに元モデルと ONNX の出力・評価差が定義した許容範囲内である。許容範囲はモデル採用記録に固定する。 |
-| POC-09 ライセンス | SBOM、third-party notices、全 weight manifest に unknown、非商用、未承認 copyleft がない。 |
+| POC-09 ライセンス | SBOM、third-party notices、全 weight manifest に unknown、製品のモデル利用条件（非商用の研究・教育目的）に不適合な重み（FR-LIC-003 に基づき書面承認され、その狭い条件を配布物とアプリ内表示に明示しているものを除く）、未承認 copyleft がない。 |
 | POC-10 削除 | Project 削除で Project 所有データが消え、Reference 元が変更・削除されない。 |
 | POC-11 Windows installer | クリーンな Windows 11 x64 標準ユーザー環境で、ネットワーク無効・開発 runtime なしの状態から EXE 1 ファイルだけで導入し、再起動なしで Project 作成まで完了する。署名検証にも合格する。 |
 | POC-12 macOS installer | **将来対応。** クリーンなApple Silicon Macでの署名・notarization・stapled PKG・Gatekeeper試験はVersion 1のGateに含めない。 |
@@ -820,7 +823,7 @@ SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要�
 9. **低速端末:** 性能未達時に古いフレームを drop し、実 FPS/latency/drop を正しく表示する。
 10. **オフライン:** 画像・モデル・テレメトリを外部送信せず、ネットワークなしで主要フローが完了する。
 11. **Windows製品整合:** 署名済みWindows x64配布物で開発時と同じProject機能、schema、モデル意味論を提供する。クロスプラットフォームparityは将来macOS対応時に追加する。
-12. **商用利用:** 実際の配布物に含まれる全ソフトウェア、重み、データ、asset がライセンスゲートを通過する。
+12. **ライセンス・利用条件:** 実際の配布物に含まれる全ソフトウェア、重み、データ、asset がライセンスゲートを通過する。重みは非商用の研究・教育目的での利用と再配布が許されること（より狭い用途制限を持つ重みは、FR-LIC-003 に基づき書面承認され、その狭い条件を配布物とアプリ内表示に明示していること）を確認し、配布物とアプリ内表示がその利用条件を明示する。
 13. **Windows 導入:** クリーンな Windows 11 x64 で、署名済み EXE 1 ファイルを起動するだけでオフライン導入でき、別 runtime、コマンド、再起動なしで Project を作成できる。
 14. **macOS導入（将来対応）:** 署名・notarize・staple済みPKGによる導入はVersion 1の受入条件に含めず、将来版で新しい実機証拠を要求する。
 15. **更新・復旧:** 直前版からの upgrade で全 Project データを保持し、意図的に失敗させた場合は旧版を起動可能な状態へ rollback する。
@@ -863,14 +866,14 @@ SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要�
 | 特別ハードウェア調査 | 12 |
 | 論文・Microsoft 等のベストプラクティス | 2, 13, 18 |
 | Cloud を一切使用しない | 3.2–3.3, FR-TRN-019, FR-SEC-001–003, POC-06 |
-| 商用利用可能なモデル/ソフトウェアのみ | 8.8, 13.1–13.3, POC-09, POC-16 |
+| 商用利用可能なソフトウェア、非商用の研究・教育目的で利用可能なモデルのみ | 8.8, 13.1–13.3, POC-09, POC-16 |
 | Windowsインストーラー、macOSは将来対応 | 3.1, 8.10, 11.7, POC-11–13, 16.13–15 |
 | インストーラー完了後すぐ利用可能 | FR-INS-003–006, FR-INS-012–014, NFR-INS-001–002 |
 | 公開・再配布可能な分類/検出サンプルで試用 | 3.1, 3.3, FR-SMP-001〜005, 16.21 |
 
 ### 17.1 UI改善要求の割当
 
-2026-09-07の承認による11要求を追加し、定義総数は**245件（従来234件＋FR-UIの11件）**となる。以下はUI/UX改善プランへの実行割当であり、実装・試験済みを意味しない。旧機能タスクは同計画の移管先と既存Gateを継承する。UIR-003は本節と冒頭の最終更新日だけを同一baseline整合の文書節数例外として更新し、Draft版番号と過去承認日は保持する。
+2026-09-07の承認による11要求を追加し、定義総数は**245件（従来234件＋FR-UIの11件）**となった（2026-09-23 の FR-LIC-016 追加後の現在の総数は**246件**）。以下はUI/UX改善プランへの実行割当であり、実装・試験済みを意味しない。旧機能タスクは同計画の移管先と既存Gateを継承する。UIR-003は本節と冒頭の最終更新日だけを同一baseline整合の文書節数例外として更新し、Draft版番号と過去承認日は保持する。
 
 | 追加要求 | 実装担当（UIRは改善プランのID） | 受入・検証 | 操作文書担当 |
 |---|---|---|---|
@@ -900,6 +903,7 @@ SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要�
 | TBD-06 | 分類・検出の Annotation Assist Model | SigLIP / Florence-2 / Grounding DINO 等は技術候補に留め、checkpoint、学習データ由来、再配布、実機性能、最終 annotation 品質を監査して各 1 つを承認する | 実装着手前、POC-16 完了時 |
 | TBD-07 | annotation editor の実装方式 | CVAT/Label Studio は機能・license の参考とし、全体を同梱するか task-focused editor を実装するかを installer 容量、依存、UX、SBOM で比較する | アーキテクチャ設計時 |
 | TBD-08 | モデル支援の有用性 threshold | representative gold set と manual-only baseline を定義し、coverage、最終品質、所要時間の採用基準を class/task ごとに固定する | POC-16 計画時 |
+| TBD-09 | manifest schema の許諾 field 名 | `commercialUseConfirmed` / `commercialDerivativesPermitted` は、改訂までは製品のモデル利用条件（非商用の研究・教育目的）での利用・派生の許可を表すものとして扱う（FR-LIC-016(3)） | 次に schema を変更する時 |
 
 ## 19. 参考資料
 
@@ -978,5 +982,6 @@ SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要�
 ## 20. 注意事項
 
 - 本書のライセンス調査は技術選定の一次評価であり、法的助言ではない。
-- 「商用利用可能」は、単なる使用許可だけでなく、アプリへの同梱、再配布、改変、NOTICE、attribution、特許条項、学習データ由来の権利を満たすことを意味する。
+- 「商用利用可能」（ソフトウェアに適用）は、単なる使用許可だけでなく、アプリへの同梱、再配布、改変、NOTICE、attribution、特許条項の条件を満たすことを意味する。
+- 「非商用の研究・教育目的で利用可能」（学習済みモデルに適用）は、非商用の研究・教育目的でのアプリへの同梱、再配布、NOTICE、attribution、学習データ由来の条件を満たし、Curated Base Weight については改変・派生物の作成も許されることを意味する。より狭い用途制限を持つ重みは、FR-LIC-003 に基づき書面承認され、その狭い条件を配布物とアプリ内表示に明示している場合に限り同等に扱う。
 - 実際に採用するバージョンとバイナリが確定した時点で、法務レビューと自動 license/SBOM 検査の両方を実施する。

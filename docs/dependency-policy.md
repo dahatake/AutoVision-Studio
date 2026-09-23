@@ -5,9 +5,9 @@
 | 文書バージョン | 0.2 Draft |
 | 作成日 | 2026-09-02 |
 | 最終更新日 | 2026-09-04 |
-| 根拠要求 | FR-LIC-001〜008、FR-LIC-010〜015、FR-SEC-002〜004、NFR-SEC-001/003、NFR-MNT-001（FR-LIC-009 のUI・記録は DAT-13 が担当） |
+| 根拠要求 | FR-LIC-001〜008、FR-LIC-010〜016、FR-SEC-002〜004、NFR-SEC-001/003、NFR-MNT-001（FR-LIC-009 のUI・記録は DAT-13 が担当） |
 | 対象タスク | A-05（`docs/implementation-plan.md` §Phase A） |
-| 要求基準 SHA-256 | Windows作業ツリーCRLF `2f1c57da192710ffb2fd764c7e342cf2e9106fa7387be7393133873cc815052f` / canonical Git blob LF `7a6e08e7e046a3ced59644a73bde44c4d7b279f55ba809bd78af60fdaa5b175c` |
+| 要求基準 SHA-256 | Windows作業ツリーCRLF `2f1c57da192710ffb2fd764c7e342cf2e9106fa7387be7393133873cc815052f` / canonical Git blob LF `7a6e08e7e046a3ced59644a73bde44c4d7b279f55ba809bd78af60fdaa5b175c`（**2026-09-02 時点（commit `98aba1fd`）の要求定義に対する履歴 pin**。現在の基準版は README の宣言を参照。2026-09-23 に FR-LIC-016 を追加した） |
 
 > **免責**: 本文書は技術・運用ポリシーであり、法的助言ではない（`docs/requirement-definition.md` §20 参照）。  
 > ライセンス判断は実際の採用バージョンが確定した時点で、組織の法務担当または§2.1で定義するrepository license decision authorityが書面で実施する。外部法務意見がないowner判断を、弁護士による助言または暗号学的署名とは表示しない。
@@ -64,7 +64,7 @@ FR-LIC-001 に基づき、すべてのカテゴリーにわたり、名称・バ
 4. 最終payloadへの同梱有無と、SBOM、`THIRD_PARTY_NOTICES`、source入手手段などの履行条件。
 5. 承認者、役割、決定日、再審査条件。
 
-組織の法務担当が指定されていないowner管理repositoryでは、project copyright holderかつrepository ownerをrepository license decision authorityとする。owner裁定は当該repositoryのrisk acceptanceであり、配布主体または所有者が変わる場合は新しい主体の権限者が再審査する。`unknown`、空欄、`NOASSERTION`は本手続きでも承認できない。
+組織の法務担当が指定されていないowner管理repositoryでは、project copyright holderかつrepository ownerをrepository license decision authorityとする。owner裁定は当該repositoryのrisk acceptanceであり、配布主体または所有者が変わる場合は新しい主体の権限者が再審査する。`unknown`、空欄、`NOASSERTION`を**そのまま記録として**承認することは本手続きでもできない。確認できない層については、FR-LIC-016 の要件（未確認項目の列挙、`LicenseRef-<製品名>` への置き換え、開示）を満たした場合にのみ採用できる。
 
 2026-09-03のC0 package固有裁定は`docs/dependency-adoption/c0-review.md`に記録する。これは一般allowlistを拡張せず、記録されたversion、用途、配布条件のいずれかが変われば失効する。
 
@@ -83,12 +83,15 @@ FR-LIC-001 に基づき、すべてのカテゴリーにわたり、名称・バ
 | 分類 | 例 | 解除条件 |
 |---|---|---|
 | Copyleft または置換・再リンク等の追加義務を持つライセンス | GPL-2.0-only、GPL-3.0-or-later、AGPL-3.0、LGPL 系 | 組織の法務担当または§2.1のrepository license decision authorityがリンク・組込み形態、例外、通知、ソース提供等を確認し、製品全体の配布条件との適合を**package固有に書面で承認**した場合のみ。LGPL の動的リンクを自動的に不適合とは判定しない |
-| 研究限定 | "for research purposes only"、"academic use only" | 同上 |
-| 非商用限定 | CC-BY-NC 系、"non-commercial use" | 同上 |
+| 研究限定 | "for research purposes only"、"academic use only" | 同上。C6/C7 checkpoint と C8 学習データについては、製品のモデル利用条件（**非商用の研究・教育目的**、FR-LIC-002/003）での利用と同梱・再配布を許すものは本分類に該当しない。より狭い制限（研究目的のみ等）は同上の書面承認とアプリ内表示を要する |
+| 非商用限定 | CC-BY-NC 系、"non-commercial use" | 同上。C6/C7 checkpoint と C8 学習データについては、製品のモデル利用条件（**非商用の研究・教育目的**、FR-LIC-002/003）での利用と同梱・再配布を許すものは本分類に該当しない。より狭い制限（研究目的のみ等）は同上の書面承認とアプリ内表示を要する |
 | 用途制限付き | "not for military use"、"not for clinical use" など特定用途禁止 | 同上 |
+| C6/C7 checkpoint の層別 license・学習データ terms が publisher の一次資料から確認できない | checkpoint 固有 license statement が発行されていない weight、terms 非公開の学習データ | **FR-LIC-016 の risk acceptance 経路**のみ。一次資料調査で未確認項目を列挙し、権限者が氏名・日付付きで書面決定し、`LicenseRef-<製品名>` を用い、アプリ内表示と `THIRD_PARTY_NOTICES` へ risk acceptance と未確認項目を表示する。技術 gate（hash・安全形式・parity・性能）は緩和しない |
 | **unknown / 未確定状態語彙** | SPDX が `NOASSERTION`、空欄、`TBD`、`PENDING`、`MISSING`、`NOT_RUN`、`UNCONFIRMED`、`HOLD`、`BLOCKED`、`REJECTED`、`N/A` | **解除なし — 未確定値は常にリリース失敗** |
 
-> `unknown` を承認で上書きする手段は存在しない。ライセンスが確認できない部品は含めない（FR-LIC-010）。
+> manifest へ `unknown` 等の未確定語彙を書いたまま承認する手段は存在しない（FR-LIC-010）。C1〜C5 の部品はライセンスが確認できなければ含めない。C6/C7 checkpoint の層別 license・dataset terms だけは、FR-LIC-016 の要件をすべて満たす場合に限り採用できる。
+>
+> FR-LIC-016 の risk acceptance は、この規則の**例外ではない**。manifest へ `unknown` を書くことを許すのではなく、権限者の決定により**確定した repository ローカル識別子（`LicenseRef-<製品名>`）へ置き換え**、同時に未確認である事実と項目を採用記録・アプリ内表示・`THIRD_PARTY_NOTICES` へ**開示する**ことを要求する。開示を欠いた置き換えは本経路に該当しない。
 > 上記状態語彙は調査中の採用記録で blocker を表すために使用できるが、`resources/models/manifest.json` の承認済みentryには転記しない。
 
 ---
@@ -113,7 +116,7 @@ FR-LIC-005 および FR-LIC-015 に基づき、**3 つのレイヤーを独立�
 **具体的な禁止・要確認事例（FR-LIC-005〜008/015 より）**
 
 - TorchVision コードが BSD-3-Clause でも、`DEFAULT` weight は学習データ由来の別条件が存在し得る（[S14]）。コードライセンスだけで weight を承認しない。
-- ImageNet 配布データは non-commercial research/educational purposes 限定のため（[S19]）、ImageNet 由来 weight を商用可と自動判定しない。
+- ImageNet 配布データは non-commercial research/educational purposes 限定である（[S19]）。製品のモデル利用条件はこの範囲に収まるため ImageNet 由来であることだけでは除外しないが、terms は派生 weight の利用・再配布を明記しないため、その扱いを証拠記録に残し、書面承認（FR-LIC-016 を含む）なしに同梱しない（FR-LIC-006）。
 - COCO annotations は CC BY 4.0 だが画像著作権は個別条件に従うため（[S18]）、COCO 由来 weight も由来確認なしに承認しない。
 - Open Images 由来 weight は、annotations の CC BY 4.0、表示上 CC BY 2.0 とされる画像の個別条件、帰属表示を証拠記録で確認できない限り同梱しない（FR-LIC-008、[S20]）。
 - OpenAI CLIP は code が MIT でも model card が deployed use を out-of-scope とするため（[S46][S47]）、既定の Annotation Assist Model から除外する（FR-LIC-015）。
@@ -167,7 +170,7 @@ FR-LIC-005 および FR-LIC-015 に基づき、**3 つのレイヤーを独立�
 | 承認者氏名 | ✓ |
 | 承認日 | ✓ |
 
-- 上記のいずれかが **unknown** の場合は同梱しない（fail-closed）。
+- 上記のいずれかが **unknown** の場合は同梱しない（fail-closed）。ただし checkpoint 層 license または dataset terms が publisher の一次資料から確認できない場合に限り、**FR-LIC-016 の risk acceptance 経路**（未確認項目の列挙、権限者の書面決定、`LicenseRef-<製品名>` への置き換え、採用記録・アプリ内表示・`THIRD_PARTY_NOTICES` での開示）をすべて満たせば採用できる。技術要件は緩和しない。
 - manifestの`sourcePath`はbuild machine上の`vendor/models/`、`payloadPath`はinstaller内の`resources/models/`を指す。両者は同一binaryであり、manifestに記録した単一のSHA-256とbyteSizeが検証元・同梱後の双方に一致しなければならない（D-09/PKG-01）。
 - `releaseStatus.ready=true`では対象releaseの`productVersion`を必須とする。空または部分承認状態の`ready=false`では省略できる。
 - `docs/model-governance/adoption-template.md`（A-06 成果物）を証拠記録の統一フォームとして使用する。
@@ -182,8 +185,8 @@ C6 の全項目に加え、C7ではcheckpoint model cardを一次資料として
 | 全公開学習 dataset と各 terms（複数ある場合は全列挙） | ✓ |
 
 - コードと checkpoint を独立してそれぞれ判定する。
-- intended/out-of-scope use、研究限定、非商用、製品用途対象外のいずれかが unknown または不適合なら **同梱しない**。
-- 現時点で商用製品への同梱を最終承認した Annotation Assist Model は **ない**（`docs/requirement-definition.md` §13.3）。本文書は既存 Model の承認を意味せず、将来の審査通過によってのみ承認が成立する。
+- intended/out-of-scope use、製品のモデル利用条件（非商用の研究・教育目的）への適合、製品用途対象外のいずれかが unknown または不適合なら **同梱しない**。研究限定・非商用限定であることは、それだけでは不適合としない（より狭い制限は FR-LIC-003）。checkpoint 層 license または dataset terms が確認できない場合に限り **FR-LIC-016 の risk acceptance 経路**を適用できる。**一次資料が製品用途を明示的に禁止または out-of-scope としている checkpoint には適用しない**（FR-LIC-015）。
+- 現時点で同梱を最終承認した Annotation Assist Model は **ない**（`docs/requirement-definition.md` §13.3）。本文書は既存 Model の承認を意味せず、将来の審査通過によってのみ承認が成立する。
 
 ---
 
@@ -304,11 +307,11 @@ CUDA を同梱しない場合は、その決定と CPU fallback の保証を上�
 | G-DEP-04 | Critical/High 未承認脆弱性がゼロ |
 | G-DEP-05 | C3 native バイナリが manifest hash と一致する |
 | G-DEP-06 | C4 CUDA/cuDNN（採用時）が allowlist と一致し、法務承認記録が存在する |
-| G-DEP-07 | C6 各 weight の証拠記録（§6.1 全項目）が完備し、unknown がない |
-| G-DEP-08 | C7 各 checkpoint の証拠記録（§6.2 全項目）が完備し、unknown がない。現時点で合格済みの C7 はない |
+| G-DEP-07 | C6 各 weight の証拠記録（§6.1 全項目）が完備し、unknown がない。確認できない層がある場合は FR-LIC-016 の risk acceptance 経路の要件をすべて満たしていること |
+| G-DEP-08 | C7 各 checkpoint の証拠記録（§6.2 全項目）が完備し、unknown がない。確認できない層がある場合は FR-LIC-016 の risk acceptance 経路の要件をすべて満たしていること。現時点で合格済みの C7 はない |
 | G-DEP-09 | オフライン通信キャプチャで外向き通信が 0 件（POC-06） |
 
-G-DEP-02 および G-DEP-07/08 の `unknown` は承認で上書きできない。
+G-DEP-02 および G-DEP-07/08 の `unknown` は承認で上書きできない。FR-LIC-016 は `unknown` の記録を承認する手続きではなく、確定した `LicenseRef-<製品名>` への置き換えと未確認項目の開示を要求する手続きである。
 
 ---
 

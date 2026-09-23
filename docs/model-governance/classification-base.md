@@ -17,7 +17,7 @@
 | 承認日 | **なし** |
 | 再審査期限 | **設定なし**。§10 の解除証拠を受領した場合、または artifact・license・dataset terms・製品用途が変わった場合に再審査する |
 | 法務確認 | **必須 / 未開始**。本記録に法務判断または repository license decision authority の risk acceptance はない |
-| 最終判定 | **HOLD — C6 承認 0 件** |
+| 最終判定 | **2026-09-03〜22 の調査時点: HOLD — C6 承認 0 件**。2026-09-23 に FR-LIC-016 の下で `MobileNet_V3_Large_Weights.IMAGENET1K_V2` を**承認**（§13） |
 | G-DEP-07 / Gate 2 | **BLOCKED** |
 | manifest | **未編集**。本記録を根拠に追加してはならない |
 | checkpoint binary download | **未実施**。承認を作るためだけの大容量 binary 取得は行っていない |
@@ -420,3 +420,110 @@ ETag は SHA-256 ではなく、完全性 gate へ使用しない。
 | 採用テンプレートの必須欄を暗黙のままにしていないか | 再審査・法務状態、製品 input/preprocess/output が散在または未記録になる危険 | メタデータと §3.4 を追加し、upstream 既知値と製品 pipeline の `unknown` を分離した。preset/loader source hash も追加取得した |
 
 レビュー後も blocking unknown は解消していない。したがって最終決定は **HOLD、MobileNetV3 3 weights は現配布形態で却下、DINOv2-small は保留、承認済み分類 C6 は 0、Gate 2 は BLOCKED** のままとする。
+
+---
+
+## 12. 2026-09-22 — 利用者指示による候補の再調査
+
+### 12.1 指示と調査条件
+
+2026-09-22、利用者が **「DINOv2 は諦め、別候補（例: Apache-2.0 で学習データも公開されている重み）を再調査せよ」** と指示した。DINOv2-small は本節以降**候補から除外**し、再提案していない。
+
+- 調査日・全 URL 取得日: **2026-09-22**
+- 調査対象: 画像分類の C6 候補 **8 件**
+- 調査項目: checkpoint 固有 license / 学習データと公開状況 / 商用利用の記載 / 再配布（installer 同梱）の記載 / intended use / 完全 SHA-256 の publisher 提供 / 規模
+- 本調査では **binary を取得していない**。SHA-256 は publisher 側 metadata の転記であり、独立再計算は未実施である。
+
+### 12.2 横断的に適用される一次資料
+
+#### ImageNet の access terms（候補 1〜7 の学習データ）
+
+出典: `https://www.image-net.org/download.php`（取得 2026-09-22）。原文:
+
+> "Terms of access: … 1. **Researcher shall use the Database only for non-commercial research and educational purposes.** … 6. **If Researcher is employed by a for-profit, commercial entity, Researcher's employer shall also be bound by these terms and conditions** …"
+
+**事実整理:** ImageNet は公開データセットだが、**公開 = 商用可ではない**。terms 原文に **fine-tuned weight 等の派生物に関する条項は存在しない**（許諾とも禁止とも書かれていない）。したがって FR-LIC-006 の「ImageNet 由来を自動的に商用可と判定しない」は本再調査でも維持される。
+
+#### timm publisher 自身による重みへの警告（候補 1〜3、5・7 に波及）
+
+出典: `https://raw.githubusercontent.com/huggingface/pytorch-image-models/v1.0.20/README.md`（取得 2026-09-22、§Licenses > Pretrained Weights）。原文:
+
+> "### Code — The code here is licensed Apache 2.0. … ### Pretrained Weights — … **ImageNet was released for non-commercial research purposes only … Any models I have trained with ImageNet are done for research purposes and one should assume that the original dataset license applies to the weights. It's best to seek legal advice if you intend to use the pretrained weights in a commercial product.**"
+
+**同 README は Apache-2.0 を "The code here" に限定し、publisher 自身がコード license と重み license を分離している。** これは HF repository metadata の `license: apache-2.0` タグと**反対方向の記載**であり、両者を解決する publisher 文書は確認できなかった。
+
+#### Hugging Face の `license:` metadata の位置づけ
+
+出典: `https://raw.githubusercontent.com/huggingface/hub-docs/main/docs/hub/repositories-licenses.md`（取得 2026-09-22）。HF の `license:` は **アップロード者が repository 単位で自己申告する card metadata** である。本調査対象の HF repository には **独立した `LICENSE` ファイルが 1 件も存在しなかった**。
+
+### 12.3 候補一覧
+
+| # | 候補 / exact artifact | checkpoint 固有 license の明示 | 学習データ | データ公開 | 商用可否の記載 | 再配布の記載 | publisher 提供の完全 SHA-256 | 規模 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | `timm/mobilenetv3_large_100.ra_in1k` / `model.safetensors`（revision `96f46a1c52932f27492dff66c72378eb99b443a7`） | card metadata の `apache-2.0` のみ。LICENSE ファイルなし。**§12.2 の publisher 警告と併存** | ImageNet-1k | 公開（要規約同意） | **非商用研究限定** | なし | `f425af34cc1cead2b5d6211f789a1f30b94835dc32f9c0fcc5a916e4fd2dde85` | 5,507,432 params / 22,058,321 bytes |
+| 2 | `timm/mobilenetv4_conv_small.e2400_r224_in1k` / `model.safetensors` | 同上 | ImageNet-1k | 公開（要規約同意） | 同上 | なし | `7a7102ec18f62bbfb555b6fe829bbb5af749516b84174926c29ffdfdfc03aec4` | 3,799,112 params / 15,223,016 bytes |
+| 3 | `timm/efficientnet_b0.ra_in1k` / `model.safetensors` | 同上 | ImageNet-1k | 公開（要規約同意） | 同上 | なし | `d569899762ea9b1384ee07f4af64805cf8caa1c55f9253ebb1080dc40e87a2cd` | 5,330,564 params / 21,355,344 bytes |
+| 4 | `microsoft/resnet-50` / `model.safetensors` | card metadata のみ。card は **HF team 執筆**と明記（原著者の license 表明ではない） | ImageNet-1k | 公開（要規約同意） | 同上 | なし | `9c6061af1f450bb0847e529fd742aa5066017be379c71bbf5546b198e5b13a1e` | 25,610,152 params / 102,482,854 bytes |
+| 5 | `google/vit-base-patch16-224` / `model.safetensors` | card metadata のみ。card は HF team 執筆、重みは **timm 変換物**と明記 | ImageNet-21k → ImageNet-1k | 公開（要規約同意） | 同上 | なし | `1cea07110a4a47edc51420b2dda6f3b8b58e7256e8f44b4ea6aa9696162ccb5d` | 86,567,656 params / 346,293,852 bytes |
+| 6 | `facebook/convnext-tiny-224` / `pytorch_model.bin` | **不一致**。HF metadata は `apache-2.0`、upstream repository は MIT。いずれも「重みファイルに適用される」とは書いていない | ImageNet-1k | 公開（要規約同意） | 同上 | なし | あり | params 未記載 / 114,423,189 bytes |
+| 7 | ONNX Model Zoo `mobilenetv2-12.onnx` | **本調査中で最も明示的**。model ディレクトリ README に `## License / Apache 2.0`、repository LICENSE も Apache-2.0 | ImageNet (ILSVRC2012) | 公開（要規約同意） | 同上 | なし | `c0c3f76d93fa3fd6580652a45618618a220fced18babf65774ed169de0432ad5` | 3,504,872 params / 13,964,571 bytes |
+| 8 | PASS 事前学習（Oxford VGG）`moco_v2_800ep.pth.tar` | **未確認**。repository LICENSE は MIT だが対象は "Software"。README に重みの license 記載なし | **PASS**（1,439,589 枚、全て CC BY 画像） | **完全公開**（Zenodo `6615455`） | **商用を明記**（"available to download for **commercial**/research purposes under CC BY 4.0"） | データ側は CC BY 4.0 の attribution 条件 | **なし**（HTTP `Digest` 未提供、ETag のみ） | ResNet-50 系 / 369,741,536 bytes |
+
+### 12.4 候補要件を満たさないと判明したもの
+
+| 対象 | 除外理由（一次資料） |
+|---|---|
+| LAION-2B 版 / DataComp 版 CLIP | MIT の license タグにもかかわらず、model card が **deployed use を out-of-scope** と明記。既存の OpenAI CLIP 除外（[SPI-13 §15.1](classification-assist.md)）と同一根拠 |
+| `google/mobilenet_v2_1.0_224` | `license: other` |
+| `google/siglip-base-patch16-224` | 学習データ **WebLI が非公開**。公開ダウンロード手段を確認できなかった。「学習データも公開」という本指示の要件を満たさない |
+| Places365 CNN | CC BY 明記だが、データ利用が申請制で terms 全文を取得できなかった |
+| DINOv2 系 | **利用者指示により除外**（再提案していない） |
+
+### 12.5 本再調査の結論
+
+**「checkpoint 固有 license の明示」と「学習データが公開かつ商用許諾」の両方が同時に揃う候補は、本調査の範囲では 0 件である。**
+
+| 区分 | 該当 | 状態 |
+|---|---|---|
+| A. 学習データが明確かつ**商用許諾あり** | 候補 8（PASS / CC BY 4.0） | **データ側は明確**。ただし **checkpoint license が未確認**、完全 SHA-256 も未提供 |
+| B. 学習データが明確だが**非商用研究限定** | 候補 1〜7 | terms 原文が**商用不可の方向に明確**。候補 1〜3 は publisher 自身の警告も併存 |
+| C. 学習データが非公開 | SigLIP 等 | 本指示の要件を満たさない |
+| D. model card が deployed use を除外 | CLIP 系 | 既存の除外根拠と同一 |
+
+最も近いのは候補 8（データ CC BY 4.0・商用明記）だが checkpoint license が不明であり、次点が候補 7（checkpoint 側の Apache-2.0 記載が最も明示的）だがデータが非商用研究限定である。**両者は欠落している項目が互いに逆**であり、片方をもう片方で補うことはできない。
+
+### 12.6 確認できなかった項目（推測で埋めていない）
+
+1. 候補 1〜6 の **weight ファイル自体に適用される独立した license 文書**。全 repository に存在せず、card YAML の `license:` タグのみ。
+2. ImageNet terms と「派生 weight の再配布」の関係。terms 原文に派生物条項が**存在しない**ため、許諾・禁止のいずれとも書かれていない。
+3. installer への同梱・顧客端末への配布を publisher が許諾する旨の明示記載（**いずれの候補にも無し**）。
+4. 候補 1〜3 について、HF の `apache-2.0` タグと timm README の ImageNet 警告の**どちらが checkpoint に優先するか**。publisher による解決文書を確認できなかった。
+5. 候補 4〜6 の `license:` タグを設定した主体が原重み作成者か HF 側か。
+6. 候補 7 の `.onnx` binary に Apache-2.0 が適用されると publisher が**明言した**記載。README の license 節はディレクトリ文脈である。GitHub 版と HF ミラー版の tensor 等価性も未確認（hash・サイズとも相違）。
+7. 候補 8 の **checkpoint license**（最重要未確認）と**完全 SHA-256**。
+8. 全候補の **Windows x64 CPU / ONNX Runtime DirectML EP での実測**（変換可否・レイテンシ・メモリ・精度）は**一切未実施**。
+9. 全候補の **binary を取得しての SHA-256 独立再計算**は未実施。
+
+### 12.7 判定
+
+| 項目 | 結果 |
+|---|---|
+| 本再調査で承認できた分類 C6 | **0 件** |
+| 従来の判定 | **維持**。DINOv2-small は利用者指示により候補から除外、MobileNetV3 3 weights は現配布形態で却下のまま |
+| G-DEP-07 / Gate 2 | **BLOCKED** |
+| manifest | **本記録を根拠とする entry は作成しない**（分類 C6 は承認 0 件）。本節の記録時点（2026-09-23 の §13 より前）の `models` は**空**であった。§13 で分類 C6 1 件を登録した |
+
+`G2-01` の DoD（候補について license・学習データ由来・再配布可否・intended use・checkpoint hash を一次資料 URL と取得日付きで判定し、不明が 1 つでも残れば `HOLD` を保持する）は、**8 候補すべてについて満たした上で `HOLD` を保持する**結果となった。
+
+## 13. 2026-09-23 — FR-LIC-016 による MobileNetV3 Large V2 の採用
+
+§12.7 の判定（承認 0 件）は、要求定義 v0.6 の FR-LIC-016（checkpoint license・学習データ terms を確認できない場合の risk acceptance 経路）の新設後に次のとおり更新した。§3・§12 の一次資料調査の記載は変更していない。
+
+| 項目 | 内容 |
+|---|---|
+| 対象 | `MobileNet_V3_Large_Weights.IMAGENET1K_V2`（`mobilenet_v3_large-5c1a4163.pth`、`22,132,113` byte、SHA-256 `5c1a416349c4cf298f2a6a5e2600ed0ee55e604713578f5e74e6bc8bcaef7997`。§3.1 の「完全値 unknown」は本 repository の独立計算で確定） |
+| 権利層 | [2026-09-23 risk acceptance](evidence/2026-09-23-owner-risk-acceptance.md) artifact A（決定者 dahatake）。ImageNet terms の制限は未確認項目として開示し、解消したとは扱わない |
+| §3.3 の loader 問題 | torchvision の download 経路を使わず、`weights=None` で構築して local file を `torch.load(weights_only=True)` で読む（[`classification_checkpoint_parity.py`](../../spikes/models/classification_checkpoint_parity.py)） |
+| 技術層 | CPU / DirectML parity、性能、対象用途の精度、CVE 照会を実測（[`classification-checkpoint-result.md`](../../spikes/models/classification-checkpoint-result.md)） |
+| 採用記録 | [`mobilenet-v3-large-imagenet1k-v2-adoption.md`](mobilenet-v3-large-imagenet1k-v2-adoption.md)（**承認**、2026-09-23） |
+| manifest | C6 分類 entry `mobilenet-v3-large-imagenet1k-v2` を登録。`releaseStatus.ready=false` を維持 |

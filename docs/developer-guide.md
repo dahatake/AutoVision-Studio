@@ -111,7 +111,7 @@ interpreter は `ml/.venv` を選択します。system Python を選択した状
 | Renderer | `src/renderer/main.tsx`, `src/renderer/App.tsx` | React root と navigation shell |
 | Routes | `src/renderer/routes.tsx` | 11 screen IDとworkflow／settingsの配置定義。Project・診断等の接続状態は各featureと実行記録を参照 |
 | Python worker | `ml/src/autovision_ml/cli.py` | `health`（版・OS）、`probe-hardware`（端末観測）、`scan-dataset`（Mainのrequestから画像・注釈を検査）の3 command |
-| Model governance | `resources/models/manifest.json` | 承認済み同梱 model の fail-closed 正本。現在は空 |
+| Model governance | `resources/models/manifest.json` | 承認済み同梱 model の fail-closed 正本。現在は C6 分類・検出の 2 件で `ready=false` |
 
 production source と `spikes/` を混同しません。`spikes/` は PoC、root `build/` は検証 harness / 生成物、`work/` は時点計画です。
 

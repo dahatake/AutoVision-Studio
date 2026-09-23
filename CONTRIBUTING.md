@@ -83,7 +83,7 @@ migration とそれを使う repository、backend と UI、分類と検出は原
 - 実測していない数値、存在しないファイルパス、動作確認していないコマンドを実装済みとして記録しない。
 - 一次資料（公式ドキュメント URL・取得日・hash または pull request 番号）を確認できない場合は、その判断を成功扱いにしない。該当 Gate を停止する。
 - 文書タスク（ADR、policy、guide）の証拠欄は、一次資料 URL・取得日・hash または判断記録で埋める。空欄は不合格とする。
-- モデルの hash/quality/license/intended-use が確認できない場合、manifest への登録とモデル固有実装を開始しない（`docs/dependency-policy.md` §4/§6、`docs/implementation-plan.md` D-08/D-09）。
+- モデルの hash/quality/license/intended-use が確認できない場合、manifest への登録とモデル固有実装を開始しない（`docs/dependency-policy.md` §4/§6、`docs/implementation-plan.md` D-08/D-09）。checkpoint 層 license または dataset terms だけが確認できない場合は、FR-LIC-016 の risk acceptance 経路の要件をすべて満たしたときに限り登録できる。hash・quality・intended-use の確認は緩和しない。
 - text file の SHA-256 は、**Git blob bytes（通常 LF）**と**作業ツリー bytes（`core.autocrlf` により CRLF になり得る）**のどちらかを明記する。byte 基準を記載していない異なる hash を不整合判定に使わない。
 
 ---

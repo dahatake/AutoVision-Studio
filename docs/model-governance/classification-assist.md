@@ -23,7 +23,7 @@
 | 承認済み Classification C7 件数 | **0** |
 | G-DEP-08 | **BLOCKED** |
 | Gate 2 | **BLOCKED** |
-| `resources/models/manifest.json` | **未編集**。調査時点の `models` は空配列であり、本記録を根拠に追加してはならない |
+| `resources/models/manifest.json` | **本記録を根拠に追加してはならない**。調査時点の `models` は**空配列**であった。2026-09-23 の D1 裁定後は C6 分類・C6 検出の 2 件を持ち、C7 分類 entry は無い（SigLIP は保留。§20） |
 | checkpoint binary download | **未実施** |
 | モデル実行・変換・品質試験 | **未実施（NOT_RUN）** |
 
@@ -536,7 +536,7 @@ SPI-13 の research outcome は「候補を承認できないことを証拠不�
 | safetensors 拡張子だけで安全合格にしていないか | payload、offline load、dependency を未検査のまま通す | metadata signal のみに限定し、payload inspection を NOT_RUN とした |
 | source URL だけで evidence hash 完備としていないか | 消失・改変可能なページを再現証拠にする | 保存 copy/path/hash を MISSING として G-DEP-08 を停止 |
 | 承認者・承認日を暗黙補完していないか | research record を approval record に昇格する | 承認者なし、承認日なし、approved count 0 |
-| manifest を先行更新していないか | HOLD candidate が release payload に入る | manifest 未編集、`models: []`、Gate 2 BLOCKED |
+| manifest を先行更新していないか | HOLD candidate が release payload に入る | 本記録を根拠とする entry を作成していない。`models` は空、Gate 2 BLOCKED |
 
 ### 17.4 独立敵対レビューと訂正履歴
 
@@ -547,3 +547,122 @@ SPI-13 の research outcome は「候補を承認できないことを証拠不�
 修正後の再レビュー結果は、**本 research record は HOLD / REJECT の根拠として commit 可能**、一方で **checkpoint の採用・manifest 登録・installer 同梱・G-DEP-08 / Gate 2 解除は不可**である。前者を後者の承認へ昇格させない。
 
 敵対的レビュー後も blocking evidence は解消していない。最終結果は **SigLIP `HOLD`、OpenAI CLIP `REJECT`、承認済み Classification C7 `0`、G-DEP-08 / Gate 2 `BLOCKED`** のままとする。
+
+---
+
+## 18. 2026-09-22 — 利用者の採用指示と controlled retrieval の実測
+
+### 18.1 利用者の指示
+
+2026-09-22、本 repository の license decision authority である利用者が **「SigLIP を採用」** と指示した。OpenAI CLIP については指示がなく、§15.1 の `REJECT`（公式 model card が商用・非商用を問わず deployed use を out-of-scope と明記）を維持する。
+
+本記録は §17 が求める解除証拠のうち、**利用者の指示によって実施が許可された技術検証部分**を実行した結果である。**この指示は publisher の license statement、WebLI の権利情報、法務判断を代替しない。**
+
+### 18.2 controlled retrieval の実行
+
+- 取得日: **2026-09-22**
+- 取得コマンド: `curl.exe -sSL --fail -o vendor\models\siglip-base-patch16-224.safetensors https://huggingface.co/google/siglip-base-patch16-224/resolve/7fd15f0689c79d79e38b1c2e2e2370a7bf2761ed/model.safetensors`
+- 保管先: `vendor/models/`（`.gitignore:248` により Git 追跡外）
+
+| 項目 | 実測値 | §1.1 の publisher metadata | 照合 |
+|---|---|---|---|
+| byte size | `812,672,320` | `812,672,320` | **一致** |
+| SHA-256（本調査で binary から再計算） | `2c63cb7d1f2e95ba501893cbb8faeb4ea9a3af295498d35097126228659c2af8` | 同値（HF fixed-revision API の `lfs.sha256`） | **一致** |
+| 形式 | safetensors、tensor 408 件、dtype `F32`、`__metadata__` は `{"format": "pt"}` のみ | — | — |
+
+### 18.3 解消した blocker
+
+| 従来の状態 | 実測による現在の状態 |
+|---|---|
+| checkpoint SHA-256 は HF API の申告値であり「本調査で binary から再計算していない」 | **再計算済み。publisher metadata と完全一致**した。artifact identity の照合基準が確定した |
+| payload 未検査 | **safetensors header を解析し、tensor 408 件と dtype `F32` のみで構成されることを確認**。`__metadata__` に実行可能な内容はなく、pickle 経路を含まない形式であることを実物で確認した |
+
+### 18.4 解消していない blocker
+
+| ID | 内容 | 本 retrieval で変わらない理由 |
+|---|---|---|
+| CA-L1 | exact bytes に適用される **checkpoint 固有 license statement**（§17 項目 1） | publisher が発行していない。bytes を取得しても license は生まれない |
+| CA-C8 | **WebLI** の完全な由来、画像権利、商用利用、派生 checkpoint の再配布、帰属条件 | WebLI は非公開 corpus であり、Google の開示が必要 |
+| CA-E1 | Big Vision 原版 NPZ（`gs://big_vision/siglip/webli_en_b16_224_63724782.npz`）との tensor equivalence と変換 provenance | publisher の証明が必要。本 retrieval では HF artifact のみ取得した |
+| CA-N1 | Apache-2.0 の NOTICE 伝播要否と final NOTICE packet | CA-L1 の確定後にしか書けない |
+| CA-R1 | 製品で使う exact code revision（Big Vision 経路か Transformers 経路か）と依存 lock | 未決定。`transformers` は現行 lock に存在しない |
+| CA-A1 | schema が要求する `approval` record | 下記 §18.5 により entry 自体を作れない |
+
+### 18.5 manifest を更新できない構造的理由
+
+[`resources/models/manifest.schema.json`](../../resources/models/manifest.schema.json) の `$defs.spdxLicense` は `commercialUseConfirmed` と `redistributionPermitted` をいずれも `"const": true` とし、`spdx` に `unknown` / `HOLD` / `MISSING` 等の文字列を pattern で拒否する。`$defs.licenseSet` は `code` / `checkpoint` / `trainingData` の 3 層すべてを必須とする。
+
+SigLIP の `checkpoint` 層 license は存在せず（CA-L1）、`trainingData` 層の WebLI は terms 自体が非公開である（CA-C8）。entry を作るには Big Vision コードの `Apache-2.0` を checkpoint 層へ書き、WebLI の terms を創作する以外になく、**それは §14 の敵対的レビューが禁じた「code license を C7/C8 承認へ拡張する」行為そのもの**である。
+
+**よって本記録を根拠とする entry は作成しない。**（2026-09-23 時点で manifest の `models` は空である。[`detection-base.md`](detection-base.md) §15.8 を参照。）
+
+### 18.6 本節時点の判定
+
+| 対象 | 技術 gate | 権利 gate | 総合 |
+|---|---|---|---|
+| SigLIP base patch16-224 | **通過**（hash 一致・形式検証完了） | **未充足**（CA-L1 / CA-C8 / CA-E1） | **採用指示を受領。manifest 登録は不可** |
+| OpenAI CLIP | — | **明示的に out-of-scope** | **REJECT 維持**（利用者の採用指示なし） |
+
+承認済み Classification C7 は引き続き **0 件**、G-DEP-08 と Gate 2 は **BLOCKED** である。
+---
+
+## 19. 利用者決定による権利 gate の充足設定（2026-09-22）
+
+2026-09-22、本 repository の license decision authority である利用者 **dahatake** が、**「C7 にも risk acceptance を出す」**と指示した。決定の全文は [`evidence/2026-09-22-owner-risk-acceptance.md`](evidence/2026-09-22-owner-risk-acceptance.md)（SHA-256 `baa0b97f48d3fa996cec57a6024f23f0147e04dee99f7ed01c616e723316c402`）に記録した。
+
+### 19.1 決定の内容
+
+| 項目 | 値 |
+|---|---|
+| 決定者 / 決定日 | **dahatake**（repository owner / license decision authority） / **2026-09-22** |
+| 対象 | `google/siglip-base-patch16-224`（Classification C7） |
+| 充足扱いとした項目 | CA-L1（checkpoint 固有 license）、CA-C8（WebLI の terms と商用条件）、CA-E1（一次資料の保存 copy 不足のうち権利判断に関わる部分） |
+| checkpoint 層の license 識別子 | **`LicenseRef-AutoVisionStudio`**（SPDX の `LicenseRef-` 構文による repository ローカル参照） |
+| 根拠書面 | **外部法務の書面判断は存在しない**。repository owner 自身の risk acceptance である |
+| 決定の種別 | **risk acceptance（証拠に基づく確認ではない）** |
+
+### 19.2 本決定が意味しないこと
+
+1. Google が SigLIP checkpoint 固有の license statement を発行した事実は**ない**。
+2. **WebLI の terms は依然として非公開**であり、データ由来の商用条件が確認された事実はない。
+3. §2〜§14 に記録した一次資料の引用・URL・取得日・hash は**一切書き換えていない**。
+4. OpenAI CLIP の `REJECT` は**変更しない**（model card が deployed use を out-of-scope と明記しており、利用者の採用指示の対象外）。
+
+### 19.3 それでも manifest entry を作成しない理由（権利とは別の要因）
+
+| 要因 | 要求の出所 | 現状 |
+|---|---|---|
+| `support[]` の parity 検証 | `manifest.schema.json` `$defs.supportEntry` は `verified` を `const: true` とし、`windows-x64/cpu` と `windows-x64/directml` の 2 件を必須とする | **未実施**。SigLIP の ONNX 変換には `transformers` 相当の新規依存が必要であり、本 repository の測定環境には導入されていない。未実施のまま `verified: true` と書くことは、実行していない試験を合格として記録する行為にあたる |
+| 採用記録ファイル | [`dependency-policy.md`](../dependency-policy.md) §6.2 | **未作成**。C7 は C6 の全項目に加えて model card の intended / out-of-scope use 等の追加記録を要する |
+
+### 19.4 本決定後の判定
+
+| 対象 | 技術 gate | 権利 gate | 総合 |
+|---|---|---|---|
+| SigLIP base patch16-224 | hash 一致・形式検証は通過。**parity（CPU / DirectML）は未実施** | **充足（利用者 dahatake の risk acceptance）** | **権利 gate は解除。manifest 登録は parity 実測と採用記録の作成待ち** |
+| OpenAI CLIP | — | 明示的に out-of-scope | **REJECT 維持** |
+
+承認済み Classification C7 は引き続き **0 件**、G-DEP-08 と Gate 2 は **BLOCKED** である。
+
+## 20. 2026-09-23 — SigLIP の backend parity・性能実測
+
+§19.3 が挙げた「CPU / DirectML parity 未実施」を実測した。記録は [`siglip-assist-result.md`](../../spikes/models/siglip-assist-result.md)、採用記録は [`siglip-base-patch16-224-adoption.md`](siglip-base-patch16-224-adoption.md)。
+
+| 項目 | 結果 |
+|---|---|
+| parity（torch / ORT CPU / ORT DirectML） | **PASS**（score 最大差 `4.1127e-06`、top-1 15/15） |
+| 性能（画像ごとの vision 経路） | DirectML p95 `16.5`〜`17.1` ms は基準内。**CPU p95 `545`〜`831` ms・`2.2`〜`3.3` FPS は基準（`≤ 100` ms / `≥ 10` FPS）に不適合** |
+| 判定 | **保留**。manifest に登録しない（実行計画 DQ-08）。NFR-ANN-006 の比較試験も未実施 |
+
+## 21. 2026-09-23 — 要求定義 v0.7（モデル利用条件の訂正）後の読み替え
+
+要求定義 v0.7 で、学習済みモデルの利用条件を「非商用の研究・教育目的」へ訂正した（FR-LIC-002 / 003 / 006 / 014 / 016）。本記録の §1〜§20 は調査時点の記録として変更しない。v0.7 以降の分類 Annotation Assist Modelの権利 gate は次のとおり読み替える。
+
+| 本記録の blocker・条件 | v0.7 以降の扱い |
+|---|---|
+| 商用利用・商用派生物の確認を要求する記述（対象用途、チェックリスト、再審査条件） | **置換**。確認対象は「非商用の研究・教育目的での利用と同梱・再配布」になる |
+| 研究限定・非商用限定であることを理由とする不適合 | **置換**。それだけでは不適合としない。製品の条件より狭い制限（研究のみ等）は FR-LIC-003 の書面承認と表示を要する |
+| checkpoint 固有 license・学習データ terms が確認できないこと | **維持**。FR-LIC-016 の risk acceptance 経路で扱う |
+| intended / out-of-scope use、安全形式、hash、parity、性能、NFR-ANN-006 | **維持**（緩和しない） |
+
+v0.7 後の候補の再調査は [`work/20260923-1015-NonCommercialModelSurvey.md`](../../work/20260923-1015-NonCommercialModelSurvey.md) に記録した。

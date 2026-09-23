@@ -56,7 +56,7 @@ Model Suggestion は Ground Truth ではありません。高 score でも自動
 
 ## 既知の制約
 
-Cloud backend、認証、共同編集、telemetry、動画、RTSP、segmentation、pose、OCR、生成 AI、未監査 model / plugin の実行時追加は MVP 対象外です。macOS アプリ、MPS/CoreML、macOS カメラ権限試験、PKG、Developer ID 署名、notarization、Gatekeeper 試験、macOS servicing も Version 1 対象外であり、現在利用できません。同梱 model はガバナンス審査を通過したものだけを許可しますが、現在の model manifest に承認済み entry はありません。この model blocker が解消するまで、モデル支援、学習、推論を含む MVP をリリース可能とは判定しません。
+Cloud backend、認証、共同編集、telemetry、動画、RTSP、segmentation、pose、OCR、生成 AI、未監査 model / plugin の実行時追加は MVP 対象外です。macOS アプリ、MPS/CoreML、macOS カメラ権限試験、PKG、Developer ID 署名、notarization、Gatekeeper 試験、macOS servicing も Version 1 対象外であり、現在利用できません。同梱 model はガバナンス審査を通過したものだけを許可します。現在の model manifest の承認済み entry は Curated Base Weight（C6）の分類・検出の 2 件だけで、Annotation Assist Model（C7）の 2 役と補助品質の比較試験が未充足のため `ready=false` です。この model blocker が解消するまで、モデル支援、学習、推論を含む MVP をリリース可能とは判定しません。
 
 ## 読者別クイックリンク
 
@@ -86,4 +86,4 @@ source code は [MIT License](LICENSE) です。第三者 dependency、学習済
 
 完成アプリケーションが未提供のため、一般利用者向けの製品サポートはまだ開始していません。Version 1 の予定サポート範囲は Windows 11 24H2 以降の x64 のみで、macOS は現在サポート対象外です。一般利用者向けの確認項目は[トラブルシューティング](docs/users-guide.md#トラブルシューティング)、開発時の報告と変更手順は[開発・検証規約](CONTRIBUTING.md)を参照してください。未実装機能や将来 macOS 対応を利用可能な機能または現在の Gate として扱わず、[実装計画](docs/implementation-plan.md)の依存 task と Gate を確認してください。
 
-要求定義の基準版は v0.5 Draft（2026-09-07 UI改善追補、245要求）です。SHA-256 は、Windows 作業ツリー raw CRLF bytes が `cd060e8740e986271ca32cf1e22f0cad275e7c26f9ead573c9fb667f26f984fa`、LF-normalized bytes が `962f5d7209de1f607ee6cb4d31e68b084409f7b3105612e6e4042d8b893e037f` です。
+要求定義の基準版は v0.7 Draft（2026-09-23 学習済みモデルの利用条件を非商用の研究・教育目的へ訂正、246要求）です。SHA-256 は、Windows 作業ツリー raw CRLF bytes が `6e0c0bda2396b5e716d2c7b8b252dc5fe4758dadf3bcdbd936ca5857c236dcf5`、LF-normalized bytes が `1e84ca26dd257a931516b58d4f6c5a3c858606f689808777d317019f608e1335` です。
