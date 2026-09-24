@@ -1,0 +1,204 @@
+{
+  "nodes": [
+    {
+      "id": "T9-S",
+      "deps": [],
+      "duration": 30.0,
+      "write_set": [
+        "resources/models/manifest.schema.json",
+        "lock:model-manifest",
+        "work/20260924-1341-TBD09-T9-S-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "docs/model-governance/evidence/2026-09-24-owner-ruling-TBD-09.md",
+          "work/20260924-1341-TBD09-SchemaFieldRenamePlan.md"
+        ],
+        "outputs": [
+          "resources/models/manifest.schema.json",
+          "work/20260924-1341-TBD09-T9-S-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -Command \"$o = git grep -n -E 'commercialUseConfirmed|commercialDerivativesPermitted' -- resources/models/manifest.schema.json; if ($LASTEXITCODE -ne 1) { exit 1 }; if (-not (Select-String -Path resources/models/manifest.schema.json -SimpleMatch '\\\"const\\\": \\\"3.0.0\\\"' -Quiet)) { exit 1 }; if (Select-String -Path resources/models/manifest.schema.json -SimpleMatch 'Commercial use' -Quiet) { exit 1 }; if (-not (Select-String -Path work/20260924-1341-TBD09-T9-S-Review.md -Pattern '^blocking: 0$' -Quiet)) { exit 1 }\"",
+        "timeout_seconds": 600,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "T9-M",
+      "deps": [
+        "T9-S"
+      ],
+      "duration": 30.0,
+      "write_set": [
+        "resources/models/manifest.json",
+        "lock:model-manifest",
+        "work/20260924-1341-TBD09-T9-M-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "resources/models/manifest.schema.json"
+        ],
+        "outputs": [
+          "resources/models/manifest.json",
+          "work/20260924-1341-TBD09-T9-M-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -Command \"$o = git grep -n -E 'commercialUseConfirmed|commercialDerivativesPermitted' -- resources/models/manifest.json; if ($LASTEXITCODE -ne 1) { exit 1 }; if (-not (Select-String -Path resources/models/manifest.json -SimpleMatch '\\\"schemaVersion\\\": \\\"3.0.0\\\"' -Quiet)) { exit 1 }; if (-not (Select-String -Path work/20260924-1341-TBD09-T9-M-Review.md -Pattern '^blocking: 0$' -Quiet)) { exit 1 }\"",
+        "timeout_seconds": 600,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "T9-T",
+      "deps": [
+        "T9-M"
+      ],
+      "duration": 40.0,
+      "write_set": [
+        "scripts/models/manifest-schema.test.mjs",
+        "lock:model-manifest",
+        "work/20260924-1341-TBD09-T9-T-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "resources/models/manifest.schema.json",
+          "resources/models/manifest.json"
+        ],
+        "outputs": [
+          "scripts/models/manifest-schema.test.mjs",
+          "work/20260924-1341-TBD09-T9-T-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -Command \"node --test scripts/models/manifest-schema.test.mjs; if ($LASTEXITCODE -ne 0) { exit 1 }; if (-not (Select-String -Path scripts/models/manifest-schema.test.mjs -SimpleMatch 'rejects the pre-3.0.0 license field names' -Quiet)) { exit 1 }; if (-not (Select-String -Path work/20260924-1341-TBD09-T9-T-Review.md -Pattern '^blocking: 0$' -Quiet)) { exit 1 }\"",
+        "timeout_seconds": 600,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "T9-G",
+      "deps": [
+        "T9-S"
+      ],
+      "duration": 60.0,
+      "write_set": [
+        "docs/adr/0004-spike-decisions.md",
+        "docs/model-governance/classification-assist.md",
+        "docs/model-governance/detection-assist.md",
+        "docs/model-governance/detection-base.md",
+        "docs/model-governance/mobilenet-v3-large-imagenet1k-v2-adoption.md",
+        "docs/model-governance/ssdlite320-mobilenet-v3-large-coco-v1-adoption.md",
+        "docs/model-governance/adoption-template.md",
+        "docs/dependency-policy.md",
+        "work/20260924-1341-TBD09-T9-G-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "resources/models/manifest.schema.json"
+        ],
+        "outputs": [
+          "docs/adr/0004-spike-decisions.md",
+          "docs/model-governance/classification-assist.md",
+          "docs/model-governance/detection-assist.md",
+          "docs/model-governance/detection-base.md",
+          "docs/model-governance/mobilenet-v3-large-imagenet1k-v2-adoption.md",
+          "docs/model-governance/ssdlite320-mobilenet-v3-large-coco-v1-adoption.md",
+          "docs/model-governance/adoption-template.md",
+          "docs/dependency-policy.md",
+          "work/20260924-1341-TBD09-T9-G-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -Command \"$env:PATH = \\\"$env:LOCALAPPDATA\\npm-12.0.0;$env:PATH\\\"; if ((npm --version) -ne '12.0.0') { exit 2 }; $o = git grep -n -E 'commercialUseConfirmed|commercialDerivativesPermitted' -- docs/adr/0004-spike-decisions.md docs/model-governance/classification-assist.md docs/model-governance/detection-assist.md docs/model-governance/detection-base.md docs/model-governance/mobilenet-v3-large-imagenet1k-v2-adoption.md docs/model-governance/ssdlite320-mobilenet-v3-large-coco-v1-adoption.md docs/model-governance/adoption-template.md docs/dependency-policy.md; if ($LASTEXITCODE -ne 1) { exit 1 }; if (Select-String -Path docs/model-governance/adoption-template.md,docs/dependency-policy.md -SimpleMatch 'manifest schema `2.0.0`' -Quiet) { exit 1 }; npm run verify:docs; if ($LASTEXITCODE -ne 0) { exit 1 }; npm run test:docs; if ($LASTEXITCODE -ne 0) { exit 1 }; if (-not (Select-String -Path work/20260924-1341-TBD09-T9-G-Review.md -Pattern '^blocking: 0$' -Quiet)) { exit 1 }\"",
+        "timeout_seconds": 600,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "T9-R",
+      "deps": [
+        "T9-S"
+      ],
+      "duration": 30.0,
+      "write_set": [
+        "docs/requirement-definition.md",
+        "work/20260924-1341-TBD09-T9-R-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "resources/models/manifest.schema.json",
+          "docs/model-governance/evidence/2026-09-24-owner-ruling-TBD-09.md",
+          "work/20260924-1341-TBD09-SchemaFieldRenamePlan.md"
+        ],
+        "outputs": [
+          "docs/requirement-definition.md",
+          "work/20260924-1341-TBD09-T9-R-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -Command \"$env:PATH = \\\"$env:LOCALAPPDATA\\npm-12.0.0;$env:PATH\\\"; if ((npm --version) -ne '12.0.0') { exit 2 }; $o = git grep -n -E 'commercialUseConfirmed|commercialDerivativesPermitted' -- docs/requirement-definition.md; if ($LASTEXITCODE -ne 1) { exit 1 }; npm run verify:docs; if ($LASTEXITCODE -ne 0) { exit 1 }; npm run test:docs; if ($LASTEXITCODE -ne 0) { exit 1 }; if (-not (Select-String -Path work/20260924-1341-TBD09-T9-R-Review.md -Pattern '^blocking: 0$' -Quiet)) { exit 1 }\"",
+        "timeout_seconds": 600,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "T9-V",
+      "deps": [
+        "T9-T",
+        "T9-G",
+        "T9-R"
+      ],
+      "duration": 30.0,
+      "write_set": [
+        "package.json",
+        "package-lock.json",
+        "CHANGELOG.md",
+        "lock:root-version",
+        "work/20260924-1341-TBD09-T9-V-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-1341-TBD09-VersionDecision.md",
+          "resources/models/manifest.schema.json",
+          "resources/models/manifest.json",
+          "scripts/models/manifest-schema.test.mjs",
+          "docs/adr/0004-spike-decisions.md",
+          "docs/model-governance/classification-assist.md",
+          "docs/model-governance/detection-assist.md",
+          "docs/model-governance/detection-base.md",
+          "docs/model-governance/mobilenet-v3-large-imagenet1k-v2-adoption.md",
+          "docs/model-governance/ssdlite320-mobilenet-v3-large-coco-v1-adoption.md",
+          "docs/model-governance/adoption-template.md",
+          "docs/requirement-definition.md",
+          "docs/dependency-policy.md"
+        ],
+        "outputs": [
+          "package.json",
+          "package-lock.json",
+          "CHANGELOG.md",
+          "work/20260924-1341-TBD09-T9-V-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -Command \"$env:PATH = \\\"$env:LOCALAPPDATA\\npm-12.0.0;$env:PATH\\\"; if ((npm --version) -ne '12.0.0') { exit 2 }; $v = @(Select-String -Path work/20260924-1341-TBD09-VersionDecision.md -Pattern '^version: (\\d+\\.\\d+\\.\\d+)$'); if ($v.Count -ne 1) { exit 1 }; if ((node -p \\\"require('./package.json').version\\\") -ne $v[0].Matches[0].Groups[1].Value) { exit 1 }; npm run verify:version; if ($LASTEXITCODE -ne 0) { exit 1 }; npm run test:version; if ($LASTEXITCODE -ne 0) { exit 1 }; node --test scripts/models/manifest-schema.test.mjs; if ($LASTEXITCODE -ne 0) { exit 1 }; npm run verify:docs; if ($LASTEXITCODE -ne 0) { exit 1 }; npm run test:docs; if ($LASTEXITCODE -ne 0) { exit 1 }; $o = git grep -n -E 'commercialUseConfirmed|commercialDerivativesPermitted' -- . ':!docs/model-governance/evidence' ':!work'; if ($LASTEXITCODE -ne 1) { exit 1 }; if (-not (Select-String -Path CHANGELOG.md -SimpleMatch 'productUsePermitted' -Quiet)) { exit 1 }; if (-not (Select-String -Path CHANGELOG.md -SimpleMatch 'productDerivativesPermitted' -Quiet)) { exit 1 }; if (-not (Select-String -Path work/20260924-1341-TBD09-T9-V-Review.md -Pattern '^blocking: 0$' -Quiet)) { exit 1 }\"",
+        "timeout_seconds": 600,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    }
+  ]
+}

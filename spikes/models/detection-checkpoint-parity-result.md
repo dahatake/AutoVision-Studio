@@ -228,3 +228,53 @@ cd spikes\models
 - 採用基準（`≤ 100` ms / `≥ 10` FPS）を CPU・DirectML とも**満たすのは `score_thresh=0.05` の後処理で再 export した graph に限る**。
 - 既定 `score_thresh=0.001` の後処理での不合格（§10）は取り消さない。製品の検出後処理（DP-03）は未決定であり、manifest schema は C6 entry に推論設定を持たないため、本条件を強制できない。このため採用記録はいったん**保留**とした（[`detection-base.md`](../../docs/model-governance/detection-base.md) §15.9）。その後の owner 裁定 D1 により、C6 の採用判定には本性能基準を用いないこととなり、承認した（同 §15.10）。本節の値は INF phase の後処理閾値設計の入力として残す。
 - POC-03 の完全条件（capture-to-display、30 分連続、drop 率）は依然として未測定である。
+
+---
+
+## 12. G2T-11 承認済み C6 初期化 transfer train → ONNX parity（2026-09-24）
+
+### 12.1 実行方法と evidence
+
+```powershell
+$env:PYTHONUTF8='1'; cmd /d /c "cd /d spikes\models && ..\..\vendor\models\_spike\venv\Scripts\python.exe detection_checkpoint_parity.py --mode transfer > ..\..\vendor\models\_spike\c6-det-transfer.json"; $code=$LASTEXITCODE
+```
+
+- exit code: `0`
+- verdict: **PASS**
+- evidence JSON: `vendor\models\_spike\c6-det-transfer.json`
+- JSON SHA-256: `9917bd0ae12eda07aa451791b48133c372cd37c894f133a27b0b7d16f7993dd9`
+- 生成 ONNX SHA-256: `e88a0774d94467b9e9401fb0eae7b4d297b2375f8e31770a967f7af178b2a2d4`
+- repeat_run_bitwise_identical: `true`
+- compared_detections: `551`
+- ruff: `ml\.venv\Scripts\ruff.exe` / `ruff 0.16.4`
+
+evidence: 9917bd0ae12eda07aa451791b48133c372cd37c894f133a27b0b7d16f7993dd9 exit=0
+
+### 12.2 固定条件
+
+- 許容差（測定前に固定、SPI-16 と同値）: box `1.0e-03`、score `1.0e-04`。source: SPI-16 detection.py constants and detection-result.md §7。
+- 後処理閾値: torchvision `score_thresh=0.05`、filter `score >= 0.05`。source: docs/model-governance/ssdlite320-mobilenet-v3-large-coco-v1-adoption.md §9/§11。
+- checkpoint: SHA-256 `a79551df90c79834bcd3bb3845ef9d966b5449a3a9b2833ae8404778ca5d65d2`、byte_size `14069355`、初期化 `approved C6 SSDLite320 checkpoint`、architecture `torchvision ssdlite320_mobilenet_v3_large`、num_classes `2`。
+
+### 12.3 実測環境
+
+| 項目 | 値 |
+|---|---|
+| Python | `3.14.7` |
+| OS / machine | `Windows 10.0.29671` / `AMD64` |
+| torch / torchvision | `2.11.0+cpu` / `0.26.0+cpu` |
+| onnx / onnxruntime | `1.22.0` / `1.24.4` |
+| numpy | `2.5.2` |
+| available providers | `DmlExecutionProvider, CPUExecutionProvider` |
+| CPU session providers | `CPUExecutionProvider` |
+| DirectML session providers | `DmlExecutionProvider, CPUExecutionProvider` |
+
+### 12.4 比較結果
+
+| 比較 | 判定 | 対応付け件数 | 片側のみ検出 | label 不一致 | box 最大差 | score 最大差 |
+|---|---|---:|---:|---:|---:|---:|
+| `DP-01 torch vs onnxruntime-cpu` | **PASS** | `551` | `0` / `0` | `0` | `0.00026702880859375` | `2.86102294921875e-06` |
+| `DP-04 torch vs onnxruntime-directml` | **PASS** | `551` | `0` / `0` | `0` | `0.000152587890625` | `2.9206275939941406e-06` |
+| `DP-04 onnxruntime-cpu vs onnxruntime-directml` | **PASS** | `551` | `0` / `0` | `0` | `0.000213623046875` | `2.8312206268310547e-06` |
+
+3 比較すべてで対応付け件数は `551` 件以上で、片側のみ検出と label 不一致は 0 件である。比較対象の検出件数が 0 件ではないため、G2T-11 の fail-closed 条件を満たす。

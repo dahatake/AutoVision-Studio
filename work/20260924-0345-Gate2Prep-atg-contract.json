@@ -1,0 +1,23 @@
+{
+  "objective": "Gate 2 準備 run（正本 §7.0）として G2D-09 の所有者判断と EXT-ATG の完了を確認する",
+  "non_goals": [
+    "所有者の判断を生成・推定しない",
+    "ATG 規約・500 行を超える file を変更しない",
+    "主 run の node を実行しない"
+  ],
+  "deliverables": [
+    "docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-09.md",
+    "work/20260924-0345-EXT-ATG-Confirmation.md"
+  ],
+  "acceptance_command": "pwsh -NoLogo -NoProfile -Command \"if (-not (Test-Path docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-09.md)) { exit 1 }; $t = Get-Content docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-09.md -Raw -Encoding utf8; if ($t -cnotmatch '(?m)^選択: (A|B)\\r?$' -or $t -cnotmatch '(?m)^> ' -or -not $t.Contains('判断者') -or -not $t.Contains('判断が意味しないこと')) { exit 1 }; if ((npm --version) -ne '12.0.0') { exit 2 }; npm run verify:docs; if ($LASTEXITCODE) { exit $LASTEXITCODE }; if (-not (Test-Path work/20260924-0345-EXT-ATG-Confirmation.md)) { exit 1 }; if (-not (Select-String -Path work/20260924-0345-EXT-ATG-Confirmation.md -Pattern '^evidence: .+ exit=0$' -Quiet)) { exit 1 }\"",
+  "baseline_policy": "既存の失敗は許容するが、新しい失敗を増やさない",
+  "time_budget": "80m",
+  "execution_envelope": {
+    "code_changes": "allowed_within_write_set",
+    "dependency_additions": "declared_only",
+    "external_network_writes": "deny",
+    "production_deploy": "deny",
+    "secret_read": "declared_refs_only"
+  },
+  "secret_policy": "秘密値は契約・引継ぎ・ログ・成果物へ保存せず、必要時は参照名のみを記録する"
+}

@@ -13,7 +13,7 @@ description: >
   parallel, what must block, and how to proceed without guessing.
 metadata:
   origin: user
-  version: 0.2.2
+  version: 0.2.3
 category: planning
 ---
 

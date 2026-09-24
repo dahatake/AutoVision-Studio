@@ -379,8 +379,16 @@ def run_performance(
     return 1 if failures else 0
 
 
-def run_transfer() -> int:
-    """Adoption record 11 accuracy: fine-tune from this checkpoint vs random init, same recipe."""
+def run_transfer(artifact_dir: Path, score_thresh: float) -> int:
+    """Fine-tune from this checkpoint, export ONNX, and measure backend parity."""
+    artifact_dir.mkdir(parents=True, exist_ok=True)
+    available = ort.get_available_providers()
+    if DML_PROVIDER not in available:
+        raise SystemExit(
+            f"{DML_PROVIDER} is not available in this onnxruntime build "
+            f"({available}); transfer parity cannot be measured"
+        )
+
     images, boxes, _ = load_fixture()
     train_images, train_boxes = images[:-EVAL_IMAGES], boxes[:-EVAL_IMAGES]
     eval_images, eval_boxes = images[-EVAL_IMAGES:], boxes[-EVAL_IMAGES:]
@@ -393,10 +401,38 @@ def run_transfer() -> int:
     }
     ground_truth = [target.numpy() for target in eval_boxes]
     runs: dict[str, Any] = {}
+    transfer_model: Any | None = None
+    torch_outputs: list[Detection] = []
+
+    def collect_torch_outputs(model: Any) -> list[Detection]:
+        with torch.no_grad():
+            return [
+                filter_detections(
+                    output["boxes"].numpy(),
+                    output["scores"].numpy(),
+                    output["labels"].numpy(),
+                )
+                for output in (model([image])[0] for image in eval_images)
+            ]
+
+    def detections_bitwise_identical(
+        left: list[Detection], right: list[Detection]
+    ) -> bool:
+        return len(left) == len(right) and all(
+            all(
+                np.array_equal(left_part, right_part)
+                for left_part, right_part in zip(l_det, r_det)
+            )
+            for l_det, r_det in zip(left, right)
+        )
+
     for init in ("checkpoint", "random"):
         torch.manual_seed(SEED)
         model = ssdlite320_mobilenet_v3_large(
-            weights=None, weights_backbone=None, num_classes=2
+            weights=None,
+            weights_backbone=None,
+            num_classes=2,
+            score_thresh=score_thresh,
         )
         if init == "checkpoint":
             missing, unexpected = model.load_state_dict(transferable, strict=False)
@@ -406,37 +442,131 @@ def run_transfer() -> int:
                 raise SystemExit(f"unexpected transfer keys: {missing} {unexpected}")
         losses = train_model(model, train_images, train_boxes)
         model.eval()
-        with torch.no_grad():
-            outputs = [model([image])[0] for image in eval_images]
-        predictions = [
-            filter_detections(
-                out["boxes"].numpy(), out["scores"].numpy(), out["labels"].numpy()
-            )[:2]
-            for out in outputs
-        ]
+        detections = collect_torch_outputs(model)
+        predictions = [detection[:2] for detection in detections]
         runs[init] = {
             "eval_ap50": average_precision(predictions, ground_truth),
             "detections_at_score_floor": int(sum(p[0].shape[0] for p in predictions)),
             "epoch_mean_loss_first_last": [round(losses[0], 6), round(losses[-1], 6)],
         }
+        if init == "checkpoint":
+            transfer_model = model
+            torch_outputs = detections
+
+    if transfer_model is None:
+        raise SystemExit("checkpoint transfer model was not trained")
+
+    onnx_path = artifact_dir / "detection-transfer.onnx"
+    export_started = time.perf_counter()
+    torch.onnx.export(
+        transfer_model,
+        ([eval_images[0]],),
+        str(onnx_path),
+        input_names=["images"],
+        output_names=["boxes", "scores", "labels"],
+        opset_version=OPSET_VERSION,
+        dynamo=False,
+    )
+    export_seconds = time.perf_counter() - export_started
+    onnx.checker.check_model(onnx.load(str(onnx_path)))
+    onnx_sha256 = sha256_file(onnx_path)
+
+    cpu_outputs, cpu_providers, cpu_seconds = run_session(
+        onnx_path, CPU_PROVIDER, eval_images
+    )
+    dml_outputs, dml_providers, dml_seconds = run_session(
+        onnx_path, DML_PROVIDER, eval_images
+    )
+    torch_repeat = collect_torch_outputs(transfer_model)
+    cpu_repeat, _, _ = run_session(onnx_path, CPU_PROVIDER, eval_images)
+    dml_repeat, _, _ = run_session(onnx_path, DML_PROVIDER, eval_images)
+    repeat_run_bitwise_identical = (
+        detections_bitwise_identical(torch_outputs, torch_repeat)
+        and detections_bitwise_identical(cpu_outputs, cpu_repeat)
+        and detections_bitwise_identical(dml_outputs, dml_repeat)
+    )
+
+    comparisons = [
+        compare("DP-01 torch vs onnxruntime-cpu", torch_outputs, cpu_outputs),
+        compare("DP-04 torch vs onnxruntime-directml", torch_outputs, dml_outputs),
+        compare(
+            "DP-04 onnxruntime-cpu vs onnxruntime-directml", cpu_outputs, dml_outputs
+        ),
+    ]
+    failures = [failure for item in comparisons for failure in item["failures"]]
+    compared_detections = min(item["iou_matched_detections"] for item in comparisons)
+    if compared_detections == 0:
+        failures.append("transfer parity compared 0 detections")
+    if not repeat_run_bitwise_identical:
+        failures.append("repeat run outputs were not bitwise identical")
+
     passed = runs["checkpoint"]["eval_ap50"] >= runs["random"]["eval_ap50"]
+    if not passed:
+        failures.append(
+            "checkpoint-initialised eval AP@0.5 was below random-initialised AP@0.5"
+        )
     result = {
-        "task": "SPI-12 / G2-02 checkpoint transfer accuracy (adoption record 11)",
-        "verdict": "PASS" if passed else "FAIL",
+        "task": "G2T-11 transfer-trained detection ONNX backend parity",
+        "verdict": "FAIL" if failures else "PASS",
+        "failures": failures,
         "criterion": "checkpoint-initialised eval AP@0.5 >= random-initialised, identical recipe",
+        "environment": {
+            "python": platform.python_version(),
+            "os": f"{platform.system()} {platform.version()}",
+            "machine": platform.machine(),
+            "torch": torch.__version__,
+            "torchvision": torchvision.__version__,
+            "onnx": onnx.__version__,
+            "onnxruntime": ort.__version__,
+            "numpy": np.__version__,
+            "available_providers": available,
+            "cpu_session_providers": cpu_providers,
+            "directml_session_providers": dml_providers,
+        },
         "checkpoint": {
             "sha256": checkpoint["sha256"],
             "byte_size": checkpoint["byte_size"],
+            "initialization": "approved C6 SSDLite320 checkpoint",
+            "architecture": "torchvision ssdlite320_mobilenet_v3_large",
+            "num_classes": 2,
+        },
+        "onnx_sha256": onnx_sha256,
+        "export": {
+            "path": onnx_path.relative_to(REPO_ROOT).as_posix(),
+            "opset": OPSET_VERSION,
+            "exporter": "torch.onnx.export(dynamo=False)",
+            "onnx_bytes": onnx_path.stat().st_size,
+            "seconds": round(export_seconds, 3),
+        },
+        "tolerances": {
+            "box": BOX_TOLERANCE,
+            "score": SCORE_TOLERANCE,
+            "source": "SPI-16 detection.py constants and detection-result.md §7",
+        },
+        "post_processing": {
+            "score_thresh": score_thresh,
+            "filter_score_floor": SCORE_FLOOR,
+            "source": (
+                "docs/model-governance/"
+                "ssdlite320-mobilenet-v3-large-coco-v1-adoption.md §9/§11"
+            ),
         },
         "recipe": "detection.train_model defaults (SPI-16), num_classes=2",
         "train_images": len(train_images),
         "eval_images": len(eval_images),
         "eval_ground_truth_boxes": int(sum(t.shape[0] for t in ground_truth)),
         "runs": runs,
+        "comparisons": comparisons,
+        "compared_detections": compared_detections,
+        "repeat_run_bitwise_identical": repeat_run_bitwise_identical,
+        "timing_seconds": {
+            "onnxruntime_cpu": round(cpu_seconds, 3),
+            "onnxruntime_directml": round(dml_seconds, 3),
+        },
     }
     json.dump(result, sys.stdout, indent=2)
     sys.stdout.write("\n")
-    return 0 if passed else 1
+    return 1 if failures else 0
 
 
 def main() -> int:
@@ -467,7 +597,12 @@ def main() -> int:
     torch.manual_seed(SEED)
     torch.set_num_threads(1)
     if args.mode == "transfer":
-        return run_transfer()
+        if args.score_thresh is not None and not math.isclose(args.score_thresh, 0.05):
+            parser.error("--mode transfer uses the adoption record score_thresh=0.05")
+        transfer_artifact_dir = args.artifact_dir or (
+            REPO_ROOT / "vendor" / "models" / "_spike"
+        )
+        return run_transfer(transfer_artifact_dir, 0.05)
 
     if args.artifact_dir is None:
         parser.error("--artifact-dir is required in parity and performance mode")

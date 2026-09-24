@@ -1,0 +1,121 @@
+{
+  "nodes": [
+    {
+      "id": "GAL-D1",
+      "deps": [],
+      "duration": 90.0,
+      "write_set": [
+        "work/20260924-0700-GalleryPagingDesign.md",
+        "work/20260924-0700-GalleryPagingDesign-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-0630-GalleryBeyond200Investigation.md",
+          "docs/requirement-definition.md",
+          ".github/skills/atg/references/planning.md"
+        ],
+        "outputs": [
+          "work/20260924-0700-GalleryPagingDesign.md",
+          "work/20260924-0700-GalleryPagingDesign-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -Command \"$f = 'work/20260924-0700-GalleryPagingDesign.md'; if (-not (Test-Path $f)) { exit 1 }; $t = Get-Content $f -Raw -Encoding utf8; foreach ($h in '## 方式','## page の大きさ','## 順序','## filter 変更時の位置','## 総件数','## 重複・欠落','## keyboard の前後移動','## 最後の item の境界','## 読み・編集の行範囲','## 必須 test') { if (-not $t.Contains($h)) { exit 1 } }; if ((Select-String -Path $f -Pattern '\\S+\\.tsx?:\\d+' -AllMatches).Matches.Count -lt 3) { exit 1 }; if (-not (Select-String -Path 'work/20260924-0700-GalleryPagingDesign-Review.md' -Pattern '^blocking: 0$' -Quiet)) { exit 1 }\"",
+        "timeout_seconds": 1800,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "GAL-I1",
+      "deps": [
+        "GAL-D1"
+      ],
+      "duration": 120.0,
+      "write_set": [
+        "src/renderer/features/annotations/AnnotationWorkspacePage.tsx",
+        "work/20260924-1308-GAL-I1-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-0700-GalleryPagingDesign.md",
+          "src/renderer/features/annotations/AnnotationWorkspacePage.tsx",
+          "src/renderer/features/annotations/ImageGallery.tsx",
+          "src/shared/contracts/annotation-ipc.ts"
+        ],
+        "outputs": [
+          "src/renderer/features/annotations/AnnotationWorkspacePage.tsx",
+          "work/20260924-1308-GAL-I1-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -Command \"$env:PATH = \\\"$env:LOCALAPPDATA\\npm-12.0.0;$env:PATH\\\"; if ((npm --version) -ne '12.0.0') { exit 2 }; npm run typecheck; if ($LASTEXITCODE) { exit $LASTEXITCODE }; if (-not (Select-String -Path 'work/20260924-1308-GAL-I1-Review.md' -Pattern '^blocking: 0$' -Quiet)) { exit 1 }\"",
+        "timeout_seconds": 1800,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "GAL-T1",
+      "deps": [
+        "GAL-I1"
+      ],
+      "duration": 120.0,
+      "write_set": [
+        "src/renderer/features/annotations/AnnotationWorkspacePage.test.tsx",
+        "work/20260924-1308-GAL-T1-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-0700-GalleryPagingDesign.md",
+          "src/renderer/features/annotations/AnnotationWorkspacePage.tsx",
+          "src/renderer/features/annotations/AnnotationWorkspacePage.test.tsx"
+        ],
+        "outputs": [
+          "src/renderer/features/annotations/AnnotationWorkspacePage.test.tsx",
+          "work/20260924-1308-GAL-T1-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -Command \"$f = 'src/renderer/features/annotations/AnnotationWorkspacePage.test.tsx'; foreach ($k in 'GAL 0 items','GAL 1 item','GAL 200 items','GAL 201 items','GAL multiple pages','GAL filter boundary','GAL last item','GAL no duplicates','GAL fetch failure') { if (-not (Select-String -Path $f -SimpleMatch $k -Quiet)) { exit 1 } }; $env:PATH = \\\"$env:LOCALAPPDATA\\npm-12.0.0;$env:PATH\\\"; if ((npm --version) -ne '12.0.0') { exit 2 };  .\\node_modules\\.bin\\vitest.cmd run src/renderer/features/annotations; if ($LASTEXITCODE) { exit $LASTEXITCODE }; if (-not (Select-String -Path 'work/20260924-1308-GAL-T1-Review.md' -Pattern '^blocking: 0$' -Quiet)) { exit 1 }\"",
+        "timeout_seconds": 1800,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "GAL-V1",
+      "deps": [
+        "GAL-T1"
+      ],
+      "duration": 30.0,
+      "write_set": [
+        "lock:root-version",
+        "package.json",
+        "package-lock.json",
+        "CHANGELOG.md"
+      ],
+      "contract": {
+        "inputs": [
+          "package.json",
+          "CHANGELOG.md"
+        ],
+        "outputs": [
+          "package.json",
+          "package-lock.json",
+          "CHANGELOG.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -Command \"$env:PATH = \\\"$env:LOCALAPPDATA\\npm-12.0.0;$env:PATH\\\"; if ((npm --version) -ne '12.0.0') { exit 2 };  npm run verify:version; if ($LASTEXITCODE) { exit $LASTEXITCODE }; npm run test:version; if ($LASTEXITCODE) { exit $LASTEXITCODE }; npm run verify:docs; exit $LASTEXITCODE\"",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    }
+  ]
+}

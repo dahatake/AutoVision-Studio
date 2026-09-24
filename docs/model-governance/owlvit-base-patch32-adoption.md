@@ -30,6 +30,19 @@
 | C7 checkpoint | `LicenseRef-AutoVisionStudio`（条件付き書面決定、2026-09-23）。model card の `license: apache-2.0` タグは checkpoint 層の許諾表明とみなさない（FR-LIC-005） |
 | C8 training data | model card: CLIP backbone は公開 image-caption data（"a handful of websites" の crawl と、"such as" YFCC100M の既存 dataset）、予測 head と backbone は "such as" COCO と OpenImages の検出 dataset で fine-tune。**`unknown`**: 学習データの完全な一覧、crawl した website の特定、各 dataset の version / snapshot / split、各 terms と派生重みの利用・再配布条件（risk acceptance §2.2 の未確認項目として開示済み） |
 
+G2T-50D tokenizer audit（2026-09-24、publisher `google`）:
+
+| file | byte size | 独立計算 hash | publisher 値 |
+|---|---:|---|---|
+| `vocab.json` | 1,059,962 | Git blob `469be27c5c010538f845f518c4f5e8574c78f7c8` | size `1059962` / blobId `469be27c5c010538f845f518c4f5e8574c78f7c8` |
+| `merges.txt` | 524,619 | Git blob `76e821f1b6f0a9709293c3b6b51ed90980b3166b` | size `524619` / blobId `76e821f1b6f0a9709293c3b6b51ed90980b3166b` |
+| `tokenizer_config.json` | 775 | Git blob `2460b9a4e2f76172145e9eef9e26cc3419c53727` | size `775` / blobId `2460b9a4e2f76172145e9eef9e26cc3419c53727` |
+| `special_tokens_map.json` | 460 | Git blob `ae0c5be6f35217e51c4c000fd325d8de0294e99c` | size `460` / blobId `ae0c5be6f35217e51c4c000fd325d8de0294e99c` |
+
+spike の import 行で確認した C5 code package は `numpy==2.5.2`、`onnx==1.22.0`、`onnxruntime-directml==1.24.4`、`torch==2.11.0`、`transformers==5.17.0`、`pillow==12.3.0`。製品依存としては選定しない。
+
+tokenizer-audit exit=0
+
 ## 5. NOTICE
 
 **未作成**（保留のため）。承認する場合は、FR-LIC-016(4) の開示文（publisher grant でない旨、risk acceptance §2.2 の未確認項目）に加え、FR-LIC-003 / owner rulings D2 により **「OWL-ViT による補助候補は研究目的に限って提供する」旨**を `noticeText` / `redistributionConditions` と設定画面の「ライセンス・情報」に表示する（risk acceptance §3）。
@@ -111,7 +124,9 @@ manifest の `inferenceConfig`（[`manifest.schema.json`](../../resources/models
 
 ## 13. セキュリティ
 
-本記録では advisory を照会していない。spike の依存 version（transformers `5.17.0`、torch `2.11.0+cpu`、onnx `1.22.0`、onnxruntime-directml `1.24.4`）は [`grounding-dino-tiny-adoption.md`](grounding-dino-tiny-adoption.md) §13 の照会（2026-09-23）と同じ版を含むが、採用に進む場合は照会し直す。
+2026-09-24 に GitHub Global Security Advisories を照会した。対象は spike venv の `$PY` が報告した `transformers==5.17.0`、`tokenizers==0.23.2`、`safetensors==0.8.0`、`huggingface-hub==1.31.0`、`torch==2.11.0`、`onnx==1.22.0`、`onnxruntime-directml==1.24.4`、`numpy==2.5.2`、`pillow==12.3.0`。照会 command は exit 0、`vendor\models\_spike\advisories-D.txt` の SHA-256 は `54641414d6ca279087f58a4669b57848f03a6fd4c295a94068dc0abffb45ca03`。High / Critical advisory: 0 件。invalid advisory: 0 件。Low は `torch==2.11.0` の `GHSA-rrmf-rvhw-rf47`（reviewed / valid）のみ。
+
+evidence: 54641414d6ca279087f58a4669b57848f03a6fd4c295a94068dc0abffb45ca03 exit=0
 
 ## 14. リリースマニフェスト対応付け
 

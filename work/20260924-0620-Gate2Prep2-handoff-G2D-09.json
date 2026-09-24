@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "execution_id": "d77c9409-405d-44cc-8bbd-afb37eb92961",
+  "node_id": "G2D-09",
+  "attempt": 1,
+  "root_contract_sha256": "684f361dbf317c57d29d606f7fbf344e4c164c19d39f088d260c54d8357366c3",
+  "input_artifacts": [
+    {
+      "path": "work/202609232120-Gate2-RequirementExtract.md",
+      "sha256": "78f2c954ec3afef770c43b6bf250829f40af85ae52e19b76296ff6e803807e02"
+    },
+    {
+      "path": "docs/model-governance/evidence/2026-09-23-owner-rulings.md",
+      "sha256": "bcd4c8a55113b88af33c48946b19a486c04e958ad002606d3da1df07edf1eb84"
+    },
+    {
+      "path": ".github/skills/atg/references/planning.md",
+      "sha256": "ff2c8f6760e183a77289f196610b7d111079e707fab087376c2faf94d8483ef6"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D-001",
+      "statement": "所有者 dahatake が 2026-09-24 05:56 JST に「B: A」と回答し、G2D-09 は選択肢 A（ATG planning 規約の改訂）。敵対的レビュー blocking 0",
+      "source_refs": [
+        "docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-09.md",
+        "work/20260924-0620-Gate2Prep2-G2D-09-Review.md"
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "path": "docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-09.md",
+      "sha256": "996a0b298463561e51c40ea5bef8d0eb6ab80bea3f8c4dac8ecca78864a7a7d3"
+    },
+    {
+      "path": "work/20260924-0620-Gate2Prep2-G2D-09-Review.md",
+      "sha256": "24d1aad2fc8eb8b4d0c2f5cb64ec4925aa2593b1642a4105bd4febe66a9523af"
+    }
+  ],
+  "verification": {
+    "command": "pwsh -NoLogo -NoProfile -Command \"$f = 'docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-09.md'; if (-not (Test-Path $f)) { exit 1 }; $t = Get-Content $f -Raw -Encoding utf8; if ($t -cnotmatch '(?m)^選択: (A|B)\\r?$') { exit 1 }; if ($t -cnotmatch '(?m)^\\| 決定日 \\| \\*\\*2026-09-24\\*\\*') { exit 1 }; if ($t -cnotmatch '(?m)^> B: A\\r?$') { exit 1 }; if ($t -cnotmatch '(?m)^## 根拠\\r?$' -or -not $t.Contains('requirement-definition.md')) { exit 1 }; if (-not $t.Contains('判断者') -or $t -cnotmatch '(?m)^## 本判断が意味しないこと\\r?$') { exit 1 }; if (-not (Select-String -Path 'work/20260924-0620-Gate2Prep2-G2D-09-Review.md' -Pattern '^blocking: 0$' -Quiet)) { exit 1 }; $env:PATH = \\\"$env:LOCALAPPDATA\\npm-12.0.0;$env:PATH\\\"; if ((npm --version) -ne '12.0.0') { exit 2 }; npm run verify:docs; if ($LASTEXITCODE) { exit $LASTEXITCODE }\"",
+    "exit_code": 0,
+    "evidence_path": "docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-09.md"
+  },
+  "risks": [],
+  "blocked_reasons": [],
+  "next_nodes": [
+    "EXT-ATG"
+  ]
+}

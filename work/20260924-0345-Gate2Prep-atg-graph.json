@@ -1,0 +1,54 @@
+{
+  "nodes": [
+    {
+      "id": "G2D-09",
+      "deps": [],
+      "duration": 40.0,
+      "write_set": [
+        "docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-09.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/202609232120-Gate2-RequirementExtract.md",
+          "docs/model-governance/evidence/2026-09-23-owner-rulings.md",
+          ".github/skills/atg/references/planning.md"
+        ],
+        "outputs": [
+          "docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-09.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -Command \"if (-not (Test-Path docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-09.md)) { exit 1 }; $t = Get-Content docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-09.md -Raw -Encoding utf8; if ($t -cnotmatch '(?m)^選択: (A|B)\\r?$' -or $t -cnotmatch '(?m)^> ' -or -not $t.Contains('判断者') -or -not $t.Contains('判断が意味しないこと')) { exit 1 }; if ((npm --version) -ne '12.0.0') { exit 2 }; npm run verify:docs; if ($LASTEXITCODE) { exit $LASTEXITCODE }\"",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "EXT-ATG",
+      "deps": [
+        "G2D-09"
+      ],
+      "duration": 40.0,
+      "write_set": [
+        "work/20260924-0345-EXT-ATG-Confirmation.md"
+      ],
+      "contract": {
+        "inputs": [
+          "docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-09.md"
+        ],
+        "outputs": [
+          "work/20260924-0345-EXT-ATG-Confirmation.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -Command \"if (-not (Test-Path work/20260924-0345-EXT-ATG-Confirmation.md)) { exit 1 }; if (-not (Select-String -Path work/20260924-0345-EXT-ATG-Confirmation.md -Pattern '^evidence: .+ exit=0$' -Quiet)) { exit 1 }\"",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    }
+  ]
+}

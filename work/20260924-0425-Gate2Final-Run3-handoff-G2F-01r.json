@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "execution_id": "37fd890d-285b-490b-bac4-dd9915187a81",
+  "node_id": "G2F-01r",
+  "attempt": 1,
+  "root_contract_sha256": "7d9d0ded46655750e4b78f58e8a5f67deee295f009e3bb1f0e5c6c5df75317f5",
+  "input_artifacts": [
+    {
+      "path": "work/20260924-0345-Gate2-TerminalState.md",
+      "sha256": "caa7c6c75b305f45d861e4b3f6bc3bd248bcfb9527bf100ecabacbd03446c67f"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D-001",
+      "statement": "manifest の releaseStatus.reason に、G2D-09 failed・EXT-ATG blocked・主 run 44 node not-started と理由を追記した（run 2 と同じ内容）。ready と models は変えていない",
+      "source_refs": [
+        "work/20260924-0345-Gate2-TerminalState.md",
+        "work/20260924-0345-Gate2-AtgReport.md"
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "path": "resources/models/manifest.json",
+      "sha256": "43919590694716d59ff29f31fe78a129153003630e0dd7b8036dfd7381426de6"
+    }
+  ],
+  "verification": {
+    "command": "node --test scripts/models/manifest-schema.test.mjs",
+    "exit_code": 0,
+    "evidence_path": "resources/models/manifest.json"
+  },
+  "risks": [],
+  "blocked_reasons": [],
+  "next_nodes": [
+    "G2F-01a1"
+  ]
+}

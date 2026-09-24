@@ -110,3 +110,34 @@ cd spikes\models
 1. **両者とも 3 クラスの偶然水準（1/3）である。** 本測定は「初期重みが乱数初期化より悪い結果を与えない」ことだけを示し、**初期重みの有益性は示していない**。
 2. checkpoint 初期化の loss は epoch 2 で `0.328` まで下がった後に `2.680` へ発散している。SPI-15 の学習率 `0.05` は事前学習済み重みの Fine-Tuning には大きすぎる可能性があるが、**測定前に固定した recipe を結果を見て変更しない**。製品の Fine-Tuning recipe は TRN phase で別途決定する。
 3. eval は 15 枚であり、統計的な有意性・汎化性能を主張しない。
+
+## 8. Transfer 学習済み model の ONNX parity（G2T-10、2026-09-24）
+
+既存の `--mode transfer` を使い、承認済み MobileNetV3 C6 checkpoint で初期化して SPI-15 と同じ recipe で学習した model を ONNX へ export し、torch / ONNX Runtime CPU / ONNX Runtime DirectML の一致を測った。random 初期化 run は従来どおり比較基準として残すだけで、parity には使っていない。
+
+```powershell
+$env:PYTHONUTF8='1'; cmd /d /c "cd /d spikes\models && ..\..\vendor\models\_spike\venv\Scripts\python.exe classification_checkpoint_parity.py --mode transfer > ..\..\vendor\models\_spike\c6-cls-transfer.json"; $code=$LASTEXITCODE
+```
+
+| 項目 | 値 |
+|---|---|
+| 実行日 | 2026-09-24 |
+| exit code | `1` |
+| 判定 | **FAIL** |
+| 環境 | Windows `10.0.29671` / `AMD64` / CPython `3.14.7`、torch `2.11.0+cpu`、torchvision `0.26.0+cpu`、onnx `1.22.0`、onnxruntime `1.24.4`、NumPy `2.5.2` |
+| available providers | `DmlExecutionProvider`, `CPUExecutionProvider` |
+| checkpoint | `vendor/models/mobilenet_v3_large-5c1a4163.pth`、SHA-256 `5c1a416349c4cf298f2a6a5e2600ed0ee55e604713578f5e74e6bc8bcaef7997`、`torch.load(weights_only=True)` / `strict=True` |
+| ONNX | `vendor/models/_spike/onnx/classification-checkpoint-transfer.onnx`、`16,813,500` bytes、SHA-256 `a9392506bcec2874c7712b915ea976e19566b1094a018d08693eec7e3d81f698` |
+| 許容差 | logit `1.0e-04`、softmax 確率 `1.0e-05` |
+| 許容差の出典 | SPI-15 の `classification.py` 定数 `LOGIT_TOLERANCE` / `PROB_TOLERANCE`。本書 §4 と同じ値で、実行前に固定し、結果を見て変更していない |
+| repeat_run_bitwise_identical | `true`（CPU / DirectML とも反復実行は bit 一致） |
+
+| 比較 | logit 最大差 | softmax 最大差 | top-1 一致 | top-5 集合一致 | 判定 |
+|---|---:|---:|---:|---:|---|
+| torch vs onnxruntime-cpu | `16384.0` | `0.0` | 15/15 | 15/15 | **FAIL** |
+| torch vs onnxruntime-directml | `12288.0` | `0.0` | 15/15 | 15/15 | **FAIL** |
+| onnxruntime-cpu vs onnxruntime-directml | `8192.0` | `0.0` | 15/15 | 15/15 | **FAIL** |
+
+従来の transfer accuracy 条件（checkpoint 初期化の eval top-1 accuracy が random 初期化以上）は `5/15 ≥ 5/15` で満たしたが、3 比較すべてで logit 最大差が固定許容差を超えたため、総合 verdict は `FAIL` である。softmax 最大差と top-1 は一致しているが、logit 許容差は緩和しない。
+
+evidence: 28ca90753dd42d5cfc56cacc78df26610e827a8d57de86fbdaa6a5bb7bbe1f85 exit=1

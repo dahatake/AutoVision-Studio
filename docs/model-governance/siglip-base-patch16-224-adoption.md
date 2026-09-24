@@ -29,6 +29,19 @@
 | C7 checkpoint | `LicenseRef-AutoVisionStudio`（risk acceptance、2026-09-22）。model card の `license: apache-2.0` タグは checkpoint 層の許諾表明とみなさない（FR-LIC-005） |
 | C8 training data | WebLI。**terms は非公開**（[`classification-assist.md`](classification-assist.md) §4.1）。risk acceptance で充足扱い |
 
+G2T-50C tokenizer audit（2026-09-24、publisher `google`）:
+
+| file | byte size | 独立計算 hash | publisher 値 |
+|---|---:|---|---|
+| `spiece.model` | 798,330 | SHA-256 `1e5036bed065526c3c212dfbe288752391797c4bb1a284aa18c9a0b23fcaf8ec` | size `798330` / lfs.sha256 `1e5036bed065526c3c212dfbe288752391797c4bb1a284aa18c9a0b23fcaf8ec` |
+| `tokenizer.json` | 2,399,357 | Git blob `6d6fd0bd6cc263099dc98e4fa383f90c9baa3521` | size `2399357` / blobId `6d6fd0bd6cc263099dc98e4fa383f90c9baa3521` |
+| `tokenizer_config.json` | 711 | Git blob `70741c5c1f6d21423ebf51ee77ef2fce868c33f2` | size `711` / blobId `70741c5c1f6d21423ebf51ee77ef2fce868c33f2` |
+| `special_tokens_map.json` | 409 | Git blob `6555f2261d409dea394d6b6973129a53b8725803` | size `409` / blobId `6555f2261d409dea394d6b6973129a53b8725803` |
+
+spike の import 行で確認した C5 code package は `numpy==2.5.2`、`onnx==1.22.0`、`onnxruntime-directml==1.24.4`、`torch==2.11.0`、`transformers==5.17.0`、`pillow==12.3.0`。製品依存としては選定しない。
+
+tokenizer-audit exit=0
+
 ## 5. NOTICE
 
 **未作成**（保留のため）。登録時は [`mobilenet-v3-large-imagenet1k-v2-adoption.md`](mobilenet-v3-large-imagenet1k-v2-adoption.md) §5 と同じ FR-LIC-016 の開示文（publisher grant でない旨、未確認項目）を含める。
@@ -91,7 +104,9 @@
 
 ## 13. セキュリティ
 
-GitHub Advisory Database（2026-09-23 照会）で `transformers==5.17.0`、`safetensors==0.8.0`、`tokenizers==0.23.2`、`huggingface-hub==1.31.0`、`sentencepiece==0.2.2` の該当 advisory は **0 件**。`torch==2.11.0` は Low 1 件（`GHSA-rrmf-rvhw-rf47`）のみ。
+2026-09-24 に GitHub Global Security Advisories を照会した。対象は spike venv の `$PY` が報告した `transformers==5.17.0`、`tokenizers==0.23.2`、`safetensors==0.8.0`、`huggingface-hub==1.31.0`、`sentencepiece==0.2.2`、`torch==2.11.0`、`onnx==1.22.0`、`onnxruntime-directml==1.24.4`、`numpy==2.5.2`、`pillow==12.3.0`。照会 command は exit 0、`vendor\models\_spike\advisories-C.txt` の SHA-256 は `54641414d6ca279087f58a4669b57848f03a6fd4c295a94068dc0abffb45ca03`。High / Critical advisory: 0 件。invalid advisory: 0 件。Low は `torch==2.11.0` の `GHSA-rrmf-rvhw-rf47`（reviewed / valid）のみ。
+
+evidence: 54641414d6ca279087f58a4669b57848f03a6fd4c295a94068dc0abffb45ca03 exit=0
 
 ## 14. リリースマニフェスト対応付け
 

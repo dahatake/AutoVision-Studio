@@ -125,6 +125,7 @@ function AnnotationWorkspaceSession({
   const [items, setItems] = useState<readonly AnnotationItem[]>([]);
   /** Workspace-wide count from Main. `items` only holds the first page. */
   const [total, setTotal] = useState(0);
+  const [offset, setOffset] = useState(0);
   const [schema, setSchema] = useState<LabelSchemaSnapshot | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<AnnotationItem | null>(null);
@@ -153,8 +154,12 @@ function AnnotationWorkspaceSession({
   const instructions = schema?.instructions ?? '';
   const openCount = items.filter(isOpen).length;
 
-  async function load(keepSelection = false): Promise<void> {
+  async function load(keepSelection = false, nextOffset = offset): Promise<void> {
     const current = session.current;
+    // A page move never auto-selects: the gallery filter is invisible here, so the
+    // first item may be hidden, and the old editor must not outlive its page.
+    const paging = nextOffset !== offset;
+    if (paging) { setSelectedId(null); setDetail(null); }
     setBusy(true); setError(''); setMessage('読込中');
     try {
       const workspacesInput = c.annotationWorkspacesInputSchema.parse({ projectId: project.id });
@@ -166,8 +171,9 @@ function AnnotationWorkspaceSession({
         return;
       }
       const latest = found.value.reduce((best, candidate) => (candidate.createdAt > best.createdAt ? candidate : best));
+      const pageOffset = latest.id === workspace?.id ? nextOffset : 0;
       const listInput = c.annotationListInputSchema.parse({
-        projectId: project.id, workspaceId: latest.id, offset: 0, limit: PAGE_LIMIT,
+        projectId: project.id, workspaceId: latest.id, offset: pageOffset, limit: PAGE_LIMIT,
       });
       const listed = c.parseAnnotationListResponse(await annotations.list(listInput), listInput);
       if (!current.active) return;
@@ -178,12 +184,16 @@ function AnnotationWorkspaceSession({
       setWorkspace(latest);
       setItems(listed.value.items);
       setTotal(listed.value.total);
+      setOffset(pageOffset);
       setSchema(loadedSchema.ok ? loadedSchema.value : null);
       if (!loadedSchema.ok) setError(annotationErrors[loadedSchema.error.code]);
       setMessage(listed.value.total === 0 ? '対象画像がありません。' : '読込済み');
-      const keep = keepSelection && listed.value.items.some((entry) => entry.id === selectedId)
-        ? selectedId : listed.value.items[0]?.id ?? null;
-      setSelectedId(keep);
+      if (!paging) {
+        const keep = keepSelection && listed.value.items.some((entry) => entry.id === selectedId)
+          ? selectedId : listed.value.items[0]?.id ?? null;
+        if (keep !== selectedId) setDetail(null);
+        setSelectedId(keep);
+      }
     } catch {
       if (current.active) reset(annotationErrors.OPERATION_FAILED);
     } finally { if (current.active) setBusy(false); }
@@ -344,8 +354,18 @@ function AnnotationWorkspaceSession({
         <p role="status">
           全 {total.toLocaleString('ja-JP')}件（表示 {items.length.toLocaleString('ja-JP')}件）
           ／ 表示分の未確認 {openCount.toLocaleString('ja-JP')} 件
-          {total > items.length && `。表示は先頭 ${PAGE_LIMIT.toLocaleString('ja-JP')}件までです。残り ${(total - items.length).toLocaleString('ja-JP')}件は未取得で、この未確認件数には含まれていません。`}
+          {total > items.length && `。表示は ${(offset + 1).toLocaleString('ja-JP')}〜${(offset + items.length).toLocaleString('ja-JP')}件目です。残り ${(total - items.length).toLocaleString('ja-JP')}件は未取得で、この未確認件数には含まれていません。`}
         </p>
+      )}
+      {workspace && total > PAGE_LIMIT && (
+        <div>
+          <button type="button" disabled={busy || offset === 0} onClick={() => { void load(false, offset - PAGE_LIMIT); }}>
+            前の 200 件
+          </button>
+          <button type="button" disabled={busy || offset + items.length >= total} onClick={() => { void load(false, offset + PAGE_LIMIT); }}>
+            次の 200 件
+          </button>
+        </div>
       )}
       {queued && (
         <p role="status">

@@ -174,13 +174,14 @@ def compare(label: str, left: np.ndarray, right: np.ndarray) -> dict[str, Any]:
     }
 
 
-def run_transfer() -> dict[str, Any]:
-    """Adoption record 11 accuracy: fine-tune from this checkpoint vs random init, same recipe."""
+def run_transfer(artifact_dir: Path) -> dict[str, Any]:
+    """Fine-tune from this checkpoint and measure the trained model's ONNX parity."""
     classes, images, labels, train_index, eval_index = load_split()
     inputs = torch.cat(images)
     targets = torch.tensor(labels, dtype=torch.long)
     state, checkpoint = load_state()
     runs: dict[str, Any] = {}
+    checkpoint_model: nn.Module | None = None
     for init in ("checkpoint", "random"):
         torch.manual_seed(SEED)
         model = mobilenet_v3_large(weights=None, num_classes=IMAGENET_CLASS_COUNT)
@@ -190,18 +191,62 @@ def run_transfer() -> dict[str, Any]:
         losses = train_model(model, inputs[train_index], targets[train_index])
         model.eval()
         with torch.no_grad():
-            predicted = model(inputs[eval_index]).argmax(dim=1)
+            logits = model(inputs[eval_index])
+            predicted = logits.argmax(dim=1)
         correct = int((predicted == targets[eval_index]).sum())
         runs[init] = {
             "eval_top1_correct": f"{correct}/{len(eval_index)}",
             "eval_top1_accuracy": correct / len(eval_index),
             "epoch_mean_loss": [round(value, 6) for value in losses],
         }
-    passed = (
+        if init == "checkpoint":
+            checkpoint_model = model
+    if checkpoint_model is None:
+        raise RuntimeError("checkpoint-initialised transfer model was not trained")
+
+    onnx_path = artifact_dir / "classification-checkpoint-transfer.onnx"
+    eval_images = [inputs[index : index + 1].contiguous() for index in eval_index]
+    with torch.no_grad():
+        checkpoint_logits = np.concatenate(
+            [checkpoint_model(image).numpy() for image in eval_images]
+        )
+    torch.onnx.export(
+        checkpoint_model,
+        (eval_images[0],),
+        str(onnx_path),
+        input_names=["images"],
+        output_names=["logits"],
+        opset_version=OPSET_VERSION,
+        dynamo=False,
+    )
+    onnx.checker.check_model(onnx.load(str(onnx_path)))
+    cpu_logits, cpu_providers = run_onnx(onnx_path, CPU_PROVIDER, eval_images)
+    dml_logits, dml_providers = run_onnx(onnx_path, DML_PROVIDER, eval_images)
+    cpu_repeat, _ = run_onnx(onnx_path, CPU_PROVIDER, eval_images)
+    dml_repeat, _ = run_onnx(onnx_path, DML_PROVIDER, eval_images)
+    comparisons = [
+        compare("torch vs onnxruntime-cpu", checkpoint_logits, cpu_logits),
+        compare("torch vs onnxruntime-directml", checkpoint_logits, dml_logits),
+        compare("onnxruntime-cpu vs onnxruntime-directml", cpu_logits, dml_logits),
+    ]
+    repeat = {
+        "cpu_bitwise_identical": bool(np.array_equal(cpu_logits, cpu_repeat)),
+        "directml_bitwise_identical": bool(np.array_equal(dml_logits, dml_repeat)),
+    }
+    failures = [failure for item in comparisons for failure in item["failures"]]
+    failures += [
+        f"repeat run not identical: {key}" for key, same in repeat.items() if not same
+    ]
+    accuracy_passed = (
         runs["checkpoint"]["eval_top1_accuracy"] >= runs["random"]["eval_top1_accuracy"]
     )
+    if not accuracy_passed:
+        failures.append(
+            "checkpoint-initialised eval top-1 accuracy < random-initialised"
+        )
     return {
-        "verdict": "PASS" if passed else "FAIL",
+        "verdict": "PASS" if not failures else "FAIL",
+        "failures": failures,
         "criterion": "checkpoint-initialised eval top-1 accuracy >= random-initialised, identical recipe",
         "checkpoint": checkpoint,
         "recipe": "classification.train_model defaults (SPI-15), classifier[-1] replaced",
@@ -209,6 +254,18 @@ def run_transfer() -> dict[str, Any]:
         "train_images": len(train_index),
         "eval_images": len(eval_index),
         "runs": runs,
+        "export": {
+            "artifact": onnx_path.relative_to(REPO_ROOT).as_posix(),
+            "opset": OPSET_VERSION,
+            "exporter": "torch.onnx.export(dynamo=False)",
+            "onnx_bytes": onnx_path.stat().st_size,
+        },
+        "onnx_sha256": sha256_file(onnx_path),
+        "session_providers": {"cpu": cpu_providers, "directml": dml_providers},
+        "tolerances": {"logit": LOGIT_TOLERANCE, "prob": PROB_TOLERANCE},
+        "comparisons": comparisons,
+        "repeat_run_bitwise_identical": bool(all(repeat.values())),
+        "repeat_run": repeat,
     }
 
 
@@ -230,9 +287,27 @@ def main() -> int:
     torch.set_num_threads(1)
     if args.mode == "transfer":
         torch.use_deterministic_algorithms(True)
+        available = ort.get_available_providers()
+        if DML_PROVIDER not in available:
+            raise SystemExit(f"{DML_PROVIDER} is not available ({available})")
+        artifact_dir = args.artifact_dir or (
+            REPO_ROOT / "vendor" / "models" / "_spike" / "onnx"
+        )
+        artifact_dir.mkdir(parents=True, exist_ok=True)
         result = {
-            "task": "G2R-12 C6 classification transfer accuracy",
-            **run_transfer(),
+            "task": "G2T-10 C6 classification transfer ONNX parity (G2R-12 accuracy criterion retained)",
+            "environment": {
+                "python": platform.python_version(),
+                "os": f"{platform.system()} {platform.version()}",
+                "machine": platform.machine(),
+                "torch": torch.__version__,
+                "torchvision": torchvision.__version__,
+                "onnx": onnx.__version__,
+                "onnxruntime": ort.__version__,
+                "numpy": np.__version__,
+                "available_providers": available,
+            },
+            **run_transfer(artifact_dir),
         }
         json.dump(result, sys.stdout, indent=2)
         sys.stdout.write("\n")

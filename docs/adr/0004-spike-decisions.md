@@ -5,7 +5,7 @@
 | ADR ID | 0004 |
 | タイトル | Windows リスクスパイクと Gate 判定 |
 | 作成日 | 2026-09-07 |
-| 最終更新日 | 2026-09-23 |
+| 最終更新日 | 2026-09-24 |
 | 対応タスク | SPI-18（二部判定） |
 | 依存 ADR | ADR-0001、ADR-0002、ADR-0003 |
 | 要求基準 | `docs/requirement-definition.md` v0.5 Draft（2026-09-07 UI改善追補、245要求） |
@@ -23,11 +23,13 @@ AutoVision Studio Version 1のWindows 11 24H2以降x64を対象に、A-07およ�
 
 したがってGate 1部は**CONDITIONAL_GO**とする。これは実装計画でGate 1に依存するcore、Project、data import、manual annotationの開発を、個別DAG・対象test・独立レビューに従って開始できるという限定判断である。全PoC成立、製品機能完成、正式出荷可、Gate 2〜5合格を意味しない。
 
-Gate 2部は、承認済み分類・検出のCurated Base WeightとAnnotation Assist Model、train/export parity、assist品質、有限AutoML budgetが未確定であるため**BLOCKED / NOT_COMPLETE**とする。`resources/models/manifest.json`は`releaseStatus.ready=false`を維持する（承認済みentryは、2026-09-23のD1裁定前はC6分類1件、D1裁定後はC6分類・C6検出の2件。§5.1.12・§5.1.13）。Gate 1部だけでSPI-18全体を完了扱いにしない。
+Gate 2部は、承認済み分類・検出のCurated Base WeightとAnnotation Assist Model、train/export parity、assist品質、実データ規模の有限AutoML budgetが未確定であるため**BLOCKED / NOT_COMPLETE**とする。`resources/models/manifest.json`は`releaseStatus.ready=false`を維持する（承認済みentryは、2026-09-23のD1裁定前はC6分類1件、D1裁定後はC6分類・C6検出の2件。§5.1.12・§5.1.13）。Gate 1部だけでSPI-18全体を完了扱いにしない。
 
 **Gate 2 lane追補（2026-09-22）:** SPI-11〜17とD-15を2回実行し、各入力の現在状態を確定した（§5.1）。SPI-11〜14は既存監査の充足確認と、利用者指示による**候補の再調査および controlled retrieval**を行った。分類のtrain/export parityは**PASS**、検出は**PASS**（既定60 epoch。6/20 epochでは**FAIL**であり、その実測も保持する）、assist品質は段階3が`SKIPPED_BY_USER`かつ承認済みC7が0件のため**NOT_RUN（実測0件）**、D-15は分類のCPU / CUDAと検出のCPUについて有限budgetを確定した。同日夜、利用者dahatakeの提示（license識別子・NOTICE・承認者氏名）によりC6検出1役を承認しmanifestへ登録したが（§5.1.10）、翌日の推論性能実測が採用基準に不適合であったため**保留へ差し戻し登録を取り消した**（§5.1.11）。**承認済みmodelは0件**であり、Gate 2部の**BLOCKED / NOT_COMPLETE**と`releaseStatus.ready=false`・`models: []`は変更しない。
 
 **Gate 2残タスク追補（2026-09-23）:** FR-LIC-016の新設を受け、C6分類（MobileNetV3 Large V2）を**承認**しmanifestへ登録した。C6検出（SSDLite）は、いったん保留とした後、同日のowner裁定D1（C6にPOC-03の実時間推論基準を適用しない）により**承認**・登録した（§5.1.13）。C7分類（SigLIP、CPU性能不適合）、C7検出（Grounding DINO tiny、parity FAIL）は**保留**、SPI-17は**NOT_RUN**である（§5.1.12）。同日のC7残タスクでは、TinyCLIPを**除外 / HOLD維持**、SigLIPのCPU改善（量子化）を**parity・性能とも不適合で保留維持**、C7検出の新候補OWL-ViT B/32を**保留**（生出力parity PASS、CPU性能不適合）とした（§5.1.14）。Gate 2部は**BLOCKED / NOT_COMPLETE**、`releaseStatus.ready=false`を維持する。
+
+**Gate 2終端化追補（2026-09-24）:** Gate 2の主run（ATG実行ID `e7c6da3f-8f62-4785-b40e-fab254437a4b`）は静止（失敗あり）で終端したため、Gate 2部は**BLOCKED / NOT_COMPLETE**のままとする。所有者の判断G2D-01・02・04・06・10・12は回答がなく失敗、G2D-11はnpm `12.0.0`の導入指示はあるが導入方法の組織承認が未確認で失敗、G2T-10は分類checkpointのparityが**FAIL**で失敗、EXT-X1（集約testの失敗）は原因未確定で失敗とした。このため、比較試験の準備・実行（G2Q）、C7採用承認（G2A-01・02）、C7のmanifest entryと表示（G2A-03・04）、最終検証G2V-01はblockedである（終端状態の記録`work/20260924-1425-Gate2-TerminalState.md`）。G2D-10が未判断のため、POC-16の品質・時間以外の条項の検証時期の分担は**未決定**であり、Gate 2はPOC-16を満たしたと記録しない（`work/202609232120-RemainTaskExecutionPlan.md`のG2D-10）。PKG-01（model payload verifier）は未実装であり、`releaseStatus.ready=true`のmanifestをPKG-01の照合前に出荷物へ使わない（同計画§8.21）。manifestは承認2件（C6分類・C6検出）、`releaseStatus.ready=false`を維持する。
 
 ---
 
@@ -137,10 +139,12 @@ Gate 2部は次が未充足である。
 - SPI-11〜14の法務・checkpoint・training-data・再配布・intended-use承認が、分類/検出のC6/C7全4役で完了していない。
 - SPI-15/16の権利確認済みfixtureによるtrain→ONNX parityが完了していない（2026-09-22の実測で分類・検出とも技術的にはPASSしたが、**承認済みweightではなくrandom初期化での測定**であるため、SPI-15/16の「承認済みcheckpointに対するparity」は未完である。内訳は§5.1）。
 - SPI-17のgold setによるassist品質・manual-only比較が完了していない（段階3は2026-09-22に`SKIPPED_BY_USER`）。
-- D-15のWindows実機に基づく有限AutoML trial / 時間budgetが決定していない（2026-09-22に分類のCPU `180`秒 / CUDA `120`秒・最大Trial数`20`を確定。**検出と実データ規模は未決定**。§5.1.3）。
-- `resources/models/manifest.json`に承認済みentryがない。
+- D-15の実データ規模の有限AutoML budgetが決定していない（fixture条件のWindows実機では分類・検出ともCPU / CUDAの有限budgetを確定した。分類: 20 trial、CPU `180`秒 / CUDA `120`秒。検出: 20 trial、CPU `420`秒 / CUDA `120`秒。§5.1の表。実データ規模のbudgetはTRN-09で扱う）。
+- `resources/models/manifest.json`の承認済みentryはC6分類・C6検出の2件で、C7の2役がない（§5.1.13・§5.1.14）。
 
 したがってAST-01以降の承認model loader、model固有assist、training、model version、report、camera inferenceをGate 1だけで開始しない。manual annotation/core laneとmodel laneを分離する。
+
+2026-09-24のGate 2終端化の判定（**BLOCKED / NOT_COMPLETE**、主run `e7c6da3f-8f62-4785-b40e-fab254437a4b`）、G2D-10未判断によるPOC-16の分担の未決定、PKG-01の照合前に`ready=true`のmanifestを出荷物へ使わない規則は、§1のGate 2終端化追補に記す。
 
 SPI-18全体のstatusはGate 2部が完了するまで**IN_PROGRESS**である。本ADRへGate 1部を記録したことや、空manifestがschemaに適合することをSPI-18全体の完了、Gate 2合格、model同梱許可へ転用しない。
 

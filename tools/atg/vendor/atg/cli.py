@@ -336,11 +336,16 @@ def cmd_node_start(args: argparse.Namespace) -> int:
         for node_id, node_state in node_states.items()
         if node_state.status == "running"
     }
+    terminal_ids = {
+        node_id for node_id, node_state in node_states.items()
+        if node_state.status in ("failed", "blocked")
+    }
     runnable = schedule.next_runnable(
         graph_data,
         succeeded_ids,
         running_ids_and_writesets,
         limit=len(graph_data.get("nodes", [])) or None,
+        terminal_ids=terminal_ids,
     )
     if args.node_id not in runnable:
         _emit({"error": f"node is not runnable: {args.node_id}"})

@@ -1,0 +1,27 @@
+{
+  "objective": "GAL-02 の graph（work/20260924-1308-GAL-atg-graph.json。work/20260924-0700-GAL02-atg-graph.json から verify の 2 点だけを直したもの）を実行し、annotation の gallery で 201 件目以降へ到達できるようにする",
+  "non_goals": [
+    "全件の一括読み込みを既定にしない",
+    "root version を決めない",
+    "AnnotationPage.tsx を変えない"
+  ],
+  "deliverables": [
+    "work/20260924-0700-GalleryPagingDesign.md",
+    "work/20260924-0700-GalleryPagingDesign-Review.md",
+    "src/renderer/features/annotations/AnnotationWorkspacePage.tsx",
+    "work/20260924-1308-GAL-I1-Review.md",
+    "src/renderer/features/annotations/AnnotationWorkspacePage.test.tsx",
+    "work/20260924-1308-GAL-T1-Review.md"
+  ],
+  "acceptance_command": "pwsh -NoLogo -NoProfile -Command \"$env:PATH = $env:LOCALAPPDATA + '\\npm-12.0.0;' + $env:PATH; if ((npm --version) -ne '12.0.0') { exit 2 }; npm run typecheck; if ($LASTEXITCODE) { exit $LASTEXITCODE }; .\\node_modules\\.bin\\vitest.cmd run src/renderer/features/annotations; exit $LASTEXITCODE\"",
+  "baseline_policy": "既存の失敗は許容するが、新しい失敗を増やさない",
+  "time_budget": "365m",
+  "execution_envelope": {
+    "code_changes": "allowed_within_write_set",
+    "dependency_additions": "declared_only",
+    "external_network_writes": "deny",
+    "production_deploy": "deny",
+    "secret_read": "declared_refs_only"
+  },
+  "secret_policy": "秘密値は契約・引継ぎ・ログ・成果物へ保存せず、必要時は参照名のみを記録する"
+}

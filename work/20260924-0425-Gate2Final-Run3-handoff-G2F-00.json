@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "execution_id": "37fd890d-285b-490b-bac4-dd9915187a81",
+  "node_id": "G2F-00",
+  "attempt": 1,
+  "root_contract_sha256": "7d9d0ded46655750e4b78f58e8a5f67deee295f009e3bb1f0e5c6c5df75317f5",
+  "input_artifacts": [
+    {
+      "path": "work/202609232120-Gate2-NodeInventory.md",
+      "sha256": "ad3bf6e98e7c0c712a8de79413d8a334d563e5f232b9c4c9529d423648298021"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D-001",
+      "statement": "準備 run で G2D-09 が failed のため主 run は未作成。主 run の 44 node をすべて not-started と記録し、冒頭行を「主 run: 未作成」とした",
+      "source_refs": [
+        "work/20260924-0345-Gate2-AtgReport.md",
+        "work/202609232120-RemainTaskExecutionPlan.md"
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "path": "work/20260924-0345-Gate2-TerminalState.md",
+      "sha256": "caa7c6c75b305f45d861e4b3f6bc3bd248bcfb9527bf100ecabacbd03446c67f"
+    },
+    {
+      "path": "work/20260924-0345-Gate2-AtgReport.md",
+      "sha256": "e5bb47a61dd8e016d557ffe3bab032a939fc432db1451b8b2201c3bd7f37e78a"
+    }
+  ],
+  "verification": {
+    "command": "pwsh -NoLogo -NoProfile -Command \"pwsh -NoLogo -NoProfile -File work/20260924-0345-Gate2-TerminalState-check.ps1; if ($LASTEXITCODE) { exit $LASTEXITCODE }; $a = @(Get-Content work/20260924-0345-Gate2-TerminalState.md -TotalCount 1 -Encoding utf8); $b = @(Get-Content work/20260924-0345-Gate2-AtgReport.md -TotalCount 2 -Encoding utf8); if ($a[0] -cne '主 run: 未作成' -or $b[0] -cne '主 run: 未作成' -or $b[1] -cne '# ATG 終端レポート') { exit 1 }\"",
+    "exit_code": 0,
+    "evidence_path": "work/20260924-0345-Gate2-TerminalState.md"
+  },
+  "risks": [],
+  "blocked_reasons": [],
+  "next_nodes": [
+    "G2F-01r"
+  ]
+}

@@ -14,11 +14,15 @@ Gate 2 lane（モデル承認）の監査・実測・採用処理を実施しま
 
 続けて、補助モデル（C7）の残タスクを実行しました。画像分類の補助モデルでは、TinyCLIP の想定用途を一次資料で確認できなかったため候補から外し、SigLIP の CPU 推論の改善として量子化を 1 案だけ試しましたが、出力の一致と推論性能のどちらも基準に届かず、保留を維持しました。物体検出の補助モデルでは、新しい第一候補 OWL-ViT base patch32 の取得物を配布元の値と照合し、ONNX 変換後の出力が PyTorch と一致することを確認しましたが、CPU での推論性能が基準に届かないため保留としました。補助モデルが 2 役とも未承認のため、補助品質の比較試験は実行していません。承認済みモデルは 2 件のまま、`ready=false` を維持し、Gate 2 は **BLOCKED** のままです。あわせて、モデル一覧の形式を改め、出荷可能（`ready=true`）とするには補助モデル 2 役それぞれの比較試験に合格した記録を必須にしました。
 
-その後、`/work/` の残タスク統合実行計画に沿って、実行の前提条件を確認し、利用者・所有者の操作を必要としない調査を行いました。その結果、Gate 2 の実行前提が 3 件満たされていないため、Gate 2 の処理は開始していません。満たされていない前提は、別セッションが計画を編集していないことの利用者による確認、npm `12.0.0` の用意、計画とノード一覧における状態の記録規則の不足です。画面まわりの残課題（親 UIR-025 の残条件 9 件と、UIR-041Q・UIR-084 の前提）を現在のコードと記録から判定し直した結果は、完了 4 件・未完了 7 件でした。すべての残タスクの状態と、再開に必要な利用者の確認・所有者の判断を記録しています。製品コード、モデル一覧、ADR は変更していません。
+その後、`/work/` の残タスク統合実行計画に沿って、実行の前提条件を確認し、利用者・所有者の操作を必要としない調査を行いました。計画とノード一覧で不足していた状態の記録規則は、計画を編集するセッションに依頼して補いました。Gate 2 は、500 行を超えるファイルの扱いについての所有者の判断（G2D-09）がないため準備段階で止まり、本体の 44 ノードは開始していません。この状態を **BLOCKED** として終端記録を作り、モデル一覧の `releaseStatus.reason` に理由を追記しました。npm `12.0.0` がないため、文書検査を完了条件に含む ADR と Gate 2 の実行記録の更新は行っていません。画面まわりの残課題（親 UIR-025 の残条件 9 件と、UIR-041Q・UIR-084 の前提）を現在のコードと記録から判定し直した結果は、完了 4 件・未完了 7 件でした。利用者の本人確認・実機受入と所有者の判断を要する残タスクは未着手のまま、理由と再開の条件を記録しています。製品コードと ADR は変更していません。
+
+続けて、所有者の判断（G2D-09）を得て Gate 2 の準備 run をやり直し（ATG の実行 ID `d77c9409-405d-44cc-8bbd-afb37eb92961`、受入済み）、本体の 44 ノードを主 run（実行 ID `e7c6da3f-8f62-4785-b40e-fab254437a4b`）として実行しました。成功 9 件、失敗 9 件、未起動 26 件で止まり、Gate 2 は **BLOCKED** のままです。失敗の理由は次の 4 つです。所有者の判断 6 件（G2D-01・02・04・06・10・12）の回答がありません。npm `12.0.0` は所有者の指示で導入しましたが、導入方法が組織承認済みか確認できていません（G2D-11）。分類の基盤重みについて、変換前後の出力一致の測定が不合格でした（G2T-10）。一括の `npm test` の失敗の原因を特定できませんでした（EXT-X1。失敗した 7 ファイルを 3 回再実行しても再現しませんでした）。このため、補助品質の比較試験、補助モデルの採用承認とモデル一覧への登録、最終検証は実行していません。続く終端化 run（実行 ID `2ac91e5d-b355-4080-b88c-a040b7514b86`）で、終端状態の記録、モデル一覧の `releaseStatus.reason`、ADR-0004、Gate 2 の実行記録を更新しました。承認済みモデルは 2 件のまま、`ready=false` を維持しています。
+
+あわせて、`/work/` の残タスク実行計画（`work/202609240830-RemainTaskExecutionPlan.md`）に沿って、残りの作業を実行しました。所有者の判断（G2D-09 の選択 A）に基づき、ATG kit の計画規約に 500 行を超えるファイルの行範囲読みの扱いを加えて `0.2.3` へ上げました。実行の途中で見つかった `node start` の不具合は、ATG engine `0.1.5` で直しました。注釈の Workspace 画面には、200 件を超える画像に page 送りで到達する手段を加えました。GAL の run（実行 ID `bbb01912-859a-49b4-8819-4d928913c9da`）は受入済みです。ただし製品の版の更新（GAL-V1）は release 責任者が決めるため、失敗として記録しています。所有者の判断のうち、G2D-11（npm の用意の方法）と TBD-09（schema の許諾 field 名の改訂時期）は未確定です。TBD-09 は別計画だけを作り、schema は変えていません。Gate 2 は **BLOCKED** のまま、承認済みモデルは 2 件、`ready=false` です。
 
 ### Added
-
-- 残タスクの実行記録を追加しました。`work/20260924-0306-RemainTaskRun-Baseline.md` には、実行前提の確認結果（PRE-00〜03）、Gate 2 の計画とノード一覧の SHA-256、両者の照合に使った検査 script `work/20260924-0306-PRE03-InventoryCheck.ps1` の結果、計画を編集するセッションへの修正依頼を記録しています。`work/20260924-0300-UirStatusRedetermination.md` は UIR-025 の残条件と UIR-041Q・UIR-084 の前提を判定し直した記録です。`work/20260924-0325-RemainTaskTerminalState.md` と検査 script `work/20260924-0325-TERM01-Check.ps1` は、全ノードと未完了事項 15 件の終端状態の記録です。Gate 2 の終端化の記録がないため、この終端記録は完了条件を満たしていません（検査は exit 1）。
+- 残タスクの実行記録を追加しました。`work/20260924-0306-RemainTaskRun-Baseline.md` には、実行前提の確認結果（PRE-00〜03 とその再実行）、Gate 2 の計画とノード一覧の SHA-256、両者の照合に使った検査 script `work/20260924-0306-PRE03-InventoryCheck.ps1` の結果、Gate 2 の準備 run と終端化 run の結果を記録しています。準備 run の段階の Gate 2 の終端化の記録は `work/20260924-0345-Gate2-TerminalState.md`・`work/20260924-0345-Gate2-AtgReport.md` と、その検査 script・ATG の graph・契約・受入記録・引継ぎ（`work/20260924-0345-*`、`work/20260924-0400-*`、`work/20260924-0410-*`、`work/20260924-0415-*`、`work/20260924-0425-*`）です。`work/20260924-0300-UirStatusRedetermination.md` は UIR-025 の残条件と UIR-041Q・UIR-084 の前提を判定し直した記録です。`work/20260924-0325-RemainTaskTerminalState.md` と検査 script `work/20260924-0325-TERM01-Check.ps1` は、全ノードと未完了事項 15 件の終端状態の記録です。
+- 主 run の後の Gate 2 の終端化の記録を追加しました。終端状態の記録 `work/20260924-1425-Gate2-TerminalState.md`（44 ノードの状態と根拠）、ATG の終端レポートの原文 `work/20260924-1425-Gate2-AtgReport.md`、実行記録 `work/20260924-1425-Gate2-RemainTaskExecution.md`（ノードごとの結果、検証の結果、一括の `npm test` の失敗 7 ファイル・21 件と以前の記録にある既知の失敗との区別）です。主 run の受入記録は `work/20260924-1430-Gate2Main-Acceptance.md`、終端化 run の graph・契約・検査 script は `work/202609232120-atg-graph-final.json`・`work/20260924-1425-Gate2Final-atg-contract.json`・`work/20260924-1425-Gate2-TerminalState-check.ps1` です。
 - 物体検出の補助モデル OWL-ViT base patch32 の一致検証と性能を測る spike `spikes/models/owlvit_assist_parity.py`、結果記録 `spikes/models/owlvit-assist-result.md`、採用記録 `docs/model-governance/owlvit-base-patch32-adoption.md`（保留）を追加しました。一致検証は PyTorch・ONNX Runtime CPU・ONNX Runtime DirectML の 3 経路で合格し、性能は DirectML が基準内、CPU が基準外でした。性能モードは基準未達、または要求した実行基盤で session が作られない場合に非ゼロで終了します。検証用 fixture ではスコア閾値を超える検出が 0 件で、検出単位の一致は未確認であることも記録しています。
 - TinyCLIP の一次資料（モデルカード、配布メタデータ、公開リポジトリの README・LICENSE・学習手順、論文の抜粋）の保存コピー `docs/model-governance/evidence/tinyclip-*` を追加しました。想定用途と対象外用途の記載はなく、蒸留元（OpenCLIP ViT-B/16）の重みの系譜も確認できないため、候補から外しています。
 - C7 残タスクの実行計画・記録（`work/20260923-1437-C7-RemainingTasksExecutionPlan.md`、`work/20260923-1520-OWLViT-ControlledArtifact.md`、`work/20260923-1546-TinyCLIP-PrimarySourceSurvey.md`、`work/20260923-2003-C7-RemainingTasksExecution.md`）を追加しました。
@@ -42,9 +46,30 @@ Gate 2 lane（モデル承認）の監査・実測・採用処理を実施しま
 - `docs/adr/0004-spike-decisions.md` に Gate 2 lane の実行記録（§5.1）を追加しました。
 - `docs/model-governance/classification-base.md` に、事前学習重み候補 8 件の再調査結果（§12）を一次資料 URL と取得日付きで追加しました。
 - `docs/model-governance/detection-base.md`・`classification-assist.md`・`detection-assist.md` に、利用者の採用指示と controlled retrieval の実測記録を追加しました。
+- 所有者の判断記録 3 件を `docs/model-governance/evidence/` に追加しました。`2026-09-24-owner-ruling-G2D-09.md` は 500 行を超えるファイルの扱いで、選択 A（ATG の計画規約を改訂する）です。`2026-09-24-owner-ruling-G2D-11.md` は検証に使う npm の用意で、npm `12.0.0` は導入済みですが、導入方法が組織承認済みかは未確認のため `選択: 未確定` です。`2026-09-24-owner-ruling-TBD-09.md` は manifest schema の許諾 field 名の改訂で、要否は「改訂する」、時期は未選択のため `選択: 未確定` です。npm `12.0.0` は開発環境の前提で、製品の依存ではありません。
+- 注釈の Workspace 画面 `src/renderer/features/annotations/AnnotationWorkspacePage.tsx` に「前の 200 件」「次の 200 件」の page 送りを追加し、201 件目以降の画像へ到達できるようにしました。
+  - 取得には既存の一覧 IPC の `offset` / `limit` を使うため、IPC と Main は変えていません。
+  - 保持するのは現在の page だけで、全件の一括読み込みはしません。
+  - page を移ると選択と編集中の表示を解除し、先頭の item を自動では選びません。
+  - 0 件・1 件・200 件・201 件・複数 page・filter・最後の item・重複・取得失敗の境界の test 10 件を `AnnotationWorkspacePage.test.tsx` に追加しました。
+  - 製品の版は更新していません（release 責任者の判断。GAL-V1）。
+  - 調査・設計・graph・run の記録は `work/20260924-0630-GalleryBeyond200Investigation.md`（GAL-01）、`work/20260924-0700-GalleryPagingDesign.md`、`work/20260924-0700-GAL02-GraphRecord.md`（GAL-02）、`work/20260924-1308-GAL-*`、`work/20260924-1415-GAL-Acceptance.md` です。
+- 主 run の G2T 系の実測結果を記録しました。
+  - G2T-10（分類）: `spikes/models/classification_checkpoint_parity.py` の `--mode transfer` を、学習後のモデルを ONNX へ変換し、PyTorch・ONNX Runtime CPU・ONNX Runtime DirectML の 3 経路で比べるよう拡張しました。結果は `spikes/models/classification-checkpoint-result.md` §8 に記録しています。3 比較とも logit 最大差が許容差を超えたため **FAIL** です。top-1 は 15/15 で一致しましたが、許容差は緩和していません。
+  - G2T-11（検出）: `spikes/models/detection_checkpoint_parity.py` の `--mode transfer` を、採用記録のスコア閾値 0.05 で学習後のモデルを ONNX へ変換し、3 経路で比べるよう拡張しました。結果は `spikes/models/detection-checkpoint-parity-result.md` §12 に記録しています。3 比較とも対応付け 551 件、片側のみの検出 0 件、ラベル不一致 0 件で **PASS** です。
+  - G2T-50C・50D・60C・60D: `docs/model-governance/siglip-base-patch16-224-adoption.md` と `docs/model-governance/owlvit-base-patch32-adoption.md` に、tokenizer ファイルの配布元の値との照合と、2026-09-24 の既知脆弱性の再照会の結果を追記しました。High / Critical は 0 件です。採用の判定（保留）は変えていません。
+  - G2T-40: Assist session の記録手段の調査を `work/20260924-0730-AssistSessionRecording.md` に記録しました。
+- Wave 2 の完了記録の監査 `work/20260924-0630-Wave2CompletionAudit.md`（AUD-02）を追加しました。Wave 2 の 32 件のうち照合できたのは 14 件、完了の記録が見つからなかったのは 18 件で、未完了は 0 件です。
+- TBD-09（manifest schema の許諾 field 名 `commercialUseConfirmed` / `commercialDerivativesPermitted` の改訂）の別計画 `work/20260924-1341-TBD09-SchemaFieldRenamePlan.md` と、その graph `work/20260924-1341-TBD09-atg-graph.json` を追加しました。所有者の承認前のため計画だけで、schema・manifest・test・要求定義は変更していません。
+- 残タスク実行計画 `work/202609240830-RemainTaskExecutionPlan.md` と、タスクごとの敵対的レビューの記録 `work/20260924-*-RemainPlan-*-Review.md` を追加しました。準備 run 2 の記録は `work/20260924-0605-EXT-ATG-Plan.md`、`work/20260924-0620-*` です。終端化 run の受入記録は `work/20260924-1512-Gate2Final-Acceptance.md` です。
 
 ### Changed
 
+- `resources/models/manifest.json` の `releaseStatus.reason` に、2026-09-24 の Gate 2 の終端化で BLOCKED を記録した理由を追記しました。準備 run の段階で追記した理由（G2D-09 が failed、`EXT-ATG` が blocked、本体の 44 ノードが未着手）は、主 run の結果に置き換えました。主 run の結果は、失敗したノードとその理由、実行されなかった範囲（補助品質の比較試験、補助モデルの採用承認、モデル一覧への登録と表示、最終検証）です。`ready=false` と承認済みモデル 2 件は変えていません。
+- `docs/adr/0004-spike-decisions.md` を次のとおり更新しました。
+  - §1 に Gate 2 の終端化の追補を加えました。主 run の実行 ID と BLOCKED の判定、失敗したノードとその理由を記録しています。POC-16 の品質・時間以外の条項をいつ検証するかは、所有者の判断（G2D-10）がないため未決定です。モデル一覧の検証機能（PKG-01）は未実装のため、PKG-01 の照合の前に `ready=true` のモデル一覧を出荷物に使わないことも記録しました。
+  - §5 の AutoML の予算の記述を訂正しました。分類・検出とも fixture 規模の予算は確定しており、未決定なのは実データ規模の予算です（TRN-09）。
+  - §5 の承認済みモデルの記述を、C6 の 2 件、C7 は 0 件に合わせました。
 - `resources/models/manifest.json` の `releaseStatus.reason` に、C7 残タスクの結果（SigLIP の量子化が出力の一致と CPU 推論性能の基準を満たさなかったこと、TinyCLIP を候補から外したこと、OWL-ViT の CPU 推論性能が基準外であること）を追記しました。登録モデルと `ready=false` は変えていません。
 - `spikes/models/siglip-assist-result.md`（§7）と `docs/model-governance/siglip-base-patch16-224-adoption.md`（§16）に、CPU 推論の改善として試みた量子化（ONNX Runtime の動的量子化）の結果を追記しました。PyTorch との出力の差が許容差を大きく超え（15 枚中 3 枚で最上位の候補が変わる）、CPU の推論性能も基準に届かないため、保留を維持します。同じ手順で再測定できるよう、量子化の経路を spike に残しています。
 - モデル一覧の schema `resources/models/manifest.schema.json` を `2.0.0` に改め、`releaseStatus.ready=true` とするには、補助モデルの分類・検出それぞれについて、補助なしの作業と比べて最終品質が悪化せず作業時間の中央値が短縮したことを示す記録（`releaseStatus.assistQuality`）を必須にしました（NFR-ANN-006 / POC-16）。出荷可能と判定していた既存の条件を狭める変更のため、メジャーを上げています。`resources/models/manifest.json` の `schemaVersion`、`scripts/models/manifest-schema.test.mjs`（否定 test 8 件を追加）、`docs/dependency-policy.md`、`docs/model-governance/adoption-template.md` を合わせて更新しました。
@@ -75,6 +100,17 @@ Gate 2 lane（モデル承認）の監査・実測・採用処理を実施しま
 - 所有者の委任に基づく判断の記録 `docs/model-governance/evidence/2026-09-23-owner-rulings.md` を追加しました。検出用基盤重みは初回学習に用いる重みであり、カメラ推論の対象は学習後のモデル版であるため、基盤重みの採用判定には実時間推論の基準を適用しないこととしました（実時間推論の基準は、推論機能の実装時に学習後のモデル版で検証し、緩和しません）。あわせて、OWL-ViT 系のモデルカードが教育目的に言及しない点は、製品の利用条件より狭い制限として扱うこととしました。
 - 物体検出の補助モデルの新候補について、所有者（dahatake、Product Manager）による 2026-09-23 付けのリスク受容の書面 `docs/model-governance/evidence/2026-09-23-owner-risk-acceptance-c7-detection.md` を追加しました。対象は OWL-ViT base patch32 で、研究目的に限って提供する条件付きです。重みを取得し、計算したハッシュが配布元の公開値と一致することを確認しています。第一候補としていた OmDet-Turbo は、追加調査で文字列処理部分が OpenAI CLIP の重みから構築されていると判明したため（OpenAI CLIP のモデルカードは実運用を対象外とする）、対象から外して保留にしました。採用決定ではなく、一致検証・性能・補助品質の測定と、採用時の所有者の署名が必要です。
 - 上記の判断に基づき、検出用基盤重み（SSDLite320 MobileNetV3 Large）の採用記録を承認とし、モデル一覧へ登録しました（承認済み 2 件、`ready=false` のまま）。関連する調査記録・判断記録・結果記録の現状記述を更新しています。
+- ATG kit を `0.2.2` から `0.2.3` へ更新しました（`tools/atg/KIT-VERSION.json`）。計画規約 `.github/skills/atg/references/planning.md` と、配布用の `tools/atg/skill/references/planning.md` に §1.1「500 行を超えるファイルの行範囲読み」を加えました。行範囲を計画に列挙し、編集箇所がすべてその範囲内にあり、範囲の合計が 500 行以下である場合は、`context_size=large` とみなしません（G2D-09 の選択 A）。
+- 残タスクの実行記録を更新しました。`work/20260924-0306-RemainTaskRun-Baseline.md` §7 には、準備 run 2・主 run・終端化 run・GAL run の結果、所有者の判断の記録、engine の修正を記録しました。`work/20260924-0325-RemainTaskTerminalState.md` では、各ノードと未完了事項 15 件の状態を更新し、Gate 2 の終端化の記録への参照を `work/20260924-1425-Gate2-TerminalState.md` に替えました。
+- 記録すべき逸脱として、次の 8 件を Baseline §7.5 に記録しました（計画 §12）。
+  - Gate 2 の計画とノード一覧を、hash を保つために更新していません。
+  - npm の用意の方法が組織承認済みかは未確認です。
+  - TBD09-D の完了条件を満たしていません。
+  - G2Q-01C / 01D の数値行の読み方は、実行主体が決めました。
+  - 未判断の所有者判断は work file にだけ記録しています。
+  - 実行の途中で engine を修正しました。
+  - 準備 run 2 と主 run の記録が Baseline に書かれていない時間がありました。
+  - 書込み検査を helper の hash の差で代えました。H0 より前の node は ATG の lease の保護を受けておらず、G2T-10 の失敗は規約と異なり `contract` として記録しています。
 
 ### Removed
 
@@ -87,6 +123,7 @@ Gate 2 lane（モデル承認）の監査・実測・採用処理を実施しま
 - 検出 parity で、順位整列による参考比較がラベル不一致の判定へ二重に計上されていた問題を修正しました。
 - 検出 parity で、スコア閾値以上の検出が存在しない画像があるとスコア範囲の集計が異常終了しうる問題を修正しました。
 - 分類 spike の parity モードが、実行デバイスの指定を無言で受理して決定性を無効化しうる問題を修正しました。parity モードは CPU 固定とし、それ以外の指定を拒否します。
+- ATG engine を `0.1.5` へ更新し、`node start` が起動可能判定で `failed` / `blocked` のノードを lock の選択に含めていた問題を修正しました（`tools/atg/vendor/atg/cli.py` の `cmd_node_start`。`node next` と同じ判定）。修正前に `node fail` で記録したノードの結果は変わりません。
 
 ### Security
 

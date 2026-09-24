@@ -529,7 +529,7 @@ repository root で、`pwsh.exe -NoLogo -NoProfile`（PowerShell 7+）から実�
 ### 8.20 G2F-00 — 終端化の記録（終端化 run の最初）
 
 - 起動条件: §7.2 の静止、全成功、または主 run を作らなかった場合。
-- 成果物: `work/<yyyymmdd-hhmm>-Gate2-TerminalState.md`。[ノード一覧](202609232120-Gate2-NodeInventory.md) の全 ID（外部前提を含む）について、`| <ID> | <状態> | <根拠> |` の形で状態（`done` / `failed` / `not-started`）を記録し、冒頭に `主 run: 全成功` または `主 run: 静止（失敗あり）` と、`G2A-03: done` または `G2A-03: not-done` の行を置く（いずれも node 行の状態と一致していなければならない）。`python -m atg report --execution-id <主 run の id>` の出力（主 run を作らなかった場合は §7.2 の内容）は別の file `work/<yyyymmdd-hhmm>-Gate2-AtgReport.md` に残す（ノード一覧 §2 の検査は、状態の記録と ATG の report の両方を読み、状態が対応すること（`succeeded`→`done`、`failed`→`failed`、それ以外→`not-started`）と、`主 run: 全成功` の場合に manifest に 4 役（C6 / C7 × 分類 / 検出）の entry があることを確認する）。
+- 成果物: `work/<yyyymmdd-hhmm>-Gate2-TerminalState.md`。[ノード一覧](202609232120-Gate2-NodeInventory.md) の全 ID（外部前提を含む）について、`| <ID> | <状態> | <根拠> |` の形で状態（`done` / `failed` / `not-started`）を記録し、冒頭に `主 run: 全成功` または `主 run: 静止（失敗あり）` と、`G2A-03: done` または `G2A-03: not-done` の行を置く（いずれも node 行の状態と一致していなければならない）。`python -m atg report --execution-id <主 run の id>` の出力（主 run を作らなかった場合は §7.2 の内容）は別の file `work/<yyyymmdd-hhmm>-Gate2-AtgReport.md` に残す（ノード一覧 §2 の検査は、状態の記録と ATG の report の両方を読み、状態が対応すること（`succeeded`→`done`、`failed`→`failed`、それ以外→`not-started`）と、`主 run: 全成功` の場合に manifest に 4 役（C6 / C7 × 分類 / 検出）の entry があることを確認する）。状態の記録の根拠の列には、ATG の生の状態（`succeeded` / `failed` / `blocked` / `pending` / `running`。主 run を作らなかった場合は `未登録`）を書く。主 run を作らなかった場合（§7.2）は、冒頭の行を `主 run: 未作成` とする。
 - 参照ファイル数: 2（ノード一覧、ATG の report 出力）。見積: R 10 / P 5 / I 15 / V 10 / F 5 = 45 分。
 
 #### 完了条件

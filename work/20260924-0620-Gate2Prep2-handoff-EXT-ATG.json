@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "execution_id": "d77c9409-405d-44cc-8bbd-afb37eb92961",
+  "node_id": "EXT-ATG",
+  "attempt": 1,
+  "root_contract_sha256": "684f361dbf317c57d29d606f7fbf344e4c164c19d39f088d260c54d8357366c3",
+  "input_artifacts": [
+    {
+      "path": "docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-09.md",
+      "sha256": "996a0b298463561e51c40ea5bef8d0eb6ab80bea3f8c4dac8ecca78864a7a7d3"
+    },
+    {
+      "path": "work/20260924-0605-EXT-ATG-Plan.md",
+      "sha256": "76adf8ea62518a5205268e25e9bb64f97a62bbfdec4f71e6fe340dcf68c09850"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D-001",
+      "statement": "G2D-09=A に従う別計画 EXT-ATG（planning.md §1.1 の追加、ATG 0.2.3）が完了し、kit の検査が exit 0、敵対的レビュー none",
+      "source_refs": [
+        "work/20260924-0605-EXT-ATG-Plan.md",
+        "work/20260924-0620-EXT-ATG-Confirmation.md"
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "path": "work/20260924-0620-EXT-ATG-Confirmation.md",
+      "sha256": "2012dd9d0bd4e3c51ea629bb31ac9d79bc84ff4f4c39a4ef01a23cdbf0fc850e"
+    }
+  ],
+  "verification": {
+    "command": "pwsh -NoLogo -NoProfile -Command \"$f = 'work/20260924-0620-EXT-ATG-Confirmation.md'; if (-not (Test-Path $f)) { exit 1 }; if (-not (Select-String -Path $f -Pattern '^evidence: .+ exit=0$' -Quiet)) { exit 1 }; if (-not (Select-String -Path tools/atg/skill/references/planning.md -Pattern '^### 1\\.1 ' -Quiet)) { exit 1 }; if ((Get-FileHash .github/skills/atg/references/planning.md).Hash -ne (Get-FileHash tools/atg/skill/references/planning.md).Hash) { exit 1 }; if ((Get-FileHash .github/skills/atg/SKILL.md).Hash -ne (Get-FileHash tools/atg/skill/SKILL.md).Hash) { exit 1 }; if ((Get-Content tools/atg/KIT-VERSION.json -Raw | ConvertFrom-Json).version -ne '0.2.3') { exit 1 }; python tools/atg/install.py --verify; if ($LASTEXITCODE) { exit $LASTEXITCODE }\"",
+    "exit_code": 0,
+    "evidence_path": "work/20260924-0620-EXT-ATG-Confirmation.md"
+  },
+  "risks": [],
+  "blocked_reasons": [],
+  "next_nodes": []
+}

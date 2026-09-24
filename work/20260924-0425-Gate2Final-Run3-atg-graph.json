@@ -1,0 +1,137 @@
+{
+  "nodes": [
+    {
+      "id": "G2F-00",
+      "deps": [],
+      "duration": 45.0,
+      "write_set": [
+        "work/20260924-0345-Gate2-TerminalState.md",
+        "work/20260924-0345-Gate2-AtgReport.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/202609232120-Gate2-NodeInventory.md"
+        ],
+        "outputs": [
+          "work/20260924-0345-Gate2-TerminalState.md",
+          "work/20260924-0345-Gate2-AtgReport.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -Command \"pwsh -NoLogo -NoProfile -File work/20260924-0345-Gate2-TerminalState-check.ps1; if ($LASTEXITCODE) { exit $LASTEXITCODE }; $a = @(Get-Content work/20260924-0345-Gate2-TerminalState.md -TotalCount 1 -Encoding utf8); $b = @(Get-Content work/20260924-0345-Gate2-AtgReport.md -TotalCount 2 -Encoding utf8); if ($a[0] -cne '主 run: 未作成' -or $b[0] -cne '主 run: 未作成' -or $b[1] -cne '# ATG 終端レポート') { exit 1 }\"",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2F-01r",
+      "deps": [
+        "G2F-00"
+      ],
+      "duration": 40.0,
+      "write_set": [
+        "resources/models/manifest.json"
+      ],
+      "contract": {
+        "inputs": [
+          "resources/models/manifest.json",
+          "work/20260924-0345-Gate2-TerminalState.md"
+        ],
+        "outputs": [
+          "resources/models/manifest.json"
+        ],
+        "verify_command": "node --test scripts/models/manifest-schema.test.mjs",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2F-01a1",
+      "deps": [
+        "G2F-01r"
+      ],
+      "duration": 60.0,
+      "write_set": [
+        "docs/adr/0004-spike-decisions.md"
+      ],
+      "contract": {
+        "inputs": [
+          "docs/adr/0004-spike-decisions.md",
+          "resources/models/manifest.json",
+          "work/20260924-0345-Gate2-TerminalState.md"
+        ],
+        "outputs": [
+          "docs/adr/0004-spike-decisions.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -Command \"if ((npm --version) -ne '12.0.0') { exit 2 }; npm run verify:docs; if ($LASTEXITCODE) { exit $LASTEXITCODE }; npm run test:docs; if ($LASTEXITCODE) { exit $LASTEXITCODE }; npm run verify:version; if ($LASTEXITCODE) { exit $LASTEXITCODE }; npm run test:version; if ($LASTEXITCODE) { exit $LASTEXITCODE }; git diff --check; exit $LASTEXITCODE\"",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2F-01a3",
+      "deps": [
+        "G2F-01a1"
+      ],
+      "duration": 70.0,
+      "write_set": [
+        "work/20260924-0345-Gate2-RemainTaskExecution.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-0345-Gate2-TerminalState.md",
+          "work/202609232120-Gate2-NodeInventory.md",
+          "resources/models/manifest.json",
+          "docs/adr/0004-spike-decisions.md"
+        ],
+        "outputs": [
+          "work/20260924-0345-Gate2-RemainTaskExecution.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -Command \"$m = Get-Content resources/models/manifest.json -Raw | ConvertFrom-Json; if (-not (Select-String -Path work/20260924-0345-Gate2-RemainTaskExecution.md -SimpleMatch ('承認件数: ' + $m.models.Count) -Quiet) -or -not (Select-String -Path work/20260924-0345-Gate2-RemainTaskExecution.md -SimpleMatch ('ready: ' + $m.releaseStatus.ready.ToString().ToLower()) -Quiet)) { exit 1 }; if ((npm --version) -ne '12.0.0') { exit 2 }; npm run verify:docs; if ($LASTEXITCODE) { exit $LASTEXITCODE }; npm run test:docs; if ($LASTEXITCODE) { exit $LASTEXITCODE }; npm run verify:version; if ($LASTEXITCODE) { exit $LASTEXITCODE }; npm run test:version; if ($LASTEXITCODE) { exit $LASTEXITCODE }; git diff --check; exit $LASTEXITCODE\"",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2F-03",
+      "deps": [
+        "G2F-01a3"
+      ],
+      "duration": 55.0,
+      "write_set": [
+        "CHANGELOG.md"
+      ],
+      "contract": {
+        "inputs": [
+          "CHANGELOG.md",
+          "work/20260924-0345-Gate2-RemainTaskExecution.md",
+          "docs/adr/0004-spike-decisions.md"
+        ],
+        "outputs": [
+          "CHANGELOG.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -Command \"if ((npm --version) -ne '12.0.0') { exit 2 }; npm run verify:docs; if ($LASTEXITCODE) { exit $LASTEXITCODE }\"",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    }
+  ]
+}

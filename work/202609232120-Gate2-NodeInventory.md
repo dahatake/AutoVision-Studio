@@ -20,7 +20,7 @@
 
 ## 2. 終端状態の記録の検査コマンド（G2F-00）
 
-`pwsh.exe -NoLogo -NoProfile` で、repository root から実行する。`<file>` は G2F-00 が作る `work/<yyyymmdd-hhmm>-Gate2-TerminalState.md`、`<report>` は同じく `work/<yyyymmdd-hhmm>-Gate2-AtgReport.md`（主 run の `python -m atg report` の出力。準備 run が失敗して主 run を作らなかった場合は、1 行目を `主 run: 未作成` とし、準備 run の report を続ける）。状態の記録の node 行は `| <ID> | <done|failed|not-started> | <根拠> |` の形に限り、ATG の report は状態の記録に含めない。
+`pwsh.exe -NoLogo -NoProfile` で、repository root から実行する。`<file>` は G2F-00 が作る `work/<yyyymmdd-hhmm>-Gate2-TerminalState.md`、`<report>` は同じく `work/<yyyymmdd-hhmm>-Gate2-AtgReport.md`（主 run の `python -m atg report` の出力。準備 run が失敗して主 run を作らなかった場合は、1 行目を `主 run: 未作成` とし、準備 run の report を続ける）。状態の記録の node 行は `| <ID> | <done|failed|not-started> | <根拠> |` の形に限り、ATG の report は状態の記録に含めない。主 run を作らなかった場合、状態の記録の冒頭行は `主 run: 未作成` とする。
 
 ```powershell
 $ids = 'G2D-01','G2D-01T','G2D-02','G2D-02R','G2D-04','G2D-05','G2D-06','G2D-07C','G2D-07D','G2D-08','G2D-10','G2D-11','G2D-12','G2D-12T','EXT-41','EXT-X1','G2T-10','G2T-11','G2T-40','G2T-50C','G2T-50D','G2T-60C','G2T-60D','G2X-01a','G2X-01b','G2X-01c','G2Q-01C','G2Q-01D','G2Q-01CM','G2Q-01DM','G2Q-02','G2Q-03C','G2Q-03D','G2Q-04C','G2Q-04D','G2Q-05C','G2Q-05D','G2Q-06C','G2Q-06D','G2A-01','G2A-02','G2A-03','G2A-04','G2V-01'
@@ -59,7 +59,7 @@ if ($all) {
     if (@($mf.models | Where-Object { $_.category -ceq $cat -and $_.task -ceq $task }).Count -lt 1) { exit 1 }
   }
 }
-$want = if ($all) { '主 run: 全成功' } else { '主 run: 静止（失敗あり）' }
+$want = if ($all) { '主 run: 全成功' } elseif ($rt -cmatch '\A(?:\uFEFF)?主 run: 未作成(?:\r?\n|\z)') { '主 run: 未作成' } else { '主 run: 静止（失敗あり）' }
 if ($t -cnotmatch "(?m)^$([regex]::Escape($want))\r?$") { exit 1 }
 $a3 = if ($state['G2A-03'] -ceq 'done') { 'G2A-03: done' } else { 'G2A-03: not-done' }
 if ($t -cnotmatch "(?m)^$([regex]::Escape($a3))\r?$") { exit 1 }
