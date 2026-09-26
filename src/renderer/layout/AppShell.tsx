@@ -171,7 +171,7 @@ export function AppShell() {
   const mainRef = useRef<HTMLElement>(null);
   const settingsOrigin = useRef<SettingsOrigin | null>(null);
   const pendingCreated = useRef<ProjectSnapshot | null>(null);
-  const selectionGeneration = useRef(0), creationGeneration = useRef(0);
+  const selectionGeneration = useRef(0), deletionGeneration = useRef(0), creationGeneration = useRef(0);
   const creationContext = creationGeneration.current;
 
   useLayoutEffect(() => {
@@ -277,8 +277,16 @@ export function AppShell() {
     return () => { observer?.disconnect(); main.ownerDocument.removeEventListener('focusin', stopOnFocus); };
   }, [focusTarget]);
 
+  /** Drops a pending or shown delete preview; an in-flight delete (busy with a preview) is left as is. */
+  function closeDeletePreview() {
+    deletionGeneration.current++;
+    setDeletion((current) => {
+      if (current.busy && current.preview) return current;
+      return current.busy || current.preview ? { ...current, busy: false, preview: null } : current;
+    });
+  }
   function invalidateSelection() {
-    selectionGeneration.current++; setSelection(null);
+    selectionGeneration.current++; closeDeletePreview(); setSelection(null);
   }
   function showList() {
     invalidateSelection(); creationGeneration.current++; settingsOrigin.current = null;
@@ -312,6 +320,7 @@ export function AppShell() {
   }
   async function selectProject(snapshot: ProjectSnapshot, destination: 'workspace' | 'settings') {
     if (!api || !apiContext.current.active || view !== 'list' || settingsOpen) return;
+    closeDeletePreview();
     const input = projectGetInputSchema.safeParse({ projectId: snapshot.project.id });
     if (!input.success) return;
     const { projectId } = input.data, ticket = ++selectionGeneration.current;
@@ -352,11 +361,12 @@ export function AppShell() {
     if (!api || !apiContext.current.active || view !== 'list' || settingsOpen) return;
     const input = projectDeletePreviewInputSchema.safeParse({ projectId: snapshot.project.id });
     if (!input.success) return;
+    const ticket = ++deletionGeneration.current;
     setDeletion({ busy: true, preview: null, error: '', receipt: '' });
     let response: ProjectDeletePreviewResponse;
     try { response = parseProjectDeletePreviewResponse(await api.deletePreview(input.data), input.data); }
     catch { response = { ok: false, error: { code: 'OPERATION_FAILED' } }; }
-    if (!apiContext.current.active || apiContext.current.api !== api) return;
+    if (!apiContext.current.active || apiContext.current.api !== api || deletionGeneration.current !== ticket) return;
     if (!response.ok) {
       setDeletion({ busy: false, preview: null, error: deletePreviewErrors[response.error.code], receipt: '' });
       return;

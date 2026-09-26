@@ -211,3 +211,33 @@ manifest schema 2.0.0 で、`releaseStatus.ready=true` に C7 分類・検出の
 | 記録の型 | `item_id` は空でない文字列、`proposed` は JSON の boolean、`seconds` は有限で負でない数値だけを受け付ける（文字列の `"false"`、負の秒数、`NaN` 等を拒否。`--self-test` に否定 test 5 件を追加） |
 
 実行結果（2026-09-23）: `--self-test` は `verdict: PASS`（exit 0）。baseline mode は `verdict: BLOCKED`（exit 2）、blocker は `no approved C7 classification assist entry in the manifest` と `no approved C7 detection assist entry in the manifest` の 2 件。§8 までの記録は当時の実行結果として変更しない。品質非劣化の判定方法は C7Q-01（gold set と基準の事前固定）で決める事項であり、本修正では追加していない。
+
+## 10. 2026-09-24 — 所有者の判断 G2D-02 による段階 3 の `SKIPPED_BY_USER` の解除
+
+repository owner の判断（[`2026-09-24-owner-ruling-G2D-02.md`](../../docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-02.md)、選択: A）により、§7 の段階 3 の `SKIPPED_BY_USER` を解除した。段階 3（gold set に対する補助あり／手作業のみの実作業 session の記録）は、利用者が実作業 session を記録する対象に戻る。
+
+- §7・§8 は当時の記録として変更しない。
+- 解除は session が記録されたことを意味しない。session（Gate 2 計画 §8.14 の G2Q-04C / 04D / 05C / 05D）は利用者の実作業からだけ作り、実装担当は値を生成・推定・補完しない（同判断記録の「本判断が意味しないこと」1）。
+- 実測値は §4 のとおり未取得であり、§5 の条件 1（承認済み C7 の manifest への登録）も未充足である（§9 の実行結果）。`G2-07` の総合判定は **NOT_RUN** のままである。
+
+## 11. 2026-09-24 — G2Q-02: 承認済みの gold set と判定基準による判定（harness の変更）
+
+Gate 2 計画（`work/202609232120-RemainTaskExecutionPlan.md` §8.11）に従い、harness を変えた。判定基準は所有者が承認した gold set 計画（[`assist-goldset-plan-classification.md`](assist-goldset-plan-classification.md)・[`assist-goldset-plan-detection.md`](assist-goldset-plan-detection.md)。承認の記録は [`G2D-07C`](../../docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-07C.md)・[`G2D-07D`](../../docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-07D.md)）の値である。§10 までの記録は当時の実行結果として変更しない。
+
+| 変更 | 内容 |
+|---|---|
+| 前提条件 | manifest の承認済み C7 entry から、採用記録 §12（比較試験）以外の gate を通過した採用候補へ変えた。採用記録を `--candidate-record`、その SHA-256 を `--candidate-sha256` で受け取る。どちらかが無い、file が無い、または SHA-256 が一致しない場合は `verdict: BLOCKED`（exit 2）で、何も測らない。harness は結果をその採用記録に結び付けるだけで、§12 以外の gate の合否は判定しない（採用記録の §15 の判定で扱う） |
+| gold set | `--goldset` で gold set manifest（`vendor/models/_spike/assist/goldset-<task>.json`）を受け取る。item id の重複、件数と `expected_item_count` の不一致、または件数が承認された計画 §2 の値（分類 60、検出 20）でない場合に中止する。両 session の item id の集合が gold set と一致しなければ中止する |
+| 最終 label | 製品で確定した Dataset Revision の manifest を `--assisted-revision` / `--manual-revision` で受け取る。その SHA-256 が、`<session file>.meta.txt` のただ 1 つの `revision_sha256: <64 桁の小文字 16 進>` の行と一致しなければ中止する。gold の各 item は `items[].imageSha256` がちょうど 1 件一致し、`disposition` が `excluded` でないこと、manifest の `taskType` が gold set の task と同じことを要求する。class は `schema.classes` の `normalizedName` で名前へ解決し、gold の class の名前がすべてその `normalizedName` のどれかであることを要求する（無い名前は両 session の品質を 0 にして合格させうるため）。`outcome` から最終 label を推定しない。中止した場合は verdict を出さずに非零で終わる |
+| 判定 | 分類: 最終 label の accuracy で `Qa >= Qm - 1/60`、かつ class ごとに `Qa_c >= Qm_c - 1/20`。検出: item の中で IoU の大きい順に 1 対 1 で対応させ、IoU 0.5 以上を一致とした全 item の F1 で `Qa >= Qm - 0.005`。両 task で、補助ありの session の提案の coverage が 0.5 以上、item ごとの `seconds` の中央値が `median(assisted) < median(manual-only)`。品質は分数で比べ、境界で丸めない。すべてを満たす場合だけ `PASS`（exit 0）、それ以外は `FAIL`（exit 1） |
+| 出力 | `verdict`、`checks`、`quality`、`median_seconds`、`environment`、`assisted`・`manual_only` の要約、`session_sha256`（2 件）、`revision_sha256`（2 件）、`goldset_sha256`、`candidate_sha256` |
+| `--self-test` | 品質非劣化の境界、中央値の境界、coverage の境界、採用記録の SHA-256 不一致、gold set と session の item id の不一致、revision の item の不正（class の名前の不一致を含む）、承認された件数でない gold set の否定 test を追加した |
+
+実行結果（2026-09-24、`vendor\models\_spike\venv\Scripts\python.exe`）: `--self-test` は `verdict: PASS`（exit 0）。引数なしの実行は `verdict: BLOCKED`（exit 2）、blocker は `--candidate-record and --candidate-sha256 are both required`。`ruff check` と `ruff format --check` は exit 0。
+
+- 本変更は測定ではない。session（G2Q-04C / 04D / 05C / 05D）は所有者の判断で今回の作業から除外されたため記録されておらず、§4 の実測欄は未取得のままである。`G2-07` の総合判定は **NOT_RUN** のままである。
+- 採用候補の閾値（`confidenceThreshold` / `thresholdPolicy`、G2Q-03C / 03D）は未確定である。承認された gold set 計画は、model 単体の評価から閾値を選ぶ規則を定めていない。
+
+## 12. 2026-09-26 — 所有者の判断による比較試験の免除
+
+[所有者の判断（2026-09-26）](../../docs/model-governance/evidence/2026-09-26-owner-rulings.md)により、比較試験（SPI-17 段階 3、NFR-ANN-006、POC-16 の品質・中央所要時間の比較）を Version 1 の実施対象から削除し、未実施のまま完了扱いとした。本 harness で session を記録・判定した結果は無く、`PASS` とは記録しない（段階 3 の測定値は §4 のとおり未取得）。manifest schema `2.0.1` 以降は `releaseStatus.ready=true` に `releaseStatus.assistQuality[]` を求めない。本 harness は、今後に試験を行う場合のために残す。

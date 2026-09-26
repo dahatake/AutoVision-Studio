@@ -24,8 +24,10 @@ const request: WorkerRequest = {
   schemaVersion: 1, jobId: 'ae45cf74-c9f9-4c49-88b9-0523b1ac7383',
   projectId: '01234567-89ab-4cde-8f01-23456789abcd', kind: 'scan-dataset', payload: {},
 };
+// closeTimeoutMs is 2 s (production: 10 s, src/main/index.ts) so that a loaded aggregate run does not
+// turn the expected code into WORKER_CLOSE_TIMEOUT; close-timeout tests pass their own 50 ms.
 const policy: WorkerSupervisorPolicy = {
-  timeoutMs: 3_000, cancelGraceMs: 250, closeTimeoutMs: 1_000,
+  timeoutMs: 3_000, cancelGraceMs: 250, closeTimeoutMs: 2_000,
   maxStdoutBytes: 1024 * 1024, maxManifestBytes: MAX_WORKER_MESSAGE_BYTES,
 };
 type Overrides = Partial<Omit<WorkerSupervisorOptions, 'policy'>> & { policy?: Partial<WorkerSupervisorPolicy> };

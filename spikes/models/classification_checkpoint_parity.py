@@ -11,7 +11,10 @@ fail-closed boundaries kept by this probe:
 * The checkpoint is loaded with ``torch.load(weights_only=True)`` and
   ``load_state_dict(strict=True)``.
 * Tolerances are the SPI-15 values (``classification.py``), fixed before the
-  run. A measurement above tolerance is ``FAIL``; it is not retried looser.
+  run. Transfer mode (G2T-10) instead uses the FR-TRN-018 default tolerance
+  (logit allclose rtol 1e-3 / atol 1e-4, top-1 agreement >= 99.5%) by the
+  2026-09-24 owner ruling; softmax and top-5 are recorded, not judged. A
+  measurement above tolerance is ``FAIL``; it is not retried looser.
 * The fixture is ``resources/samples/beans`` (MIT). The checkpoint predicts the
   1000 ImageNet-1k classes, so the probe compares backends against each other
   and makes **no accuracy claim**.
@@ -58,6 +61,11 @@ CHECKPOINT_PATH = REPO_ROOT / "vendor" / "models" / "mobilenet_v3_large-5c1a4163
 EXPECTED_SHA256 = "5c1a416349c4cf298f2a6a5e2600ed0ee55e604713578f5e74e6bc8bcaef7997"
 IMAGENET_CLASS_COUNT = 1000
 OPSET_VERSION = 17
+# Transfer mode only: FR-TRN-018 default tolerance, per
+# docs/model-governance/evidence/2026-09-24-owner-ruling-G2T-10.md.
+FR_TRN_018_RTOL = 1e-3
+FR_TRN_018_ATOL = 1e-4
+FR_TRN_018_MIN_TOP1 = 0.995
 TOP_K = 5
 # Adoption record 11 acceptance criteria (POC-03), fixed before the run.
 MAX_P95_MS = 100.0
@@ -143,7 +151,9 @@ def run_onnx(
     return np.concatenate(logits), session.get_providers()
 
 
-def compare(label: str, left: np.ndarray, right: np.ndarray) -> dict[str, Any]:
+def compare(
+    label: str, left: np.ndarray, right: np.ndarray, fr_trn_018: bool = False
+) -> dict[str, Any]:
     logit_diff = float(np.abs(left - right).max())
     prob_diff = float(np.abs(softmax(left) - softmax(right)).max())
     top1 = int((left.argmax(axis=1) == right.argmax(axis=1)).sum())
@@ -151,22 +161,39 @@ def compare(label: str, left: np.ndarray, right: np.ndarray) -> dict[str, Any]:
     right_topk = np.argsort(-right, axis=1, kind="stable")[:, :TOP_K]
     topk = int(sum(set(a) == set(b) for a, b in zip(left_topk, right_topk)))
     failures: list[str] = []
-    if logit_diff > LOGIT_TOLERANCE:
-        failures.append(
-            f"{label} max_abs_logit_diff {logit_diff:.3e} > {LOGIT_TOLERANCE:.1e}"
+    extra: dict[str, Any] = {}
+    if fr_trn_018:
+        # Both orientations, so the verdict does not depend on which side is the reference.
+        # np.allclose treats equal infinities as close, so non-finite logits fail.
+        logit_allclose = bool(
+            np.isfinite(left).all()
+            and np.isfinite(right).all()
+            and np.allclose(right, left, rtol=FR_TRN_018_RTOL, atol=FR_TRN_018_ATOL)
+            and np.allclose(left, right, rtol=FR_TRN_018_RTOL, atol=FR_TRN_018_ATOL)
         )
-    if prob_diff > PROB_TOLERANCE:
-        failures.append(
-            f"{label} max_abs_prob_diff {prob_diff:.3e} > {PROB_TOLERANCE:.1e}"
-        )
-    if top1 != left.shape[0]:
-        failures.append(f"{label} top1_agreement {top1}/{left.shape[0]}")
-    if topk != left.shape[0]:
-        failures.append(f"{label} top{TOP_K}_set_agreement {topk}/{left.shape[0]}")
+        extra["logit_allclose"] = logit_allclose
+        if not logit_allclose:
+            failures.append(f"{label} logits not allclose")
+        if top1 / left.shape[0] < FR_TRN_018_MIN_TOP1:
+            failures.append(f"{label} top1_agreement {top1}/{left.shape[0]}")
+    else:
+        if logit_diff > LOGIT_TOLERANCE:
+            failures.append(
+                f"{label} max_abs_logit_diff {logit_diff:.3e} > {LOGIT_TOLERANCE:.1e}"
+            )
+        if prob_diff > PROB_TOLERANCE:
+            failures.append(
+                f"{label} max_abs_prob_diff {prob_diff:.3e} > {PROB_TOLERANCE:.1e}"
+            )
+        if top1 != left.shape[0]:
+            failures.append(f"{label} top1_agreement {top1}/{left.shape[0]}")
+        if topk != left.shape[0]:
+            failures.append(f"{label} top{TOP_K}_set_agreement {topk}/{left.shape[0]}")
     return {
         "comparison": label,
         "verdict": "FAIL" if failures else "PASS",
         "failures": failures,
+        **extra,
         "max_abs_logit_diff": logit_diff,
         "max_abs_prob_diff": prob_diff,
         "top1_agreement": f"{top1}/{left.shape[0]}",
@@ -225,9 +252,11 @@ def run_transfer(artifact_dir: Path) -> dict[str, Any]:
     cpu_repeat, _ = run_onnx(onnx_path, CPU_PROVIDER, eval_images)
     dml_repeat, _ = run_onnx(onnx_path, DML_PROVIDER, eval_images)
     comparisons = [
-        compare("torch vs onnxruntime-cpu", checkpoint_logits, cpu_logits),
-        compare("torch vs onnxruntime-directml", checkpoint_logits, dml_logits),
-        compare("onnxruntime-cpu vs onnxruntime-directml", cpu_logits, dml_logits),
+        compare("torch vs onnxruntime-cpu", checkpoint_logits, cpu_logits, True),
+        compare("torch vs onnxruntime-directml", checkpoint_logits, dml_logits, True),
+        compare(
+            "onnxruntime-cpu vs onnxruntime-directml", cpu_logits, dml_logits, True
+        ),
     ]
     repeat = {
         "cpu_bitwise_identical": bool(np.array_equal(cpu_logits, cpu_repeat)),
@@ -262,7 +291,12 @@ def run_transfer(artifact_dir: Path) -> dict[str, Any]:
         },
         "onnx_sha256": sha256_file(onnx_path),
         "session_providers": {"cpu": cpu_providers, "directml": dml_providers},
-        "tolerances": {"logit": LOGIT_TOLERANCE, "prob": PROB_TOLERANCE},
+        "tolerances": {
+            "logit_rule": "allclose",
+            "rtol": FR_TRN_018_RTOL,
+            "atol": FR_TRN_018_ATOL,
+            "min_top1_agreement": FR_TRN_018_MIN_TOP1,
+        },
         "comparisons": comparisons,
         "repeat_run_bitwise_identical": bool(all(repeat.values())),
         "repeat_run": repeat,

@@ -5,7 +5,7 @@
 | ADR ID | 0004 |
 | タイトル | Windows リスクスパイクと Gate 判定 |
 | 作成日 | 2026-09-07 |
-| 最終更新日 | 2026-09-24 |
+| 最終更新日 | 2026-09-26 |
 | 対応タスク | SPI-18（二部判定） |
 | 依存 ADR | ADR-0001、ADR-0002、ADR-0003 |
 | 要求基準 | `docs/requirement-definition.md` v0.5 Draft（2026-09-07 UI改善追補、245要求） |
@@ -23,13 +23,25 @@ AutoVision Studio Version 1のWindows 11 24H2以降x64を対象に、A-07およ�
 
 したがってGate 1部は**CONDITIONAL_GO**とする。これは実装計画でGate 1に依存するcore、Project、data import、manual annotationの開発を、個別DAG・対象test・独立レビューに従って開始できるという限定判断である。全PoC成立、製品機能完成、正式出荷可、Gate 2〜5合格を意味しない。
 
-Gate 2部は、承認済み分類・検出のCurated Base WeightとAnnotation Assist Model、train/export parity、assist品質、実データ規模の有限AutoML budgetが未確定であるため**BLOCKED / NOT_COMPLETE**とする。`resources/models/manifest.json`は`releaseStatus.ready=false`を維持する（承認済みentryは、2026-09-23のD1裁定前はC6分類1件、D1裁定後はC6分類・C6検出の2件。§5.1.12・§5.1.13）。Gate 1部だけでSPI-18全体を完了扱いにしない。
+Gate 2部は、承認済み分類・検出のCurated Base WeightとAnnotation Assist Model、train/export parity、assist品質、実データ規模の有限AutoML budgetが未確定であるため**BLOCKED / NOT_COMPLETE**とする。`resources/models/manifest.json`は`releaseStatus.ready=false`を維持する（承認済みentryは、2026-09-23のD1裁定前はC6分類1件、D1裁定後はC6分類・C6検出の2件。§5.1.12・§5.1.13）。Gate 1部だけでSPI-18全体を完了扱いにしない。この段落は当初の判定であり、Gate 2部の現在の状態は下の「Gate 2終端化追補6」（2026-09-26。COMPLETE）による。
 
 **Gate 2 lane追補（2026-09-22）:** SPI-11〜17とD-15を2回実行し、各入力の現在状態を確定した（§5.1）。SPI-11〜14は既存監査の充足確認と、利用者指示による**候補の再調査および controlled retrieval**を行った。分類のtrain/export parityは**PASS**、検出は**PASS**（既定60 epoch。6/20 epochでは**FAIL**であり、その実測も保持する）、assist品質は段階3が`SKIPPED_BY_USER`かつ承認済みC7が0件のため**NOT_RUN（実測0件）**、D-15は分類のCPU / CUDAと検出のCPUについて有限budgetを確定した。同日夜、利用者dahatakeの提示（license識別子・NOTICE・承認者氏名）によりC6検出1役を承認しmanifestへ登録したが（§5.1.10）、翌日の推論性能実測が採用基準に不適合であったため**保留へ差し戻し登録を取り消した**（§5.1.11）。**承認済みmodelは0件**であり、Gate 2部の**BLOCKED / NOT_COMPLETE**と`releaseStatus.ready=false`・`models: []`は変更しない。
 
 **Gate 2残タスク追補（2026-09-23）:** FR-LIC-016の新設を受け、C6分類（MobileNetV3 Large V2）を**承認**しmanifestへ登録した。C6検出（SSDLite）は、いったん保留とした後、同日のowner裁定D1（C6にPOC-03の実時間推論基準を適用しない）により**承認**・登録した（§5.1.13）。C7分類（SigLIP、CPU性能不適合）、C7検出（Grounding DINO tiny、parity FAIL）は**保留**、SPI-17は**NOT_RUN**である（§5.1.12）。同日のC7残タスクでは、TinyCLIPを**除外 / HOLD維持**、SigLIPのCPU改善（量子化）を**parity・性能とも不適合で保留維持**、C7検出の新候補OWL-ViT B/32を**保留**（生出力parity PASS、CPU性能不適合）とした（§5.1.14）。Gate 2部は**BLOCKED / NOT_COMPLETE**、`releaseStatus.ready=false`を維持する。
 
 **Gate 2終端化追補（2026-09-24）:** Gate 2の主run（ATG実行ID `e7c6da3f-8f62-4785-b40e-fab254437a4b`）は静止（失敗あり）で終端したため、Gate 2部は**BLOCKED / NOT_COMPLETE**のままとする。所有者の判断G2D-01・02・04・06・10・12は回答がなく失敗、G2D-11はnpm `12.0.0`の導入指示はあるが導入方法の組織承認が未確認で失敗、G2T-10は分類checkpointのparityが**FAIL**で失敗、EXT-X1（集約testの失敗）は原因未確定で失敗とした。このため、比較試験の準備・実行（G2Q）、C7採用承認（G2A-01・02）、C7のmanifest entryと表示（G2A-03・04）、最終検証G2V-01はblockedである（終端状態の記録`work/20260924-1425-Gate2-TerminalState.md`）。G2D-10が未判断のため、POC-16の品質・時間以外の条項の検証時期の分担は**未決定**であり、Gate 2はPOC-16を満たしたと記録しない（`work/202609232120-RemainTaskExecutionPlan.md`のG2D-10）。PKG-01（model payload verifier）は未実装であり、`releaseStatus.ready=true`のmanifestをPKG-01の照合前に出荷物へ使わない（同計画§8.21）。manifestは承認2件（C6分類・C6検出）、`releaseStatus.ready=false`を維持する。
+
+**Gate 2終端化追補2（2026-09-24、所有者の判断の後の再実行）:** 所有者の判断（`docs/model-governance/evidence/2026-09-24-owner-ruling-*.md`）を受けて主runを再実行した（ATG実行ID `0b7a6834-a226-4f48-b87c-5bc31dc2f2cd`。上の追補の主runの記録は履歴として残す）。再実行も静止（失敗あり）で終端したため、Gate 2部は**BLOCKED / NOT_COMPLETE**のままとする。所有者の判断G2D-01・02・04・05・06・10・11・12は記録され、G2T-10は所有者の判断によりFR-TRN-018の許容差で再測定して**PASS**となった（`spikes/models/classification-checkpoint-result.md` §9）。EXT-X1（集約testの失敗）は原因未確定で失敗、G2D-07C・07D（gold setと判定基準の数値案の承認）は所有者の承認が得られず失敗とした。このため、gold setの作成と比較試験の準備・実行（G2Q-01CM・01DM、G2Q-02〜06）、C7採用承認（G2A-01・02）、C7のmanifest entryと表示（G2A-03・04）、製品版の判断G2D-08、最終検証G2V-01はblockedである（終端状態の記録`work/20260924-1815-Gate2-TerminalState.md`）。G2D-10は選択肢Aにより、POC-16の品質・時間以外の条項を製品機能の受入（AST-01〜07、PKG phase）で検証する分担に決まった。Gate 2はPOC-16を満たしたと記録しない（`docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-10.md`）。PKG-01の照合前に`releaseStatus.ready=true`のmanifestを出荷物へ使わない規則と、manifestの承認2件・`releaseStatus.ready=false`は変わらない。
+
+**Gate 2終端化追補3（2026-09-25、main3〜main6の後）:** 所有者の回答に沿って、前のrunで成功しなかったnodeとその後続だけを実行するrunを4回行った（ATG実行ID `5618d7f3-f408-4e3d-bc2b-a745c1602a19`・`84e8cb29-8aa9-40b6-bcab-411bfae30eff`・`01ff4f75-d29a-453b-bb71-8e9bbb492a89`・`e52b01c9-2f58-4024-abf9-8d74f4671c85`）。44 nodeの最後の状態はsucceeded 32・failed 2・blocked 10であり、Gate 2部は**BLOCKED / NOT_COMPLETE**のままとする。G2D-07C・07D（gold setと判定基準の数値案）は所有者が承認した。EXT-X1は、集約testの失敗の原因の1つ（testが別のthreadのfile descriptorを閉じていた）をtestの修正で解消して成功としたが、残りの失敗（時間切れなど）の原因は確定していない（`work/20260924-2230-EXT-X1-RootCause.md`）。gold set・比較のharness・確信度の閾値（G2Q-01CM・01DM・02・03C・03D）は用意した。閾値はSigLIPが`0.9241492748260498`、OWL-ViTが`0.0002533551160013303`で（所有者の判断G2Q-03の方針A）、OWL-ViTの実行基盤の間の比較は所有者の判断G2Q-03D-Tの判定で**PASS**となった（`spikes/models/owlvit-assist-result.md` §7.5）。OWL-ViTのCPU性能は所有者の判断G2D-01により記録のみとし、採用記録は**保留**のままである。利用者の作業session（G2Q-04C・04D）は所有者の指示で除外したため失敗とし、比較試験（G2Q-05・06）、C7採用承認（G2A-01・02）、C7のmanifest entryと表示（G2A-03・04）、製品版の判断G2D-08、最終検証G2V-01はblockedである（終端状態の記録`work/20260925-0620-Gate2-TerminalState.md`）。manifestの承認2件・`releaseStatus.ready=false`は変わらない。
+
+**Gate 2終端化追補4（2026-09-25、main7・main8の後）:** 所有者が比較試験（NFR-ANN-006）をGate 2のタスクから外して自身で後に行うこととし、G2A-01・02とG2D-08を承認した。C7分類（SigLIP）の採用記録を**承認**してmanifestへ登録し（承認3件、`releaseStatus.ready=false`）、C7検出（OWL-ViT）は2026-09-23 risk acceptance §4の1・2についての所有者の回答が無いため**保留**のままとした。製品版G2D-08は委任により`0.1.12`とし、G2V-01で適用する。44 nodeの最後の状態はdone 35・failed 3・not-started 6であり、Gate 2部は**NOT_COMPLETE**のままとする（OWL-ViTの保留とG2A-04・G2V-01の未起動。詳細は§5.1.15、終端状態の記録`work/20260925-0947-Gate2-TerminalState.md`）。
+
+**Gate 2終端化追補5（2026-09-26、main9の後）:** 所有者が、2026-09-25の判断は2026-09-23 C7検出risk acceptance §4の1・2を変更すると回答し、比較試験（NFR-ANN-006）を実施対象から削除して未実施のまま完了扱いとした（`docs/model-governance/evidence/2026-09-26-owner-rulings.md`）。main9（ATG実行ID `860384d4-4af8-4b3a-baef-f64adacb3b98`）で比較試験の6 nodeを免除の記録で閉じ、C7検出（OWL-ViT）の採用記録を**承認**してmanifestへ登録し（承認4件、研究目的に限る）、設定画面に研究目的に限る利用条件を表示した。44 nodeの最後の状態はdone 43・not-started 1（G2V-01）で、Gate 2部は**NOT_COMPLETE**のままとする（詳細は§5.1.16、終端状態の記録`work/20260926-0848-Gate2-TerminalState.md`）。
+
+**Gate 2終端化追補6（2026-09-26、main10の後）:** 集約`npm test`を安定させて3回続けてexit 0とし（§5.1.17）、所有者の判断どおりGAL-V1（`0.1.11`）とG2V-01（`0.1.12`）の製品版を適用した。44 nodeはすべてdoneで、Gate 2計画§8.21の「全成功」が成り立ったため、Gate 2部を**COMPLETE（主run全成功）**とし、manifestを`releaseStatus.ready=true`・`productVersion` `0.1.12`とした（終端状態の記録`work/20260926-1100-Gate2-TerminalState.md`）。比較試験は免除（未実施）であり合格ではない。PKG-01が未実装のため、`ready=true`のmanifestをPKG-01の照合の前に出荷物へ使わない。
+
+**Gate 2終端化追補7（2026-09-26 12:29の所有者の回答の後）:** PKG-01（model payload verifier、`scripts/models/verify.py`）を実装し、実manifestの4件の`sourcePath`のhash・size、証拠、承認記録を照合した（§5.1.18）。TBD-09の版の更新（T9-V）は所有者の決定により`0.1.12`（G2V-01と同じ版）とした（`docs/model-governance/evidence/2026-09-26-owner-rulings-1229.md`）。
 
 ---
 
@@ -144,7 +156,7 @@ Gate 2部は次が未充足である。
 
 したがってAST-01以降の承認model loader、model固有assist、training、model version、report、camera inferenceをGate 1だけで開始しない。manual annotation/core laneとmodel laneを分離する。
 
-2026-09-24のGate 2終端化の判定（**BLOCKED / NOT_COMPLETE**、主run `e7c6da3f-8f62-4785-b40e-fab254437a4b`）、G2D-10未判断によるPOC-16の分担の未決定、PKG-01の照合前に`ready=true`のmanifestを出荷物へ使わない規則は、§1のGate 2終端化追補に記す。
+2026-09-24のGate 2終端化の判定（**BLOCKED / NOT_COMPLETE**、主run `e7c6da3f-8f62-4785-b40e-fab254437a4b`）、G2D-10未判断によるPOC-16の分担の未決定、PKG-01の照合前に`ready=true`のmanifestを出荷物へ使わない規則は、§1のGate 2終端化追補に記す。所有者の判断の後の再実行（主run `0b7a6834-a226-4f48-b87c-5bc31dc2f2cd`、引き続き**BLOCKED / NOT_COMPLETE**）とG2D-10の決定は、§1のGate 2終端化追補2に記す。main3〜main6の後の終端化（引き続き**BLOCKED / NOT_COMPLETE**）は、§1のGate 2終端化追補3に記す。
 
 SPI-18全体のstatusはGate 2部が完了するまで**IN_PROGRESS**である。本ADRへGate 1部を記録したことや、空manifestがschemaに適合することをSPI-18全体の完了、Gate 2合格、model同梱許可へ転用しない。
 
@@ -235,7 +247,7 @@ CUDA測定は`torch 2.11.0+cu130`をrepository外の隔離環境へ導入して�
 | `.pth`のsafe loadが`NOT_RUN`（FR-SEC-007 blocked） | **restricted load成功**。5件すべてtensor-only |
 | SigLIP / Florence-2のlocal hash再計算が`NOT_RUN` | **再計算済み。publisher metadataと完全一致** |
 
-一方で**checkpoint固有のlicense statementは6候補すべてで未取得**である。`resources/models/manifest.schema.json`の`$defs.spdxLicense`は`commercialUseConfirmed`と`redistributionPermitted`を`"const": true`とし、`spdx`に`unknown`等の文字列をpatternで拒否する。`$defs.licenseSet`は`code` / `checkpoint` / `trainingData`の3層すべてを必須とする。したがってentryを作るにはC5コードのlicenseをcheckpoint層へ書く以外になく、それは各監査が最大のリスクとして特定した混同そのものである。
+一方で**checkpoint固有のlicense statementは6候補すべてで未取得**である。`resources/models/manifest.schema.json`の`$defs.spdxLicense`は`productUsePermitted`（manifest schema `3.0.0`でTBD-09により改名）と`redistributionPermitted`を`"const": true`とし、`spdx`に`unknown`等の文字列をpatternで拒否する。`$defs.licenseSet`は`code` / `checkpoint` / `trainingData`の3層すべてを必須とする。したがってentryを作るにはC5コードのlicenseをcheckpoint層へ書く以外になく、それは各監査が最大のリスクとして特定した混同そのものである。
 
 **よってmanifestは未編集とした。** 利用者の指示は各監査文書へ記録し、checkpoint固有licenseが得られた時点でentryを作成できる状態にした。
 
@@ -465,3 +477,56 @@ D-15へ**検出・CUDA「最大Trial数20 / 最大時間120秒」**を記録し�
 - C7 分類・検出の両方が保留のため、計画 §5 の HOLD branch に従い補助品質 baseline（C7Q-01〜04 / SPI-17）は**実行していない**。利用者の実作業 session も存在しない。
 - manifest schema を `2.0.0` に改訂し、`releaseStatus.ready=true` に C7 分類・検出の比較試験（NFR-ANN-006 / POC-16）の合格記録 `releaseStatus.assistQuality[]` を必須とした。`ready=true` にしていた既存の条件を狭める変更のため、SchemaVer の規則（既存の有効なデータを拒否し得る変更は MODEL を上げる）に従い major を上げた。合わせて `spikes/models/assist_benchmark.py` の前提条件から `ready=true` を外し（schema と循環しないため）、gold set の item id 集合の一致と中央所要時間の出力を加えた。schema と文書間の照合（`modelId`・`recordPath`・SHA-256）の実行は PKG-01 の release verifier の範囲であり、未実装のままである。
 - manifestは承認2件（C6分類・C6検出）、`releaseStatus.ready=false`。Gate 2部は**BLOCKED / NOT_COMPLETE**のままである（C7 2役とSPI-17が未充足）。
+
+#### 5.1.15 比較試験の延期、C7分類の承認、製品版の決定（2026-09-25）
+
+利用者dahatakeが2026-09-25に、G2A-01 / 02（C7の採用）とG2D-08（製品版）を承認し（`docs/model-governance/evidence/2026-09-25-owner-ruling-G2A-01-02-G2D-08.md`）、続けて比較試験（NFR-ANN-006）をGate 2のタスクから外して自身で後に行うこと、G2D-08の値の決定を実装担当に委ねることを回答した（`docs/model-governance/evidence/2026-09-25-owner-ruling-assist-trial-deferral.md`）。計画は`work/20260925-0745-Gate2Main7-Plan.md`で、各ノードは完了条件の検証と敵対的レビューを経ている。
+
+| 対象 | 判断・結果 | manifest |
+|---|---|---|
+| C7 分類 `google/siglip-base-patch16-224` | 採用記録を**承認**（比較試験は承認の前提とせず出荷条件として残す）。gold setの閾値なしtop-1正解率は`0.35`（21/60）で3 labelの当て推量と同程度であり、有用性は比較試験で判定する。不合格ならentryを外して再審査する | 登録（3件目） |
+| C7 検出 `google/owlvit-base-patch32` | **保留**。2026-09-23 C7検出risk acceptance §4の1・2（採用記録の承認とmanifest登録を技術gateの実測と比較試験の結果に従わせる条件）を2026-09-25の判断が変更するかについて、所有者の明示の回答が無い | 未登録 |
+| G2D-08（製品版） | 委任により**`0.1.12`**（`0.1.11`はGAL-V1に割当済みで、その次のPATCH）。記録は`docs/model-governance/evidence/2026-09-25-owner-ruling-G2D-08.md`。版は今は書き換えず、比較試験の合格後のG2V-01で`package.json`とmanifestの`productVersion`へ適用する | 変更なし（`0.1.10`） |
+
+- ATG実行main7（`8c3df57e…`）では、補助script（`work/20260924-0620-atg-node.py`）の書込み検査が同じworktreeで並行したG2A-02の変更をG2A-01の違反と数え、G2A-01がfailedになった（main4 G2Q-03Cと同じ誤判定）。G2A-02を除いたmain8（`6cfad899…`）でG2A-01・G2A-03・G2D-08を順に実行し、すべてsucceededとなった（`work/20260925-0745-Gate2Main8-Acceptance.md`）。
+- manifestは承認3件（C6分類・C6検出・C7分類）、`releaseStatus.ready=false`。Gate 2の終端状態は`work/20260925-0947-Gate2-TerminalState.md`（done 35 / failed 3 / not-started 6）で、Gate 2部は**NOT_COMPLETE**のままである（OWL-ViTの保留とG2A-04・G2V-01の未起動）。比較試験はGate 2のnodeではないが、所有者の判断はGate 2計画§8.21の「全成功」（比較試験の`PASS`を含む）の定義を変えていない。また、G2V-01は`ready=false`のmanifestへrelease対象版を先に書かない規則（`CONTRIBUTING.md`「製品バージョンの更新順」3）により、`ready=true`に要る比較試験の合格の記録を待つ。G2V-01の完了条件の集約`npm test`のexit 0は、失敗の原因が未確定のため成り立っていない（依存のEXT-X1はmain3でdone）。
+- 要求定義書L754（同梱を最終承認したAnnotation Assist Modelはない）・L759（SigLIPは未承認）と`docs/dependency-policy.md` L190・L312・L327の同旨の記述は、計画§6（正本は変えない）により本作業では変更していない。
+
+#### 5.1.16 C7検出の承認、比較試験の免除、Gate 2計画の食い違いの修正（2026-09-26）
+
+利用者dahatakeが2026-09-26に、前回の未解決事項5件に回答した（`docs/model-governance/evidence/2026-09-26-owner-rulings.md`）。計画は`work/20260926-0815-OwnerRulings5-ExecutionPlan.md`で、各タスクは完了条件の検証と敵対的レビューを経ている。
+
+| 対象 | 判断・結果 | manifest |
+|---|---|---|
+| C7 検出 `google/owlvit-base-patch32` | 所有者の「はい」により、2026-09-23 risk acceptance §4の1・2（比較試験の後に承認・登録）の保留が解け、採用記録を**承認**（risk acceptance §3.2の署名は所有者の判断G2D-06）。補助候補の利用条件は研究目的に限り、設定画面の「ライセンス・情報」に表示する。gold setのF1は`0.2478`、CPU EPのp95は所有者の判断G2D-01により記録のみ | 登録（4件目） |
+| 比較試験（NFR-ANN-006、POC-16の品質・時間） | Version 1の実施対象から削除し、未実施のまま完了扱い（免除）。合格の記録は作らない。要求定義をv0.8 Draftとし、manifest schemaを`2.0.1`（`ready=true`に`assistQuality[]`を求めない緩和。SchemaVerのADDITION）にした | `assistQuality`なし |
+| Gate 2計画の食い違い | §8.19の`ready=false`のmanifestへの`productVersion`の先行記入を、`CONTRIBUTING.md`「製品バージョンの更新順」3・`docs/implementation-plan.md` L394・schema（`ready=true`のときだけ`productVersion`が必須）に合わせ、G2F-01mで`ready=true`と同時に書く手順に直した（要求定義L177は製品版の正本をroot `package.json`とする） | 変更なし |
+| 集約`npm test`の失敗 | 事前に固定した比較（libuv threadpoolの大きさ4と64）は判定の条件を満たさず**未確定**。最も多い`copy-source.test.ts:162`の時間切れは、test 1件が約4万回の同期のfile system呼び出しを行い、単独でも約7秒かかることを観測した（`work/20260926-0810-EXT-X1-ThreadpoolCompare.md`）。testの上限の延長・skip・assertの緩和はしていない | — |
+
+- 正本の「承認済みの補助モデルはない」旨の記述（要求定義§13.3、`docs/dependency-policy.md`）を、承認済みのSigLIP・OWL-ViTに合わせた（所有者の許可）。
+- G2V-01（製品版`0.1.12`の適用）は、完了条件の集約`npm test`のexit 0が成り立たず、GAL-V1の`0.1.11`も未適用のため行っていない。このため`releaseStatus.ready=false`のままで、Gate 2部は**NOT_COMPLETE**である（`work/20260926-0848-Gate2-TerminalState.md`、done 43 / not-started 1）。PKG-01が未実装のため、`ready=true`のmanifestをPKG-01の照合前に出荷物へ使わない規則は変わらない。
+
+#### 5.1.17 集約`npm test`の安定化、製品版の適用、Gate 2の完了、TBD-09（2026-09-26）
+
+利用者dahatakeが2026-09-26 09:53に、集約`npm test`の安定化とTBD-09の実施を指示した（`docs/model-governance/evidence/2026-09-26-owner-rulings-0953.md`。計画`work/20260926-0955-OwnerRulings6-ExecutionPlan.md`）。
+
+| 対象 | 判断・結果 |
+|---|---|
+| `copy-source.test.ts:162` | 短い書込みの上限を4,093から32,749 byteにした（所有者の承認。assertは不変）。単独の時間は約7秒から約4秒 |
+| JOB04の`WORKER_CLOSE_TIMEOUT` | testの共通のpolicyの`closeTimeoutMs`を1,000から2,000 msにした（製品の値は10,000 ms。close timeoutのtestは各自50 msを渡す） |
+| volumeのprobeの`unsafe` | 成立した分岐を観測した（`mountvol.exe`の`spawnSync`が5,008.6 msで`ETIMEDOUT`、`reference-access.ts:196-198`）。製品の上限は変えず、vitestの`maxWorkers`を`'50%'`にした |
+| 検証 | 変更後の集約`npm test`が3回続けてexit 0（10:24〜10:39）。その後の版の更新の検証では、2回のうち各1回目が失敗（JOB04のtestの内部の期限、`sample-assets.test.ts`のctimeの変化によるfail-closed）し、再実行でexit 0。記録は`work/20260926-0810-EXT-X1-ThreadpoolCompare.md` §7 |
+| 製品版 | GAL-V1 `0.1.11`（所有者の判断）→G2V-01 `0.1.12`（G2D-08）。`verify:version`・`test:version`・`typecheck`・`build`がexit 0、tagは作っていない |
+| Gate 2 | 44 nodeがすべてdone。G2F-01mで`releaseStatus.ready=true`・`productVersion` `0.1.12`。Gate 2部は**COMPLETE（主run全成功）** |
+| TBD-09 | manifest schemaを`3.0.0`とし、`productUsePermitted`・`productDerivativesPermitted`へ改名した（旧名はschemaが拒否する。値と意味は不変）。T9-V（版の更新）は所有者の決定待ち（候補`0.1.12`・`0.1.13`。`work/20260924-1341-TBD09-VersionDecision.md`） |
+
+- 集約`npm test`は、負荷の高いhostで本物の子processと実時間の上限を使うtestがまれに失敗しうる（安定化の後の7回中2回）。testの上限の延長・skip・assertの緩和はしていない。
+- PKG-01（release verifier）は未実装であり、`ready=true`のmanifestをPKG-01の照合の前に出荷物へ使わない。
+
+#### 5.1.18 PKG-01の実装とT9-Vの版（2026-09-26）
+
+利用者dahatakeが2026-09-26 12:29に、T9-Vの版を`0.1.12`、負荷の高いPCでの集約`npm test`のまれな失敗への対応をキャンセル、PKG-01の実装を指示した（`docs/model-governance/evidence/2026-09-26-owner-rulings-1229.md`、計画`work/20260926-1230-OwnerRulings7-ExecutionPlan.md`）。
+
+- **PKG-01:** `scripts/models/verify.py`は、manifest schemaの`$comment`がPKG-01に割り当てた検査を行い、`releaseStatus.ready=true`と空でない`models`を求める。model IDと`payloadPath`の一意性、`sourcePath`が`vendor/models/`の下の通常fileで途中にlink・junctionが無くSHA-256・byteSizeが一致、`payloadPath`が`resources/models/`の下の単純なpath（Windowsの予約名と末尾の点・空白を含まない）、approval記録のSHA-256が`approval.recordSha256`と一致し、記録の最終判定・承認者・承認日の行がそれぞれ1行だけで完全一致し、承認対象artifact（またはC6記録の`checkpoint SHA-256`）の行が1行だけでSHA-256が一致、証拠のSHA-256とmodel-cardの有無、code層のlicenseが許可のSPDX識別子（`docs/dependency-policy.md` §2）でcheckpoint層は加えて`LicenseRef-AutoVisionStudio`（FR-LIC-016(3)）、`confidenceThreshold`が`scoreRange`内、`assistQuality`のC7 entryと記録の対応。downloadはしない。不正なmanifestはexit 1で止まる。packaging後のpayloadは、payloadのrootを引数に渡して同じbytesであることを照合する。JSON Schema自体の検査は`scripts/models/manifest-schema.test.mjs`が行い、両方でPKG-01の照合とする。approval記録のbytesは、manifest schemaを`3.0.1`とし（任意の`approval.recordSha256`を加えたADDITION）、manifestの4件に記録のSHA-256を置いて固定した。採用記録を変えた場合はmanifestの値も更新する。license式（AND / OR）とlicenseのURLは、該当する承認が無いため受け付けない。`payloadPath`の一意性はWindowsに合わせて大文字・小文字を区別せずに調べる。testは`scripts/models/test_verify.py`（47件、実manifestの照合を含む）。
+- 実manifestの照合はexit 0（4件のsource→payloadの対応を出力）。§5.1.17の「PKG-01は未実装」は本節で置き換える。
+- **T9-V:** 版は`0.1.12`（新たな`npm version`は行わない）。

@@ -1,0 +1,42 @@
+{
+  "objective": "TBD-09（manifest の許諾 field 名の改名、schema 3.0.0）の T9-S〜T9-V を記録する（所有者の回答 2026-09-26 09:53）",
+  "non_goals": [
+    "field の意味と値を変えない",
+    "evidence を変えない",
+    "互換の alias・変換 script を作らない"
+  ],
+  "deliverables": [
+    "CHANGELOG.md",
+    "docs/adr/0004-spike-decisions.md",
+    "docs/dependency-policy.md",
+    "docs/model-governance/adoption-template.md",
+    "docs/model-governance/classification-assist.md",
+    "docs/model-governance/detection-assist.md",
+    "docs/model-governance/detection-base.md",
+    "docs/model-governance/mobilenet-v3-large-imagenet1k-v2-adoption.md",
+    "docs/model-governance/ssdlite320-mobilenet-v3-large-coco-v1-adoption.md",
+    "docs/requirement-definition.md",
+    "package-lock.json",
+    "package.json",
+    "resources/models/manifest.json",
+    "resources/models/manifest.schema.json",
+    "scripts/models/manifest-schema.test.mjs",
+    "work/20260924-1341-TBD09-T9-G-Review.md",
+    "work/20260924-1341-TBD09-T9-M-Review.md",
+    "work/20260924-1341-TBD09-T9-R-Review.md",
+    "work/20260924-1341-TBD09-T9-S-Review.md",
+    "work/20260924-1341-TBD09-T9-T-Review.md",
+    "work/20260924-1341-TBD09-T9-V-Review.md"
+  ],
+  "acceptance_command": "pwsh -NoLogo -NoProfile -Command \"$env:PATH = $env:LOCALAPPDATA + '\\npm-12.0.0;' + $env:PATH; if ((npm --version) -ne '12.0.0') { exit 2 }; npm run verify:docs; if ($LASTEXITCODE) { exit $LASTEXITCODE }; npm run verify:version; if ($LASTEXITCODE) { exit $LASTEXITCODE }; node --test scripts/models/manifest-schema.test.mjs; exit $LASTEXITCODE\"",
+  "baseline_policy": "既存の失敗は許容するが、新しい失敗を増やさない",
+  "time_budget": "3540m",
+  "execution_envelope": {
+    "code_changes": "allowed_within_write_set",
+    "dependency_additions": "declared_only",
+    "external_network_writes": "deny",
+    "production_deploy": "deny",
+    "secret_read": "declared_refs_only"
+  },
+  "secret_policy": "秘密値は契約・引継ぎ・ログ・成果物へ保存せず、必要時は参照名のみを記録する"
+}

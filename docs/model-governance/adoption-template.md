@@ -205,14 +205,14 @@
 
 ## 11. 精度・パフォーマンス・サイズ
 
-> C6/C7 とも、最終承認前に対象用途の実測値と採用基準を記録します。C7 はさらに §12 の manual-only 比較試験を必須とします。未測定のまま「承認」にはできません。
-> **C6 の推論 p95 レイテンシ・スループットは測定値を記録しますが、POC-03 の採用基準による合否判定は行いません**（[owner rulings 記録 D1](evidence/2026-09-23-owner-rulings.md)）。C6 は初回学習に用いる基盤重みであり、POC-03 / NFR-PERF-004 は INF phase で Model Version の推論経路に対して検証します。C6 の §11 の合否は、対象用途（Fine-Tuning 初期重み）の精度基準で判定します。C7 の扱いは変わりません。
+> C6/C7 とも、最終承認前に対象用途の実測値と採用基準を記録します。C7 はさらに §12 の manual-only 比較試験を必須とします。未測定のまま「承認」にはできません（§12 の例外を除く）。
+> **C6 の推論 p95 レイテンシ・スループットは測定値を記録しますが、POC-03 の採用基準による合否判定は行いません**（[owner rulings 記録 D1](evidence/2026-09-23-owner-rulings.md)）。C6 は初回学習に用いる基盤重みであり、POC-03 / NFR-PERF-004 は INF phase で Model Version の推論経路に対して検証します。C6 の §11 の合否は、対象用途（Fine-Tuning 初期重み）の精度基準で判定します。**C7 の CPU / DirectML の推論 p95 レイテンシ・スループットも測定値として記録し、POC-03 の採用基準による合否判定は行いません**。C7 の採用判定は §12 の比較試験（POC-16: manual-only に対する最終品質の非悪化と annotation 中央所要時間の短縮）で行います。NFR-ANN-003 は製品の assist 実装の要件として AST phase で検証し、緩和しません（[owner ruling G2D-01](evidence/2026-09-24-owner-ruling-G2D-01.md)）。
 
 | 指標 | 測定環境 | 測定値 | 採用基準 | 判定 |
 |---|---|---|---|---|
 | 精度（タスク固有指標） | [記入: EP, OS, データセット名] | [記入] | [記入: 採用基準を記入] | [記入: 合格/不合格/未測定] |
-| 推論 p95 レイテンシ（ms） | [記入: EP, OS, HW] | [記入] | C7: ≤ 100 ms（POC-03）／C6: 参考値（判定しない） | [記入] |
-| 推論スループット（FPS） | [記入] | [記入] | C7: ≥ 10 FPS（POC-03）／C6: 参考値（判定しない） | [記入] |
+| 推論 p95 レイテンシ（ms） | [記入: EP, OS, HW] | [記入] | C7: 参考値（判定しない。§12 / POC-16 で判定）／C6: 参考値（判定しない） | [記入] |
+| 推論スループット（FPS） | [記入] | [記入] | C7: 参考値（判定しない。§12 / POC-16 で判定）／C6: 参考値（判定しない） | [記入] |
 | ピークメモリ使用量（MB） | [記入: EP, OS] | [記入] | [記入: 採用基準を記入] | [記入] |
 | checkpoint ファイルサイズ（MB） | — | [記入] | [記入] | [記入] |
 | インストーラー追加サイズ寄与（MB、圧縮後） | — | [記入] | [記入] | [記入] |
@@ -223,6 +223,7 @@
 
 > **C7 は必須記入です。C6 はこのセクションをスキップできます。**  
 > 測定条件と結果は客観的な数値で記録します。
+> **例外:** SigLIP base patch16-224 と OWL-ViT base patch32 の採用記録は、[所有者の判断（2026-09-25）](evidence/2026-09-25-owner-ruling-assist-trial-deferral.md)と[所有者の判断（2026-09-26）](evidence/2026-09-26-owner-rulings.md)により、本節を「免除（未実施）」と記録します。比較試験は Version 1 の実施対象から削除され、未実施のまま完了扱いです（合格を意味しません）。`releaseStatus.assistQuality[]` には記録しません（manifest schema `2.0.1` 以降は `ready=true` に求めません）。§16 の項目 27〜29 も同じ扱いです。ほかの C7 にこの例外を広げません。
 
 | 項目 | 内容 |
 |---|---|
@@ -251,7 +252,7 @@
 
 ## 14. リリースマニフェスト対応付け（FR-LIC-010/NFR-INS-007）
 
-`releaseStatus.ready=true`にする場合は、対象releaseの`productVersion`を必ずmanifestへ記録します。`ready=false`の空manifestでは省略できます。あわせて、C7分類・C7検出のそれぞれについて §12 の比較試験に合格した記録を`releaseStatus.assistQuality[]`へ記録します（manifest schema `2.0.0`。`recordPath`は §12 を記入した本採用記録）。
+`releaseStatus.ready=true`にする場合は、対象releaseの`productVersion`を必ずmanifestへ記録します。`ready=false`の空manifestでは省略できます。§12 の比較試験に合格した場合は、その記録を`releaseStatus.assistQuality[]`へ記録します（`recordPath`は §12 を記入した本採用記録）。manifest schema `2.0.1` 以降は、Version 1 で比較試験を免除した所有者の判断（2026-09-26）により、`ready=true`にこの記録を求めません。
 
 | 項目 | 値 |
 |---|---|
@@ -288,7 +289,7 @@
 | **保留** | 審査継続中、または情報収集中 |
 
 > 空欄・`unknown`・保留は「承認」と同等に扱いません。G-DEP-07（C6）/G-DEP-08（C7）の fail-closed 規則が適用されます。
-> チェックリストの C7 専用項目は C6 では `N/A（C6）` と記録できます。それ以外の必須項目を `N/A` で省略できません。C6/C7 とも §10・§11 を完了し、C7 は §12 も完了した場合だけ最終承認できます。
+> チェックリストの C7 専用項目は C6 では `N/A（C6）` と記録できます。それ以外の必須項目を `N/A` で省略できません。C6/C7 とも §10・§11 を完了し、C7 は §12 も完了した場合だけ最終承認できます（§12 の例外を除く）。
 
 ---
 
@@ -339,11 +340,11 @@
 ### 16.7 技術性能
 
 - [ ] 23. ONNX 変換成功と parity（tensor rtol/atol・分類 top-1 / 検出 mAP）を確認した（§10 / POC-08）
-- [ ] 24. OS・EP 別動作確認（Windows DirectML/CPU・macOS CoreML/CPU）を完了した（§10）
+- [ ] 24. OS・EP 別動作確認を完了した（§10）。Version 1 は Windows DirectML/CPU だけを対象とし、macOS CoreML/CPU は `N/A（A-07）` と記録する（[owner ruling G2D-12](evidence/2026-09-24-owner-ruling-G2D-12.md)）
 - [ ] 25. deterministic inference の条件（image hash / checkpoint hash / prompt / preprocess / threshold / seed）を確認した（§9 / NFR-ANN-004）
-- [ ] 26. C7: 推論 p95 レイテンシ ≤ 100 ms・スループット ≥ 10 FPS を確認した（§11 / POC-03）。C6: 推論 p95 レイテンシ・スループットの測定値を記録した（合否判定しない）
+- [ ] 26. C6/C7: 推論 p95 レイテンシ・スループットの測定値を記録した（§11。合否判定しない。C7 の採用判定は §12 / POC-16。[owner ruling G2D-01](evidence/2026-09-24-owner-ruling-G2D-01.md)）
 
-### 16.8 品質比較試験（C7 必須）
+### 16.8 品質比較試験（C7 必須。§12 の例外を除く）
 
 - [ ] 27. manual-only と assisted の比較試験を実施した（§12 / NFR-ANN-006）
 - [ ] 28. 最終 Ground Truth 品質が悪化しないことを確認した（§12）
@@ -356,12 +357,12 @@
 ### 16.10 リリースマニフェスト
 
 - [ ] 31. リリースマニフェスト内の識別子を記入した（§14）
-- [ ] 32. SBOM への記録を確認した（§14 / FR-LIC-010）
-- [ ] 33. `THIRD_PARTY_NOTICES` への追記を確認した（§14）
+- [ ] 32. SBOM への登録予定を確定した（§14 / FR-LIC-010）。SBOM の生成と照合は PKG phase で行う（[owner ruling G2D-12](evidence/2026-09-24-owner-ruling-G2D-12.md)）
+- [ ] 33. `THIRD_PARTY_NOTICES` へ追記する文面を §5 で確定した（§14）。ファイルの生成と照合は PKG phase で行う（[owner ruling G2D-12](evidence/2026-09-24-owner-ruling-G2D-12.md)）
 
 ### 16.11 最終承認
 
-- [ ] 34. チェック 1〜33 が完了した（C6 の C7 専用項目だけは `N/A（C6）` の理由を記録した）
+- [ ] 34. チェック 1〜33 が完了した（C6 の C7 専用項目だけは `N/A（C6）` の理由を記録した。§12 の例外に当たる C7 は、項目 27〜29 を「免除（未実施）」と記録した）。項目 24 は Windows DirectML/CPU の確認と macOS の `N/A（A-07）` の記録、項目 32・33 は登録予定と文面の確定をもって完了とみなす。SBOM と `THIRD_PARTY_NOTICES` の生成と照合は免除せず、PKG phase の完了条件として残る（[owner ruling G2D-12](evidence/2026-09-24-owner-ruling-G2D-12.md)）
 - [ ] 35. 承認者が本記録を確認し、承認日を §15 に記入した
 - [ ] 36. §15 判定欄に「承認」「却下」「保留」のいずれかを明記した
 
@@ -390,7 +391,7 @@
 | NFR-ANN-006 | manual vs assisted 比較試験・品質悪化なし・annotation 時間短縮 | §12 |
 | NFR-SEC-003 | Critical/High CVE なしのリリースゲート | §13 |
 | G-DEP-07 | C6 証拠記録全項目完備・unknown なし | §1〜§7, §15 |
-| G-DEP-08 | C7 証拠記録全項目完備・unknown なし（現時点で合格済みなし） | §1〜§8, §12, §15 |
+| G-DEP-08 | C7 証拠記録全項目完備・unknown なし（合格済み: SigLIP・OWL-ViT。2026-09-26） | §1〜§8, §12, §15 |
 
 ---
 

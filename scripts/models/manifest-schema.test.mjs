@@ -1,4 +1,4 @@
-﻿import assert from 'node:assert/strict';
+import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { test } from 'node:test';
@@ -83,7 +83,7 @@ function createSyntheticModel(category, task) {
   const id = `synthetic-${category.toLowerCase()}-${task}`;
   const license = {
     spdx: 'MIT',
-    commercialUseConfirmed: true,
+    productUsePermitted: true,
     redistributionPermitted: true,
     noticeText: 'UNPUBLISHED SYNTHETIC fixture text; not a license grant.',
   };
@@ -107,7 +107,7 @@ function createSyntheticModel(category, task) {
         datasetName: 'UNPUBLISHED SYNTHETIC dataset; no real samples',
         termsUrl: 'https://example.invalid/synthetic/dataset-terms',
         termsRetrievedDate: '2024-02-29',
-        commercialDerivativesPermitted: true,
+        productDerivativesPermitted: true,
         redistributionConditions: 'Synthetic fixture text; not redistribution authorization.',
         attributionText: 'Synthetic fixture only.',
       }],
@@ -161,7 +161,7 @@ function createSyntheticAssistQuality(task) {
 
 function createSyntheticManifest() {
   const manifest = {
-    schemaVersion: '2.0.0',
+    schemaVersion: '3.0.1',
     productVersion: '0.0.0',
     releaseStatus: {
       ready: true,
@@ -207,12 +207,22 @@ test('compiles the current manifest schema as JSON Schema draft 2020-12', () => 
 
 // The shipped manifest may only list entries whose adoption record reached the
 // Approved verdict; changing it has to be a deliberate edit here as well.
-const EXPECTED_APPROVED_ENTRIES = 2;
+const EXPECTED_APPROVED_ENTRIES = 4;
 
-test('accepts the actual non-ready manifest with its current approved set', () => {
+test('accepts the actual manifest with its current approved set and release state', () => {
   const manifest = readModelJson('manifest.json');
-  assert.equal(manifest.releaseStatus.ready, false);
   assert.equal(manifest.models.length, EXPECTED_APPROVED_ENTRIES);
+  // Gate 2 complete (G2F-01m): ready with all four roles and the root product version. Version 1 waived
+  // the NFR-ANN-006 comparison (owner ruling of 2026-09-26), so there is no assist-quality record.
+  assert.equal(manifest.releaseStatus.ready, true);
+  assert.equal(manifest.releaseStatus.assistQuality, undefined);
+  for (const [category, task] of roles) {
+    assert.ok(manifest.models.some((entry) => entry.category === category && entry.task === task), `${category} ${task}`);
+  }
+  const rootVersion = JSON.parse(
+    readFileSync(fileURLToPath(new URL('../../package.json', import.meta.url)), 'utf8'),
+  ).version;
+  assert.equal(manifest.productVersion, rootVersion);
   assertValid(manifest, 'Actual manifest, without synthetic entries');
 });
 
@@ -224,6 +234,11 @@ test('the actual manifest references evidence and approval files that exist with
     assert.ok(
       existsSync(repositoryFile(entry.approval.recordPath)),
       `missing adoption record: ${entry.approval.recordPath}`,
+    );
+    assert.equal(
+      createHash('sha256').update(readFileSync(repositoryFile(entry.approval.recordPath))).digest('hex'),
+      entry.approval.recordSha256,
+      `adoption record SHA-256 mismatch for ${entry.approval.recordPath}`,
     );
     for (const evidence of entry.evidence) {
       const localPath = repositoryFile(evidence.localPath);
@@ -311,20 +326,13 @@ test('requires productVersion when ready=true', () => {
   assertInvalid(manifest, 'required', '');
 });
 
-test('requires a passing assist-quality comparison record when ready=true', () => {
+// Schema 2.0.1: the NFR-ANN-006 comparison was waived for Version 1 (owner ruling of
+// 2026-09-26), so a ready manifest no longer needs assist-quality results.
+test('accepts ready=true without assist-quality results', () => {
   const manifest = createSyntheticManifest();
   delete manifest.releaseStatus.assistQuality;
-  assertInvalid(manifest, 'required', '/releaseStatus');
+  assertValid(manifest);
 });
-
-for (const task of ['classification', 'detection']) {
-  test(`requires the ${task} assist-quality comparison when ready=true`, () => {
-    const manifest = createSyntheticManifest();
-    manifest.releaseStatus.assistQuality = manifest.releaseStatus.assistQuality
-      .filter((result) => result.task !== task);
-    assertInvalid(manifest, 'contains', '/releaseStatus/assistQuality');
-  });
-}
 
 for (const field of ['finalQualityNotWorse', 'medianAnnotationTimeReduced']) {
   test(`rejects an assist-quality result whose ${field} is false`, () => {
@@ -442,8 +450,8 @@ test('rejects every tested approval status other than exact Approved', () => {
 });
 
 for (const layer of ['code', 'checkpoint']) {
-  test(`rejects unconfirmed commercial use or redistribution in the ${layer} license layer`, () => {
-    for (const field of ['commercialUseConfirmed', 'redistributionPermitted']) {
+  test(`rejects unpermitted product use or redistribution in the ${layer} license layer`, () => {
+    for (const field of ['productUsePermitted', 'redistributionPermitted']) {
       const manifest = createSyntheticManifest();
       manifest.models[0].licenses[layer][field] = false;
       assertInvalid(manifest, 'const', `/models/0/licenses/${layer}/${field}`);
@@ -451,10 +459,28 @@ for (const layer of ['code', 'checkpoint']) {
   });
 }
 
-test('rejects unconfirmed commercial derivative permission for training data', () => {
+test('rejects unpermitted product derivative use for training data', () => {
   const manifest = createSyntheticManifest();
-  manifest.models[0].licenses.trainingData[0].commercialDerivativesPermitted = false;
-  assertInvalid(manifest, 'const', '/models/0/licenses/trainingData/0/commercialDerivativesPermitted');
+  manifest.models[0].licenses.trainingData[0].productDerivativesPermitted = false;
+  assertInvalid(manifest, 'const', '/models/0/licenses/trainingData/0/productDerivativesPermitted');
+});
+
+// TBD-09 / schema 3.0.0: the former names are not accepted as aliases.
+test('rejects the pre-3.0.0 license field names', () => {
+  const renamed = [
+    ['checkpoint', (licenses) => licenses.checkpoint, 'productUsePermitted', 'commercialUseConfirmed',
+      '/models/0/licenses/checkpoint'],
+    ['trainingData', (licenses) => licenses.trainingData[0], 'productDerivativesPermitted',
+      'commercialDerivativesPermitted', '/models/0/licenses/trainingData/0'],
+  ];
+  for (const [layer, pick, current, former, path] of renamed) {
+    const manifest = createSyntheticManifest();
+    const target = pick(manifest.models[0].licenses);
+    target[former] = target[current];
+    delete target[current];
+    assertInvalid(manifest, 'required', path, `${layer} ${former}`);
+    assertInvalid(manifest, 'additionalProperties', path, `${layer} ${former}`);
+  }
 });
 
 test('rejects either intended-use flag that excludes product production use', () => {

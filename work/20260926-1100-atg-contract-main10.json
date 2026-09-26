@@ -1,0 +1,33 @@
+{
+  "objective": "G2V-01（製品版 0.1.12）と Gate 2 の終端化（G2F-00・01m・01a1〜01a3・03）を記録する（所有者の回答 2026-09-26 09:53、docs/model-governance/evidence/2026-09-26-owner-rulings-0953.md）",
+  "non_goals": [
+    "所有者の判断・利用者の session を生成・推定しない",
+    "比較試験を合格扱いにしない。releaseStatus.assistQuality に値を入れない",
+    "test の上限の延長・skip・assert の緩和をしない",
+    "git tag を作らない。PKG-01 の照合の前に ready=true の manifest を出荷物へ使わない"
+  ],
+  "deliverables": [
+    "CHANGELOG.md",
+    "docs/adr/0004-spike-decisions.md",
+    "docs/implementation-plan.md",
+    "package-lock.json",
+    "package.json",
+    "resources/models/manifest.json",
+    "scripts/models/manifest-schema.test.mjs",
+    "work/20260926-1100-Gate2-AtgReport.md",
+    "work/20260926-1100-Gate2-RemainTaskExecution.md",
+    "work/20260926-1100-Gate2-TerminalState.md",
+    "work/20260926-1100-Gate2Final-Review.md"
+  ],
+  "acceptance_command": "pwsh -NoLogo -NoProfile -Command \"$env:PATH = $env:LOCALAPPDATA + '\\npm-12.0.0;' + $env:PATH; if ((npm --version) -ne '12.0.0') { exit 2 }; npm run verify:docs; if ($LASTEXITCODE) { exit $LASTEXITCODE }; npm run verify:version; if ($LASTEXITCODE) { exit $LASTEXITCODE }; node --test scripts/models/manifest-schema.test.mjs; exit $LASTEXITCODE\"",
+  "baseline_policy": "既存の失敗は許容するが、新しい失敗を増やさない",
+  "time_budget": "3540m",
+  "execution_envelope": {
+    "code_changes": "allowed_within_write_set",
+    "dependency_additions": "declared_only",
+    "external_network_writes": "deny",
+    "production_deploy": "deny",
+    "secret_read": "declared_refs_only"
+  },
+  "secret_policy": "秘密値は契約・引継ぎ・ログ・成果物へ保存せず、必要時は参照名のみを記録する"
+}

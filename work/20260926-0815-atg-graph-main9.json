@@ -1,0 +1,280 @@
+{
+  "nodes": [
+    {
+      "id": "G2Q-04C",
+      "deps": [],
+      "duration": 10.0,
+      "write_set": [
+        "lock:trial-waiver",
+        "work/20260926-0815-Q1-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260926-0815-Gate2Main9-verify.ps1",
+          "work/20260926-0815-OwnerRulings5-ExecutionPlan.md",
+          "docs/model-governance/evidence/2026-09-26-owner-rulings.md",
+          "docs/model-governance/siglip-base-patch16-224-adoption.md",
+          "docs/model-governance/owlvit-base-patch32-adoption.md",
+          "resources/models/manifest.json"
+        ],
+        "outputs": [
+          "work/20260926-0815-Q1-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260926-0815-Gate2Main9-verify.ps1 G2Q-04C",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2Q-04D",
+      "deps": [],
+      "duration": 10.0,
+      "write_set": [
+        "lock:trial-waiver",
+        "work/20260926-0815-Q1-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260926-0815-Gate2Main9-verify.ps1",
+          "work/20260926-0815-OwnerRulings5-ExecutionPlan.md",
+          "docs/model-governance/evidence/2026-09-26-owner-rulings.md",
+          "docs/model-governance/siglip-base-patch16-224-adoption.md",
+          "docs/model-governance/owlvit-base-patch32-adoption.md",
+          "resources/models/manifest.json"
+        ],
+        "outputs": [
+          "work/20260926-0815-Q1-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260926-0815-Gate2Main9-verify.ps1 G2Q-04D",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2Q-05C",
+      "deps": [],
+      "duration": 10.0,
+      "write_set": [
+        "lock:trial-waiver",
+        "work/20260926-0815-Q1-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260926-0815-Gate2Main9-verify.ps1",
+          "work/20260926-0815-OwnerRulings5-ExecutionPlan.md",
+          "docs/model-governance/evidence/2026-09-26-owner-rulings.md",
+          "docs/model-governance/siglip-base-patch16-224-adoption.md",
+          "docs/model-governance/owlvit-base-patch32-adoption.md",
+          "resources/models/manifest.json"
+        ],
+        "outputs": [
+          "work/20260926-0815-Q1-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260926-0815-Gate2Main9-verify.ps1 G2Q-05C",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2Q-05D",
+      "deps": [],
+      "duration": 10.0,
+      "write_set": [
+        "lock:trial-waiver",
+        "work/20260926-0815-Q1-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260926-0815-Gate2Main9-verify.ps1",
+          "work/20260926-0815-OwnerRulings5-ExecutionPlan.md",
+          "docs/model-governance/evidence/2026-09-26-owner-rulings.md",
+          "docs/model-governance/siglip-base-patch16-224-adoption.md",
+          "docs/model-governance/owlvit-base-patch32-adoption.md",
+          "resources/models/manifest.json"
+        ],
+        "outputs": [
+          "work/20260926-0815-Q1-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260926-0815-Gate2Main9-verify.ps1 G2Q-05D",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2Q-06C",
+      "deps": [],
+      "duration": 10.0,
+      "write_set": [
+        "lock:trial-waiver",
+        "work/20260926-0815-Q1-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260926-0815-Gate2Main9-verify.ps1",
+          "work/20260926-0815-OwnerRulings5-ExecutionPlan.md",
+          "docs/model-governance/evidence/2026-09-26-owner-rulings.md",
+          "docs/model-governance/siglip-base-patch16-224-adoption.md",
+          "docs/model-governance/owlvit-base-patch32-adoption.md",
+          "resources/models/manifest.json"
+        ],
+        "outputs": [
+          "work/20260926-0815-Q1-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260926-0815-Gate2Main9-verify.ps1 G2Q-06C",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2Q-06D",
+      "deps": [],
+      "duration": 10.0,
+      "write_set": [
+        "lock:trial-waiver",
+        "work/20260926-0815-Q1-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260926-0815-Gate2Main9-verify.ps1",
+          "work/20260926-0815-OwnerRulings5-ExecutionPlan.md",
+          "docs/model-governance/evidence/2026-09-26-owner-rulings.md",
+          "docs/model-governance/siglip-base-patch16-224-adoption.md",
+          "docs/model-governance/owlvit-base-patch32-adoption.md",
+          "resources/models/manifest.json"
+        ],
+        "outputs": [
+          "work/20260926-0815-Q1-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260926-0815-Gate2Main9-verify.ps1 G2Q-06D",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2A-02",
+      "deps": [],
+      "duration": 100.0,
+      "write_set": [
+        "docs/model-governance/owlvit-base-patch32-adoption.md",
+        "work/20260926-0815-A2-Review.md",
+        "lock:owlvit-record"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260926-0815-Gate2Main9-verify.ps1",
+          "work/20260926-0815-OwnerRulings5-ExecutionPlan.md",
+          "docs/model-governance/evidence/2026-09-26-owner-rulings.md",
+          "docs/model-governance/adoption-template.md",
+          "docs/model-governance/evidence/2026-09-23-owner-risk-acceptance-c7-detection.md",
+          "docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-06.md",
+          "spikes/models/owlvit-assist-result.md"
+        ],
+        "outputs": [
+          "docs/model-governance/owlvit-base-patch32-adoption.md",
+          "work/20260926-0815-A2-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260926-0815-Gate2Main9-verify.ps1 G2A-02",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2A-03",
+      "deps": [
+        "G2A-02"
+      ],
+      "duration": 100.0,
+      "write_set": [
+        "lock:model-manifest",
+        "resources/models/manifest.json",
+        "scripts/models/manifest-schema.test.mjs",
+        "work/20260926-0815-A3-Review.md",
+        "lock:owlvit-record"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260926-0815-Gate2Main9-verify.ps1",
+          "work/20260926-0815-OwnerRulings5-ExecutionPlan.md",
+          "docs/model-governance/evidence/2026-09-26-owner-rulings.md",
+          "docs/model-governance/owlvit-base-patch32-adoption.md"
+        ],
+        "outputs": [
+          "resources/models/manifest.json",
+          "scripts/models/manifest-schema.test.mjs",
+          "work/20260926-0815-A3-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260926-0815-Gate2Main9-verify.ps1 G2A-03",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2A-04",
+      "deps": [
+        "G2A-02"
+      ],
+      "duration": 110.0,
+      "write_set": [
+        "src/renderer/features/settings/SettingsPage.tsx",
+        "src/renderer/features/settings/SettingsPage.test.tsx",
+        "resources/licenses/owlvit-base-patch32.NOTICE.txt",
+        "work/20260926-0815-A4-Review.md",
+        "lock:owlvit-record"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260926-0815-Gate2Main9-verify.ps1",
+          "work/20260926-0815-OwnerRulings5-ExecutionPlan.md",
+          "docs/model-governance/evidence/2026-09-26-owner-rulings.md",
+          "docs/model-governance/owlvit-base-patch32-adoption.md",
+          "resources/models/manifest.json"
+        ],
+        "outputs": [
+          "src/renderer/features/settings/SettingsPage.tsx",
+          "src/renderer/features/settings/SettingsPage.test.tsx",
+          "resources/licenses/owlvit-base-patch32.NOTICE.txt",
+          "work/20260926-0815-A4-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260926-0815-Gate2Main9-verify.ps1 G2A-04",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    }
+  ]
+}

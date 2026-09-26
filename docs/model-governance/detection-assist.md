@@ -615,7 +615,7 @@ byte size は 3 件とも §1 の記録と一致した。
 
 ### 18.5 manifest を更新できない構造的理由
 
-[`resources/models/manifest.schema.json`](../../resources/models/manifest.schema.json) の `$defs.spdxLicense` は `commercialUseConfirmed` と `redistributionPermitted` をいずれも `"const": true` とし、`spdx` に `unknown` 等の文字列を pattern で拒否する。`$defs.licenseSet` は `code` / `checkpoint` / `trainingData` の 3 層すべてを必須とする。
+[`resources/models/manifest.schema.json`](../../resources/models/manifest.schema.json) の `$defs.spdxLicense` は `productUsePermitted` と `redistributionPermitted` をいずれも `"const": true` とし、`spdx` に `unknown` 等の文字列を pattern で拒否する。`$defs.licenseSet` は `code` / `checkpoint` / `trainingData` の 3 層すべてを必須とする。
 
 3 候補とも checkpoint 層 license が `unknown`（DA-B01）であり、学習データ terms も未確定（DA-B02）であるため、entry を作るには存在しない license 表明を書く以外にない。**よって本記録を根拠とする entry は作成しない。**（2026-09-23 時点で manifest の `models` は空である。[`detection-base.md`](detection-base.md) §15.8 を参照。）
 

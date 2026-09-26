@@ -575,11 +575,11 @@ byte size は 3 件とも §2 / §3 に記録した publisher metadata と**一�
 [`resources/models/manifest.schema.json`](../../resources/models/manifest.schema.json) の `$defs.spdxLicense` は次を**構造的に強制**する。
 
 - `spdx`: `unknown` / `NOASSERTION` / `NONE` / `TBD` / `PENDING` / `MISSING` / `NOT_RUN` / `UNCONFIRMED` / `HOLD` / `BLOCKED` / `REJECTED` / `N/A` を pattern で**拒否**する
-- `commercialUseConfirmed`: `"const": true`（`false` を取れない）
+- `productUsePermitted`: `"const": true`（`false` を取れない）
 - `redistributionPermitted`: `"const": true`（同上）
 - `$defs.licenseSet` は `code` / `checkpoint` / `trainingData` の **3 層すべてを必須**とする
 
-したがって entry を作るには、`checkpoint` 層の `spdx` に何らかの license 識別子を書き、`commercialUseConfirmed` を `true` にする必要がある。しかし checkpoint 固有 license は存在しない（DB-L1）ため、書けるのは TorchVision の `BSD-3-Clause` / YOLOX の `Apache-2.0`、すなわち **C5 コードの license** だけである。それは §13 の self-adversarial review が**最大のリスクとして特定した「code license = checkpoint license」の混同そのもの**であり、schema はこれを防ぐために設計されている（A-07、schema 回帰 35 件 PASS）。
+したがって entry を作るには、`checkpoint` 層の `spdx` に何らかの license 識別子を書き、`productUsePermitted` を `true` にする必要がある。しかし checkpoint 固有 license は存在しない（DB-L1）ため、書けるのは TorchVision の `BSD-3-Clause` / YOLOX の `Apache-2.0`、すなわち **C5 コードの license** だけである。それは §13 の self-adversarial review が**最大のリスクとして特定した「code license = checkpoint license」の混同そのもの**であり、schema はこれを防ぐために設計されている（A-07、schema 回帰 35 件 PASS）。
 
 **よって §14 の時点では `resources/models/manifest.json` を未編集のままとした。** 利用者の採用指示は §14.1 に記録した。**その後 §15 の risk acceptance で DB-L1 が解除され、§15.6 で `LicenseRef-AutoVisionStudio` を用いた entry を作成した。** なお C5 コードの license（`BSD-3-Clause` / `Apache-2.0`）を checkpoint 層へ書く選択肢は**採用していない**。本節が特定した「code license = checkpoint license」の混同は、§15.6 の登録でも回避されている。
 
@@ -633,7 +633,7 @@ byte size は 3 件とも §2 / §3 に記録した publisher metadata と**一�
 
 ### 15.4 それでも manifest entry を作成できない理由（権利とは別の要因）
 
-権利 gate が充足扱いになったため、§14.5 が挙げた `spdxLicense` の制約のうち `commercialUseConfirmed` / `redistributionPermitted` を `true` にできない、という障害は解消した。しかし次は**権利とは無関係の技術・記録要因**として残っており、これらを満たさずに entry を書くことは**未実施の試験結果を合格として記録する行為**にあたるため、実施しない。
+権利 gate が充足扱いになったため、§14.5 が挙げた `spdxLicense` の制約のうち `productUsePermitted` / `redistributionPermitted` を `true` にできない、という障害は解消した。しかし次は**権利とは無関係の技術・記録要因**として残っており、これらを満たさずに entry を書くことは**未実施の試験結果を合格として記録する行為**にあたるため、実施しない。
 
 | 要因 | 要求の出所 | 現状 |
 |---|---|---|

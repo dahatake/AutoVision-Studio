@@ -205,3 +205,65 @@ PRE-04（main graph の分割判定のやり直し）の記録は [`20260924-071
    - H0 より前に完了した node は、作業の後で helper が `node start` した。主 run の succeeded の 6 node と、失敗として記録した node がこれにあたる。この順序の違いで node の結果は変わらないが、これらの node は ATG の lease による保護を受けていない。
    - これらの node の失敗は、すべて `contract` として記録した。
    - G2T-10 は verify の失敗であり、ATG の実行規約では `implementation` にあたる（graph の `max_attempts` は 2）。parity の FAIL は決定的な測定の結果で、修正の前と後の 2 回の実測がどちらも FAIL だった。再試行しても結果は変わらないと判断して `contract` にしたが、この分類は規約と異なる。
+## 8. 所有者の判断の実行計画（1815）による追記（21:55 JST）
+
+この節は、[`20260924-1815-OwnerRulingExecutionPlan.md`](20260924-1815-OwnerRulingExecutionPlan.md)（以下「1815 計画」）の Z で追加した。§7 の後に行ったことを記録する。回答の原文は 1815 計画 §1。
+
+### 8.1 判断記録
+
+| ID | 記録 | 選択 |
+|---|---|---|
+| G2D-01・02・05・10・12 | `docs/model-governance/evidence/2026-09-24-owner-ruling-<ID>.md` | `選択: A` |
+| G2D-04 | [`2026-09-24-owner-ruling-G2D-04.md`](../docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-04.md) | `選択: 実装する`（候補 1。製品 code の変更なし） |
+| G2D-06 | [`2026-09-24-owner-ruling-G2D-06.md`](../docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-06.md) | `選択: 署名する` |
+| G2D-11 | [`2026-09-24-owner-ruling-G2D-11-readiness.md`](../docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-11-readiness.md) | `選択: 用意の完了`（A。§7.1 の install の方法が組織承認済みと確認された） |
+| G2T-10 | [`2026-09-24-owner-ruling-G2T-10.md`](../docs/model-governance/evidence/2026-09-24-owner-ruling-G2T-10.md) | `選択: A`（FR-TRN-018 の許容差を allclose の形で解釈する） |
+| TBD-09 | [`2026-09-24-owner-ruling-TBD-09-timing-and-names.md`](../docs/model-governance/evidence/2026-09-24-owner-ruling-TBD-09-timing-and-names.md) | `選択: A`（時期 A、名前は案のとおり） |
+
+G2D-07C・07D（G2Q-01C・01D の数値案の承認）は、ask_user で承認を求めたが利用者が不在で回答がなかったため、承認を作らずに `node fail --class contract` で記録した。
+
+### 8.2 run の結果
+
+どの run も HEAD commit は `5cf14447b2cdbacf49d1ab15b17bee5333d02562` だった。
+
+| run | 実行 ID | 状態 DB | node の結果 | `run finish` |
+|---|---|---|---|---|
+| U の run（U-10 #2） | `4117a949-d5d9-4ffe-aac4-190291fe1917` | `work/20260924-1815-U10-atg-state/main.sqlite3` | U10-I・U10-T・U10-R が succeeded（3/3） | `acceptance_exit: 0`、`accepted: true`（[`20260924-1815-U10-Acceptance.md`](20260924-1815-U10-Acceptance.md) 39〜40 行） |
+| 主 run（再実行） | `0b7a6834-a226-4f48-b87c-5bc31dc2f2cd` | `work/20260924-1815-Gate2Main2-atg-state/main.sqlite3` | succeeded 24、failed 3（`EXT-X1`、G2D-07C、G2D-07D）、blocked 17 | `acceptance_exit: 0`、`accepted: true`（[`20260924-1815-Gate2Main2-Acceptance.md`](20260924-1815-Gate2Main2-Acceptance.md) 89〜90 行） |
+| 終端化 run（再実行） | `9750c4b8-3a47-42b0-9bbe-30f4569c9abd` | `work/20260924-1815-Gate2Final2-atg-state/final.sqlite3` | G2F-00・01r・01a1・01a3・03 が succeeded（5/5） | `acceptance_exit: 0`、`accepted: true`（[`20260924-1815-Gate2Final2-Acceptance.md`](20260924-1815-Gate2Final2-Acceptance.md) 80〜81 行） |
+
+- §7.3 の注と同じく、`accepted` は Gate 2 の成功を示さない。Gate 2 は BLOCKED で、`ready=false` のままである。
+- `EXT-X1` の (a)・(b) は ATG の run の外で行った（[`20260924-0730-EXT-X1-ExecutionRecord.md`](20260924-0730-EXT-X1-ExecutionRecord.md) の 2026-09-24 の (a)・(b) の節）。原因は確定していない。
+- 1815 計画の V（版 `0.1.11`）は、GAL-V1 の条件（`EXT-X1` の解消）が成り立たないため行っていない。T（TBD-09 の改名）は、V が行われず T9-V の版の明示の決定もないため起動していない。
+
+### 8.3 逸脱
+
+1. 1815 計画 §3 の F の完了条件は、終端記録を `work/20260924-0345-Gate2-TerminalState.md` としていた。実行では `work/20260924-1815-Gate2-TerminalState.md` を作った。この扱いは、同じ行に日付付きの訂正として記録した（`work/20260924-1815-F-Review.md`）。0345 の file は変更していない。
+2. 主 run（再実行）の G2D-08 は、`node fail` ではなく依存による blocked で終端した。前提の G2D-07C・07D が failed だったためである（`work/20260924-1815-G-Review.md`）。
+3. 主 run（再実行）の verify は、EXT-41 について計画 §3 の検査を加えた（`work/20260924-1815-G-Review.md`）。
+
+## 9. 所有者の回答の実行計画（2230）による追記（2026-09-25 01:32 JST）
+
+この節は、[`20260924-2230-UserRulings3-ExecutionPlan.md`](20260924-2230-UserRulings3-ExecutionPlan.md)（以下「2230 計画」）の Z で追加した。回答の原文は 2230 計画 の冒頭の「入力」。
+
+### 9.1 判断記録
+
+| ID | 記録 | 選択 |
+|---|---|---|
+| G2D-07C | [`2026-09-24-owner-ruling-G2D-07C.md`](../docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-07C.md) | `選択: 承認` |
+| G2D-07D | [`2026-09-24-owner-ruling-G2D-07D.md`](../docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-07D.md) | `選択: 承認` |
+
+### 9.2 run の結果
+
+HEAD commit は `5cf14447b2cdbacf49d1ab15b17bee5333d02562` だった。
+
+| run | 実行 ID | 状態 DB | node の結果 | `run finish` |
+|---|---|---|---|---|
+| Gate 2 main3 | `5618d7f3-f408-4e3d-bc2b-a745c1602a19` | `work/20260924-2230-Gate2Main3-atg-state/main.sqlite3` | succeeded 9（EXT-X1、EXT-X1-F1〜F3、G2D-07C、G2D-07D、G2Q-01CM、G2Q-01DM、G2Q-02）、failed 4（G2Q-03C・03D・04C・04D）、blocked 10 | `acceptance_exit: 0`、`accepted: true`（[`20260924-2230-Gate2Main3-Acceptance.md`](20260924-2230-Gate2Main3-Acceptance.md)、[`20260924-2230-Gate2Main3-Report.md`](20260924-2230-Gate2Main3-Report.md)） |
+
+- `accepted` は Gate 2 の成功を示さない。Gate 2 は BLOCKED のままで、manifest は `ready=false` である。
+- 2230 計画の V（版 `0.1.11`）は、lane X の完了条件 (3)（集約 `npm test` を 3 回続けて exit 0）が成り立たないため行っていない（2230 計画 §5）。
+
+### 9.3 逸脱
+
+2230 計画 §5 に記録した（最初の実行 `d07d29aa-…` の放棄、G2Q-01DM の 1 回目の試行、Gate 2 計画 §8.15 の訂正、EXT-X1 の比較 1〜4 と 1 回目の試行）。

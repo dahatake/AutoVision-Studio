@@ -1,0 +1,30 @@
+{
+  "objective": "G2Q-03C / 03D（gold set からの閾値・閾値方針・prompt 形式・seed の決定）を、所有者の判断 docs/model-governance/evidence/2026-09-25-owner-ruling-G2Q-03.md（方針 A、定義は work/20260925-0420-G2Q03-ExecutionPlan.md §1）に基づいて新しい実行 ID で実行する",
+  "non_goals": [
+    "所有者の判断・利用者の session・gold label を生成・推定しない",
+    "parity・性能・品質の基準を測定後に変えない（所有者の判断記録 docs/model-governance/evidence/2026-09-24-owner-ruling-G2T-10.md による G2T-10 の許容差の変更を除く）",
+    "未承認 model を manifest に登録しない",
+    "正本とノード一覧を変更しない"
+  ],
+  "deliverables": [
+    "spikes/models/siglip_assist_parity.py",
+    "spikes/models/siglip-assist-result.md",
+    "vendor/models/_spike/siglip-goldset.json",
+    "work/20260925-0420-Gate2Main4-G2Q-03C-Review.md",
+    "spikes/models/owlvit_assist_parity.py",
+    "spikes/models/owlvit-assist-result.md",
+    "vendor/models/_spike/owlvit-goldset.json",
+    "work/20260925-0420-Gate2Main4-G2Q-03D-Review.md"
+  ],
+  "acceptance_command": "pwsh -NoLogo -NoProfile -Command \"$env:PATH = $env:LOCALAPPDATA + '\\npm-12.0.0;' + $env:PATH; if ((npm --version) -ne '12.0.0') { exit 2 }; npm run verify:docs; if ($LASTEXITCODE) { exit $LASTEXITCODE }; node --test scripts/models/manifest-schema.test.mjs; exit $LASTEXITCODE\"",
+  "baseline_policy": "既存の失敗は許容するが、新しい失敗を増やさない",
+  "time_budget": "3540m",
+  "execution_envelope": {
+    "code_changes": "allowed_within_write_set",
+    "dependency_additions": "declared_only",
+    "external_network_writes": "deny",
+    "production_deploy": "deny",
+    "secret_read": "declared_refs_only"
+  },
+  "secret_policy": "秘密値は契約・引継ぎ・ログ・成果物へ保存せず、必要時は参照名のみを記録する"
+}

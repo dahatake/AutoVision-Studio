@@ -118,3 +118,46 @@ manifest の `support[]` は `windows-x64/cpu` と `windows-x64/directml` の**�
 | ≥ `10` FPS | `8.33` FPS | **不合格** |
 
 **HOLD 維持。** 最小改善の 1 案は parity と性能の両方で不適合であり、計画 §8 の 4 に従い追加の最適化は試さない。量子化経路は本 script に残し、同じ手順で再測定できるようにした。
+
+
+## 8. G2Q-03C — gold set からの `confidenceThreshold` の選択（2026-09-25）
+
+所有者の判断 [`2026-09-25-owner-ruling-G2Q-03.md`](../../docs/model-governance/evidence/2026-09-25-owner-ruling-G2Q-03.md)（方針 A）と、測定の前に固定した定義 [`20260925-0420-G2Q03-ExecutionPlan.md`](../../work/20260925-0420-G2Q03-ExecutionPlan.md) §1 に従い、`--mode goldset` で測った。ATG 実行 `84e8cb29-8aa9-40b6-bcab-411bfae30eff`（main4）の node G2Q-03C として測ったが、並列の G2Q-03D の変更を補助 script が宣言外書込みと誤判定して failed になったため（`work/20260925-0420-Gate2Main4-Acceptance.md`）、実行 `01ff4f75-d29a-453b-bb71-8e9bbb492a89`（main5）で同じ command を再び実行して記録し直した。出力 JSON の SHA-256 は 2 回とも同じである。
+
+### 8.1 実行方法
+
+```powershell
+cmd /d /c "cd /d spikes\models && ..\..\vendor\models\_spike\venv\Scripts\python.exe siglip_assist_parity.py --mode goldset --goldset ..\..\vendor\models\_spike\assist\goldset-classification.json --artifact-dir ..\..\vendor\models\_spike\onnx --output ..\..\vendor\models\_spike\siglip-goldset.json"
+```
+
+- 出力: `vendor/models/_spike/siglip-goldset.json`（git 管理外）。exit code `0`。
+- gold set: `vendor/models/_spike/assist/goldset-classification.json`（60 item、3 label。SHA-256 `cc69371cd92be15cdb8856a32aa53f4baa0fb45f30f86e70a62999c37107dc11`）。画像ごとに gold set の `image_sha256` と照合した。
+- fp32 ONNX の SHA-256 は vision `31e7556a…e8e1`、text `ccced932…b691` で、§2・§4 と同じ（label prompt は入力で、graph に含まれない）。
+- prompt: `This is a photo of {label}.`（`{label}` は label 名の `_` を空白に置き換えたもの）。3 label の prompt は `This is a photo of angular leaf spot.` / `This is a photo of bean rust.` / `This is a photo of healthy.`。
+- seed: `{"torch": 20260922}`。
+
+### 8.2 結果
+
+| 項目 | 値 |
+|---|---|
+| 候補（torch の top-1 score、重複なし） | 60 個。coverage 0.5 以上は 31 個 |
+| 選んだ候補の score | `0.9259922504425049` |
+| `confidenceThreshold`（次に小さい候補 `0.9223062992095947` との中点） | **`0.9241492748260498`** |
+| coverage | `32/60` = `0.5333` |
+| 一致率（提案した item の中で top-1 が gold label と一致） | `18/32` = `0.5625` |
+| 提案した item の数（torch / ORT CPU / DirectML） | 32 / 32 / 32 |
+
+| 比較（gold set の 60 item × 3 label の score） | score 最大差 | 判定（許容差 `1.0e-04`） |
+|---|---:|---|
+| torch ↔ onnxruntime-cpu | `5.8413e-06` | PASS |
+| torch ↔ onnxruntime-directml | `4.8876e-06` | PASS |
+| onnxruntime-cpu ↔ onnxruntime-directml | `6.0201e-06` | PASS |
+
+`verdict: PASS`（coverage 0.5 以上の閾値があり、fp32 ONNX と torch の score 差が許容差以下）。
+
+### 8.3 観測値（判定に使わない）
+
+- 全 60 item の top-1 の正解率は、閾値を置かない場合 `0.35`（21/60）、この閾値で提案し正解した item は全体の `0.30`（18/60）。3 label の一様な当て推量の期待値（1/3）と同程度であり、本 prompt の SigLIP は beans の病害をほとんど識別できていない。承認された gold set 計画に精度の下限は無いため判定には使わないが、採用の審査（G2A-01）で扱う事項である。
+- prompt の規則から、`healthy` の prompt は `This is a photo of healthy.` という不自然な文になる。規則は測定の前に固定したため変えていない。
+
+evidence: 2b62e1849f92baed7cc8cfaedfaa30994ebbed4c975ea32fcb5a75e93fb1b329 exit=0

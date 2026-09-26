@@ -3,9 +3,9 @@
 | 項目 | 内容 |
 |---|---|
 | 文書名 | AutoVision Studio 要求定義書 |
-| 文書バージョン | 0.7 Draft |
+| 文書バージョン | 0.8 Draft |
 | 作成日 | 2026-09-02 |
-| 最終更新日 | 2026-09-23（学習済みモデルの利用条件を「非商用の研究・教育目的」へ訂正。同日、FR-LIC-016 を追加し checkpoint ライセンス要件に risk acceptance 経路を新設） |
+| 最終更新日 | 2026-09-26（所有者の判断により、NFR-ANN-006 の比較試験を Version 1 では未実施のまま完了扱いとし、§13.3 に承認済みの Annotation Assist Model を記載。同日、TBD-09 を解決し FR-LIC-016(3) の field 名を改名後の名前にした。2026-09-23 に学習済みモデルの利用条件を「非商用の研究・教育目的」へ訂正し、FR-LIC-016 を追加） |
 | 対象リリース | Version 1（MVP） |
 | 対象リポジトリ | `dahatake/AutoVision-Studio` |
 | ステータス | Windows MVP スコープ確定・実装中 |
@@ -427,7 +427,7 @@ Azure Machine Learning の資料 [S37][S38] は UI と human-in-the-loop の設�
 | FR-LIC-013 | CUDA/cuDNN を同梱する場合、採用版の NVIDIA SDK Agreement と supplement を承認し、CUDA は Attachment A に列挙された redistributable、cuDNN は許可された runtime `.dll` だけをアプリの一部として配布する [S30][S31]。開発ツール、未列挙部品、pre-release SDK は同梱しない。 | 必須 |
 | FR-LIC-014 | Annotation Assist Model ごとに、code と checkpoint を分けて名称、版、取得 URL、SHA-256、各ライセンス、model card の intended/out-of-scope use、全公開学習 dataset と各 terms、再配布条件、NOTICE、承認者、承認日を manifest に持つ。判断根拠となる取得日付き一次資料 URL と保存 copy/hash を添付する。いずれかが unknown、製品のモデル利用条件（非商用の研究・教育目的）に適合しない、または製品用途対象外の場合は同梱しない。研究限定・非商用限定であることは、それだけでは除外理由としない（より狭い制限は FR-LIC-003 による）。ただし **checkpoint 層ライセンスまたは学習データ terms を確認できない場合に限り**、FR-LIC-016 の risk acceptance 経路を適用できる。製品用途が一次資料で明示的に対象外とされている checkpoint には適用しない（FR-LIC-015）。 | 必須 |
 | FR-LIC-015 | repository code が permissive license であることだけを根拠に checkpoint を承認しない。OpenAI CLIP は code が MIT でも model card が deployed use を out-of-scope とするため [S46][S47]、本製品の既定 Annotation Assist Model から除外する。 | 必須 |
-| FR-LIC-016 | checkpoint 層のライセンスまたは学習データ terms を publisher の一次資料から確認できない Curated Base Weight / Annotation Assist Model は、次を**すべて**満たす場合に限り、repository license decision authority（`docs/dependency-policy.md` §2.1）の risk acceptance により同梱できる。(1) 一次資料調査を実施し、確認できた事実と**確認できなかった項目を列挙**して採用記録に残す（推測で補わない）。(2) 権限者が氏名・役割・決定日付きで書面決定し、その記録を採用記録から参照する。(3) manifest の該当 license 層に `LicenseRef-<製品名>` 形式の repository ローカル識別子を用い、**publisher による許諾表明ではない**旨を `noticeText` に明記する。schema が `const: true` を課す `commercialUseConfirmed` / `redistributionPermitted` / `commercialDerivativesPermitted` については、その値が**権限者の決定に基づくものであり publisher の確認ではない**ことを同じ `noticeText` で宣言する。schema の field 名を改訂するまで（TBD-09）、`commercialUseConfirmed` と `commercialDerivativesPermitted` は製品のモデル利用条件（非商用の研究・教育目的）での利用・派生の許可を表すものとして扱い、その旨を `noticeText` に明記する。manifest に `unknown` 等の未確定語彙を書かない（FR-LIC-010 は維持する）。(4) アプリ内ライセンス表示（FR-LIC-012）と `THIRD_PARTY_NOTICES` に、risk acceptance である事実と未確認項目を表示する。(5) SHA-256、安全形式、ONNX parity、実行基盤互換、性能などの**技術要件は緩和しない**。一次資料が製品のモデル利用条件での利用（非商用の研究・教育目的）または deployed use を**明示的に禁止している、または intended use から明示的に除外（out-of-scope）している** checkpoint には本経路を適用しない（FR-LIC-015。OpenAI CLIP がこれに該当する）。本経路は外部法務の意見を代替せず、配布主体が変わる場合は再審査する。 | 必須 |
+| FR-LIC-016 | checkpoint 層のライセンスまたは学習データ terms を publisher の一次資料から確認できない Curated Base Weight / Annotation Assist Model は、次を**すべて**満たす場合に限り、repository license decision authority（`docs/dependency-policy.md` §2.1）の risk acceptance により同梱できる。(1) 一次資料調査を実施し、確認できた事実と**確認できなかった項目を列挙**して採用記録に残す（推測で補わない）。(2) 権限者が氏名・役割・決定日付きで書面決定し、その記録を採用記録から参照する。(3) manifest の該当 license 層に `LicenseRef-<製品名>` 形式の repository ローカル識別子を用い、**publisher による許諾表明ではない**旨を `noticeText` に明記する。schema が `const: true` を課す `productUsePermitted` / `redistributionPermitted` / `productDerivativesPermitted` については、その値が**権限者の決定に基づくものであり publisher の確認ではない**ことを同じ `noticeText` で宣言する。`productUsePermitted` と `productDerivativesPermitted` は製品のモデル利用条件（非商用の研究・教育目的）での利用・派生の許可を表し（manifest schema `3.0.0` で TBD-09 により改名）、その旨を `noticeText` に明記する。manifest に `unknown` 等の未確定語彙を書かない（FR-LIC-010 は維持する）。(4) アプリ内ライセンス表示（FR-LIC-012）と `THIRD_PARTY_NOTICES` に、risk acceptance である事実と未確認項目を表示する。(5) SHA-256、安全形式、ONNX parity、実行基盤互換、性能などの**技術要件は緩和しない**。一次資料が製品のモデル利用条件での利用（非商用の研究・教育目的）または deployed use を**明示的に禁止している、または intended use から明示的に除外（out-of-scope）している** checkpoint には本経路を適用しない（FR-LIC-015。OpenAI CLIP がこれに該当する）。本経路は外部法務の意見を代替せず、配布主体が変わる場合は再審査する。 | 必須 |
 
 ### 8.9 ローカルデータ・セキュリティ
 
@@ -654,7 +654,7 @@ stateDiagram-v2
 | NFR-ANN-003 | 補助候補生成中も annotation UI の入力、保存、画面遷移を妨げない。worker 異常終了時も手動 annotation を継続できる。 |
 | NFR-ANN-004 | 同じ image hash、checkpoint hash、prompt、preprocess、threshold、seed の組み合わせでは deterministic inference を使用し、同一候補を再現できる。非決定的演算が残る場合は manifest とレポートに明記する。 |
 | NFR-ANN-005 | 確定 Dataset Revision が `確認済み` 画像の Ground Truth だけを含み、未確認画像および未処理 Model Suggestion が 1 件も含まれないことを、自動 test と manifest 検査で保証する。 |
-| NFR-ANN-006 | 採用候補モデルは、代表的な分類/検出データで manual-only と assisted の比較試験を行い、最終 Ground Truth の品質を悪化させず、annotation 所要時間を短縮することを出荷条件とする。測定条件と結果を model adoption record に保存する。 |
+| NFR-ANN-006 | 採用候補モデルは、代表的な分類/検出データで manual-only と assisted の比較試験を行い、最終 Ground Truth の品質を悪化させず、annotation 所要時間を短縮することを出荷条件とする。測定条件と結果を model adoption record に保存する。Version 1 では、所有者の判断（2026-09-26、`docs/model-governance/evidence/2026-09-26-owner-rulings.md`）により比較試験を実施対象から削除し、未実施のまま完了扱いとした（免除）。品質の非悪化と所要時間の短縮は検証されていない。 |
 | NFR-ANN-007 | 補助候補の score 分布、承認率、編集率、却下率を class 別に監視できるが、画像や telemetry を端末外へ送信しない。 |
 | NFR-ANN-008 | Label Schema と annotation instruction は日本語を含む Unicode を保存・表示でき、keyboard、screen reader、200% 拡大で主要 annotation 操作を完了できる。 |
 
@@ -751,17 +751,17 @@ flowchart LR
 
 ### 13.3 Annotation Assist Model 候補評価
 
-現時点では、**同梱を最終承認した Annotation Assist Model はない**。次表は技術調査結果であり、`候補` は採用決定を意味しない。
+同梱を最終承認した Annotation Assist Model は、分類の Google SigLIP base patch16-224（2026-09-25 承認。採用記録 `docs/model-governance/siglip-base-patch16-224-adoption.md`）と、検出の Google OWL-ViT base patch32（2026-09-26 承認、研究目的に限る。採用記録 `docs/model-governance/owlvit-base-patch32-adoption.md`）である。どちらも FR-LIC-016 の risk acceptance 経路による承認で、NFR-ANN-006 の比較試験は免除（未実施）である。次表は技術調査結果であり、`候補` は採用決定を意味しない。
 
 | 候補 | 検証できた能力 | ライセンス・利用条件の調査結果 | 判定 |
 |---|---|---|---|
 | Project の既存 Model Version | Microsoft の human-in-the-loop 事例と同様に、手動確定データから学習した分類 model は tag、検出 model は box を未確認画像へ prelabel できる [S38]。 | 本製品で生成するが、親 Curated Base Weight とユーザーデータの権利条件を継承する。 | **既存版がある場合の第一候補。** |
-| Google SigLIP base patch16-224 | model card は candidate text label による zero-shot image classification、0.2B parameters、224 x 224 入力を記載する [S53]。論文は language-image pre-training と zero-shot 評価を説明する [S54]。 | model card metadata は Apache-2.0 で、Big Vision は明示例外がない限り models を含め Apache-2.0 と記載する [S53][S55]。一方、学習データは English image-text pairs の WebLI とされ、model card は Hugging Face 作成と明記される [S53]。採用時は Hugging Face checkpoint と公式 Big Vision model resource の同一性、WebLI 由来、再配布条件を hash と一次資料で確認する。 | **既存 class 順位付けの技術候補、未承認。** |
+| Google SigLIP base patch16-224 | model card は candidate text label による zero-shot image classification、0.2B parameters、224 x 224 入力を記載する [S53]。論文は language-image pre-training と zero-shot 評価を説明する [S54]。 | model card metadata は Apache-2.0 で、Big Vision は明示例外がない限り models を含め Apache-2.0 と記載する [S53][S55]。一方、学習データは English image-text pairs の WebLI とされ、model card は Hugging Face 作成と明記される [S53]。採用時は Hugging Face checkpoint と公式 Big Vision model resource の同一性、WebLI 由来、再配布条件を hash と一次資料で確認する。 | **承認（2026-09-25、FR-LIC-016 の risk acceptance 経路）。** 調査時点では技術候補・未承認とした。 |
 | Microsoft Florence-2-base-ft | model card は 0.23B parameters、captioning、`<OD>` が `labels` と `bboxes` を返すことを記載する [S51]。論文も captioning、detection、grounding を統一 prompt で扱う [S50]。 | model repository metadata と LICENSE text は MIT [S51]。ただし LICENSE の `Software` が配布 checkpoint を含むこと、および FLD-5B の 126 million images/5.4 billion annotations の全由来と条件は、本調査だけでは最終確定していない [S50][S51]。 | **初期ラベル名・矩形の技術候補、未承認。** |
 | Grounding DINO | paper は category name/referring expression から arbitrary object を検出する open-set detector と説明する [S48]。公式 repository は image/text 入力、box/phrase 出力、CPU-only mode を説明する [S49]。 | repository code は Apache-2.0 [S49]。公式 checkpoint 表は O365、GoldG、Cap4M、COCO、OpenImage、ODinW-35、RefCOCO 等を学習元として挙げるが、review 済み資料では release checkpoint の独立した再配布条件を確認できていない [S49]。 | **Schema 名から矩形を出す技術候補、未承認。** |
 | OpenAI CLIP | paper と repository は、画像と text label の類似度による zero-shot classification を示す [S45][S46]。 | repository code は MIT だが [S46]、model card は commercial/non-commercial を問わず deployed use を out-of-scope とし、固定 taxonomy での thorough in-domain testing、英語限定、bias への注意を記載する [S47]。 | **本製品の同梱候補から除外。能力比較の参考のみ。** |
 
-SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要件を満たす別 checkpoint を再調査する。分類用・検出用の各 1 checkpoint が FR-LIC-014（FR-LIC-016 の risk acceptance 経路を含む）、NFR-ANN-006、POC-16 を通過するまで、モデル支援を含む MVP のリリース判定を `Go` にしない。
+SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要件を満たす別 checkpoint を再調査する。分類用・検出用の各 1 checkpoint が FR-LIC-014（FR-LIC-016 の risk acceptance 経路を含む）、NFR-ANN-006、POC-16 を通過するまで、モデル支援を含む MVP のリリース判定を `Go` にしない。ただし Version 1 では、NFR-ANN-006 の比較試験と POC-16 の品質・中央所要時間の比較を、所有者の判断（2026-09-26）により未実施のまま完了扱いとした（免除）。POC-16 のそれ以外の条項は免除しない。
 
 ## 14. リスクと対策
 
@@ -807,7 +807,7 @@ SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要�
 | POC-13 servicing | Windowsで直前版からのupgrade、同一版repair、意図的な中断からのrollback、uninstallを行い、Project保持とアプリ整合性を確認する。macOS servicingは将来対応とする。 |
 | POC-14 分類 annotation | 未ラベル画像をimportし、Label Schema作成、gallery一括tag、single view修正、undo、自動保存、確定、新Dataset Revision、学習自動開始までをWindowsで完了する。 |
 | POC-15 検出 annotation | 未annotation画像をimportし、複数rectangleの作成・移動・resize・class変更・削除、対象物なし、COCO import修正、確定、学習自動開始までをWindowsで完了する。 |
-| POC-16 初期モデル支援 | 分類と検出の採用候補ごとに、完全オフライン、CPU/CUDA、installer同梱、license manifest、候補表示、accept/edit/reject、未確認候補の学習除外を確認する。representative gold setでmanual-onlyより最終品質を悪化させずannotation中央所要時間を短縮する。MPSは将来対応とする。 |
+| POC-16 初期モデル支援 | 分類と検出の採用候補ごとに、完全オフライン、CPU/CUDA、installer同梱、license manifest、候補表示、accept/edit/reject、未確認候補の学習除外を確認する。representative gold setでmanual-onlyより最終品質を悪化させずannotation中央所要時間を短縮する（Version 1 では所有者の判断（2026-09-26）によりこの比較を免除した。NFR-ANN-006）。MPSは将来対応とする。 |
 | POC-17 Project model 支援 | 成功済み Model Version を明示選択し、新規画像へ分類 tag または検出 rectangle を生成する。version/hash/provenance を記録し、確認済み Ground Truth を再生成で上書きしない。 |
 
 ## 16. 受入条件
@@ -903,7 +903,7 @@ SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要�
 | TBD-06 | 分類・検出の Annotation Assist Model | SigLIP / Florence-2 / Grounding DINO 等は技術候補に留め、checkpoint、学習データ由来、再配布、実機性能、最終 annotation 品質を監査して各 1 つを承認する | 実装着手前、POC-16 完了時 |
 | TBD-07 | annotation editor の実装方式 | CVAT/Label Studio は機能・license の参考とし、全体を同梱するか task-focused editor を実装するかを installer 容量、依存、UX、SBOM で比較する | アーキテクチャ設計時 |
 | TBD-08 | モデル支援の有用性 threshold | representative gold set と manual-only baseline を定義し、coverage、最終品質、所要時間の採用基準を class/task ごとに固定する | POC-16 計画時 |
-| TBD-09 | manifest schema の許諾 field 名 | `commercialUseConfirmed` / `commercialDerivativesPermitted` は、改訂までは製品のモデル利用条件（非商用の研究・教育目的）での利用・派生の許可を表すものとして扱う（FR-LIC-016(3)） | 次に schema を変更する時 |
+| TBD-09 | manifest schema の許諾 field 名 | **解決。** manifest schema `3.0.0` で `productUsePermitted` / `productDerivativesPermitted` に改名した。製品のモデル利用条件（非商用の研究・教育目的）での利用・派生の許可を表す（FR-LIC-016(3)） | 2026-09-26 に解決 |
 
 ## 19. 参考資料
 

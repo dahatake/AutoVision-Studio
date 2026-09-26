@@ -1,0 +1,30 @@
+{
+  "objective": "G2A-01 を新しい実行 ID で記録し直し、G2A-03・G2D-08 を直列に行う（main7 の実行 8c3df57e-0c2c-4806-9be9-7eb74c082560 で、並列の G2A-02 の変更を宣言外書込みとして数えた補助 script の誤判定により G2A-01 が failed になったため）。node の定義と所有者の判断は main7 と同じ。OWL-ViT（G2A-02）は main7 で保留として終端済み",
+  "non_goals": [
+    "所有者の判断・利用者の session・gold label を生成・推定しない",
+    "比較試験（NFR-ANN-006）を実施・合格扱いにしない。releaseStatus.ready を true にしない",
+    "parity・性能・品質の基準を変えない",
+    "製品版を package.json・manifest に書き込まない（G2V-01 は対象外）",
+    "正本とノード一覧を変更しない"
+  ],
+  "deliverables": [
+    "docs/model-governance/evidence/2026-09-25-owner-ruling-G2D-08.md",
+    "docs/model-governance/siglip-base-patch16-224-adoption.md",
+    "resources/models/manifest.json",
+    "scripts/models/manifest-schema.test.mjs",
+    "work/20260925-0745-Gate2Main7-G2A-01-Review.md",
+    "work/20260925-0745-Gate2Main7-G2A-03-Review.md",
+    "work/20260925-0745-Gate2Main7-G2D-08-Review.md"
+  ],
+  "acceptance_command": "pwsh -NoLogo -NoProfile -Command \"$env:PATH = $env:LOCALAPPDATA + '\\npm-12.0.0;' + $env:PATH; if ((npm --version) -ne '12.0.0') { exit 2 }; npm run verify:docs; if ($LASTEXITCODE) { exit $LASTEXITCODE }; node --test scripts/models/manifest-schema.test.mjs; exit $LASTEXITCODE\"",
+  "baseline_policy": "既存の失敗は許容するが、新しい失敗を増やさない",
+  "time_budget": "3540m",
+  "execution_envelope": {
+    "code_changes": "allowed_within_write_set",
+    "dependency_additions": "declared_only",
+    "external_network_writes": "deny",
+    "production_deploy": "deny",
+    "secret_read": "declared_refs_only"
+  },
+  "secret_policy": "秘密値は契約・引継ぎ・ログ・成果物へ保存せず、必要時は参照名のみを記録する"
+}

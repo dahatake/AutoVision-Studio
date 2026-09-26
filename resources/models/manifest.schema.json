@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "manifest.schema.json",
   "title": "AutoVision Studio Release Model Manifest",
-  "description": "Declares only fully approved, commercially-licensed C6 (Curated Base Weight) and C7 (Annotation Assist Model) payloads. Fail-closed: unknown license, unverified commercial use, unapproved status, or path traversal causes validation failure. Represents a release manifest, not a model registry or candidate list. An empty models array is valid and expected while G-DEP-07/G-DEP-08 approval gates are pending (docs/dependency-policy.md §12, FR-LIC-004/014).",
+  "description": "Declares only fully approved C6 (Curated Base Weight) and C7 (Annotation Assist Model) payloads whose use and redistribution are permitted under the product model use condition (non-commercial research and educational purposes, FR-LIC-016(3)). Fail-closed: unknown license, unpermitted use, unapproved status, or path traversal causes validation failure. Represents a release manifest, not a model registry or candidate list. An empty models array is valid and expected while G-DEP-07/G-DEP-08 approval gates are pending (docs/dependency-policy.md §12, FR-LIC-004/014).",
   "$comment": "JSON Schema enforces release composition, approved-entry fields, support coverage, and structural fail-closed rules. The PKG-01 release verifier must additionally verify model ID uniqueness, sourcePath file existence and SHA-256/byteSize, sourcePath-to-payloadPath package mapping, adoption/evidence file existence and SHA-256, required evidence-kind coverage, SPDX expression or canonical license URL validity, approval-record consistency, confidenceThreshold compatibility with scoreRange, and that each releaseStatus.assistQuality entry names a C7 entry of the same task whose approval.recordPath equals recordPath with SHA-256 recordSha256.",
   "type": "object",
   "required": ["schemaVersion", "releaseStatus", "models"],
@@ -13,8 +13,8 @@
     },
     "schemaVersion": {
       "type": "string",
-      "const": "2.0.0",
-      "description": "Must match this schema document version. 2.0.0 added releaseStatus.assistQuality, required when ready is true; this rejects ready manifests that were valid under 1.0.0 (SchemaVer: constraint tightening is a MODEL change)."
+      "const": "3.0.1",
+      "description": "Must match this schema document version. 2.0.0 added releaseStatus.assistQuality, required when ready is true; this rejected ready manifests that were valid under 1.0.0 (SchemaVer: constraint tightening is a MODEL change). 2.0.1 no longer requires assistQuality when ready is true, because the owner ruling of 2026-09-26 waived the NFR-ANN-006 comparison for Version 1 (docs/model-governance/evidence/2026-09-26-owner-rulings.md); apart from this version value, every manifest valid under 2.0.0 stays valid (SchemaVer: constraint relaxation is an ADDITION). 3.0.0 renamed the two license permission fields to productUsePermitted and productDerivativesPermitted so that the names match their meaning under the product model use condition (TBD-09); manifests that use the former field names are rejected (SchemaVer: a MODEL change). 3.0.1 added the optional approval.recordSha256, the SHA-256 of the adoption record that the PKG-01 release verifier requires (SchemaVer: an ADDITION)."
     },
     "productVersion": {
       "type": "string",
@@ -29,7 +29,7 @@
       "properties": {
         "ready": {
           "type": "boolean",
-          "description": "Set to true only when all required C6/C7 approvals exist, the models array is non-empty, and assistQuality records a passing NFR-ANN-006 comparison for both C7 tasks."
+          "description": "Set to true only when all required C6/C7 approvals exist and the models array is non-empty. Since 2.0.1 a passing NFR-ANN-006 comparison in assistQuality is not required, because the comparison was waived for Version 1 (owner ruling of 2026-09-26)."
         },
         "reason": {
           "type": "string",
@@ -38,7 +38,7 @@
         },
         "assistQuality": {
           "type": "array",
-          "description": "Passing manual-only versus assisted comparisons (NFR-ANN-006, POC-16). A ready manifest needs at least one per C7 task. Only passing results are allowed; a missing, blocked, unmeasured, or failed comparison is expressed by omitting the entry and keeping ready false.",
+          "description": "Passing manual-only versus assisted comparisons (NFR-ANN-006, POC-16). Optional since 2.0.1 (the comparison was waived for Version 1 by the owner ruling of 2026-09-26). Only passing results are allowed; a missing, waived, blocked, unmeasured, or failed comparison is expressed by omitting the entry.",
           "items": {
             "$ref": "#/$defs/assistQualityResult"
           },
@@ -71,29 +71,6 @@
       "then": {
         "required": ["productVersion"],
         "properties": {
-          "releaseStatus": {
-            "required": ["assistQuality"],
-            "properties": {
-              "assistQuality": {
-                "allOf": [
-                  {
-                    "contains": {
-                      "properties": { "task": { "const": "classification" } },
-                      "required": ["task"]
-                    },
-                    "minContains": 1
-                  },
-                  {
-                    "contains": {
-                      "properties": { "task": { "const": "detection" } },
-                      "required": ["task"]
-                    },
-                    "minContains": 1
-                  }
-                ]
-              }
-            }
-          },
           "models": {
             "minItems": 4,
             "allOf": [
@@ -289,7 +266,7 @@
         },
         "trainingData": {
           "type": "array",
-          "description": "All public training datasets. C7 requires full enumeration (FR-LIC-014). Each dataset's terms must confirm commercial use of derivative models.",
+          "description": "All public training datasets. C7 requires full enumeration (FR-LIC-014). Each entry must record that use of derivative models is permitted under the product model use condition (FR-LIC-016(3)).",
           "items": {
             "$ref": "#/$defs/datasetLicense"
           },
@@ -301,7 +278,7 @@
     "spdxLicense": {
       "type": "object",
       "description": "License assertion for a single layer (code or checkpoint). All fields must be confirmed; no unknown or unconfirmed values (docs/dependency-policy.md §3).",
-      "required": ["spdx", "commercialUseConfirmed", "redistributionPermitted", "noticeText"],
+      "required": ["spdx", "productUsePermitted", "redistributionPermitted", "noticeText"],
       "additionalProperties": false,
       "properties": {
         "spdx": {
@@ -332,10 +309,10 @@
           ],
           "description": "SPDX identifier (e.g., 'Apache-2.0') or canonical license URL for non-SPDX licenses. 'unknown' and 'NOASSERTION' are rejected (fail-closed, docs/dependency-policy.md §3)."
         },
-        "commercialUseConfirmed": {
+        "productUsePermitted": {
           "type": "boolean",
           "const": true,
-          "description": "Commercial use explicitly confirmed. false is not a valid value for an approved entry (fail-closed)."
+          "description": "Use permitted under the product model use condition (non-commercial research and educational purposes). The value records the decision of the repository license decision authority and is not a publisher confirmation (FR-LIC-016(3)). false is not a valid value for an approved entry (fail-closed)."
         },
         "redistributionPermitted": {
           "type": "boolean",
@@ -351,12 +328,12 @@
 
     "datasetLicense": {
       "type": "object",
-      "description": "License and terms for a single training dataset (C8 layer). Commercial use of derivative models must be explicitly confirmed.",
+      "description": "License and terms for a single training dataset (C8 layer). Use of derivative models under the product model use condition must be explicitly permitted.",
       "required": [
         "datasetName",
         "termsUrl",
         "termsRetrievedDate",
-        "commercialDerivativesPermitted",
+        "productDerivativesPermitted",
         "redistributionConditions",
         "attributionText"
       ],
@@ -379,10 +356,10 @@
           "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
           "description": "ISO 8601 date on which the dataset terms were retrieved and saved."
         },
-        "commercialDerivativesPermitted": {
+        "productDerivativesPermitted": {
           "type": "boolean",
           "const": true,
-          "description": "Commercial use of models trained on this dataset is explicitly confirmed. false is not valid (fail-closed). ImageNet and COCO require individual legal review (FR-LIC-006/007)."
+          "description": "Use of models trained on this dataset is permitted under the product model use condition (non-commercial research and educational purposes). The value records the decision of the repository license decision authority and is not a publisher confirmation (FR-LIC-016(3)). false is not valid (fail-closed). ImageNet and COCO require individual legal review (FR-LIC-006/007)."
         },
         "redistributionConditions": {
           "type": "string",
@@ -505,6 +482,11 @@
       "required": ["recordPath", "status", "approver", "date"],
       "additionalProperties": false,
       "properties": {
+        "recordSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "Lowercase hex SHA-256 of the adoption record at recordPath. The PKG-01 release verifier (scripts/models/verify.py) requires it and checks it before reading the record."
+        },
         "recordPath": {
           "type": "string",
           "pattern": "^docs/model-governance/[A-Za-z0-9_-][A-Za-z0-9._-]*\\.md$",

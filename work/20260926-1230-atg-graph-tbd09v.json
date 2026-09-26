@@ -1,0 +1,46 @@
+{
+  "nodes": [
+    {
+      "id": "T9-V",
+      "deps": [],
+      "duration": 30.0,
+      "write_set": [
+        "package.json",
+        "package-lock.json",
+        "CHANGELOG.md",
+        "lock:root-version",
+        "work/20260924-1341-TBD09-T9-V-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-1341-TBD09-VersionDecision.md",
+          "resources/models/manifest.schema.json",
+          "resources/models/manifest.json",
+          "scripts/models/manifest-schema.test.mjs",
+          "docs/adr/0004-spike-decisions.md",
+          "docs/model-governance/classification-assist.md",
+          "docs/model-governance/detection-assist.md",
+          "docs/model-governance/detection-base.md",
+          "docs/model-governance/mobilenet-v3-large-imagenet1k-v2-adoption.md",
+          "docs/model-governance/ssdlite320-mobilenet-v3-large-coco-v1-adoption.md",
+          "docs/model-governance/adoption-template.md",
+          "docs/requirement-definition.md",
+          "docs/dependency-policy.md"
+        ],
+        "outputs": [
+          "package.json",
+          "package-lock.json",
+          "CHANGELOG.md",
+          "work/20260924-1341-TBD09-T9-V-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -Command \"$env:PATH = \\\"$env:LOCALAPPDATA\\npm-12.0.0;$env:PATH\\\"; if ((npm --version) -ne '12.0.0') { exit 2 }; $v = @(Select-String -Path work/20260924-1341-TBD09-VersionDecision.md -Pattern '^version: (\\d+\\.\\d+\\.\\d+)$'); if ($v.Count -ne 1) { exit 1 }; if ((node -p \\\"require('./package.json').version\\\") -ne $v[0].Matches[0].Groups[1].Value) { exit 1 }; npm run verify:version; if ($LASTEXITCODE -ne 0) { exit 1 }; npm run test:version; if ($LASTEXITCODE -ne 0) { exit 1 }; node --test scripts/models/manifest-schema.test.mjs; if ($LASTEXITCODE -ne 0) { exit 1 }; npm run verify:docs; if ($LASTEXITCODE -ne 0) { exit 1 }; npm run test:docs; if ($LASTEXITCODE -ne 0) { exit 1 }; $o = git grep -n -E 'commercialUseConfirmed|commercialDerivativesPermitted' -- . ':!docs/model-governance/evidence' ':!work' ':!scripts/models/manifest-schema.test.mjs' ':!CHANGELOG.md'; if ($LASTEXITCODE -ne 1) { exit 1 }; if (-not (Select-String -Path CHANGELOG.md -SimpleMatch 'productUsePermitted' -Quiet)) { exit 1 }; if (-not (Select-String -Path CHANGELOG.md -SimpleMatch 'productDerivativesPermitted' -Quiet)) { exit 1 }; if (-not (Select-String -Path work/20260924-1341-TBD09-T9-V-Review.md -Pattern '^blocking: 0$' -Quiet)) { exit 1 }\"",
+        "timeout_seconds": 600,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    }
+  ]
+}

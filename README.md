@@ -4,7 +4,7 @@ AutoVision Studio は、画像分類と物体検出の教師データ作成、�
 
 ## 現在の利用可否
 
-現在は **Gate 1 の条件付き開発許可（CONDITIONAL_GO）の下で、core・Project・データ取り込み・手動アノテーションの開発を進めている段階**です。[Gate 判定](docs/adr/0004-spike-decisions.md)の Gate 2 は **BLOCKED / NOT_COMPLETE** のままで、完成アプリケーションや一般利用者向けインストーラーはまだ提供していません。画面や個別機能の実装は、製品受入・本人確認・正式出荷の合格を意味しません。macOS は将来対応であり、現在は利用できず、Version 1 の実装・試験・配布・Gate の対象ではありません。
+現在は **Gate 1 の条件付き開発許可（CONDITIONAL_GO）の下で、core・Project・データ取り込み・手動アノテーションの開発を進めている段階**です。[Gate 判定](docs/adr/0004-spike-decisions.md)の Gate 2 は 2026-09-26 に主 run の全成功を記録しました（補助品質の比較試験は未実施のまま完了扱い）。完成アプリケーションや一般利用者向けインストーラーはまだ提供していません。画面や個別機能の実装は、製品受入・本人確認・正式出荷の合格を意味しません。macOS は将来対応であり、現在は利用できず、Version 1 の実装・試験・配布・Gate の対象ではありません。
 
 開発用アプリでは、次の画面・導線に到達できます。Project 内の画面は Project の選択が前提であり、接続先 API が利用できない場合は操作できません。
 
@@ -56,7 +56,7 @@ Model Suggestion は Ground Truth ではありません。高 score でも自動
 
 ## 既知の制約
 
-Cloud backend、認証、共同編集、telemetry、動画、RTSP、segmentation、pose、OCR、生成 AI、未監査 model / plugin の実行時追加は MVP 対象外です。macOS アプリ、MPS/CoreML、macOS カメラ権限試験、PKG、Developer ID 署名、notarization、Gatekeeper 試験、macOS servicing も Version 1 対象外であり、現在利用できません。同梱 model はガバナンス審査を通過したものだけを許可します。現在の model manifest の承認済み entry は Curated Base Weight（C6）の分類・検出の 2 件だけで、Annotation Assist Model（C7）の 2 役と補助品質の比較試験が未充足のため `ready=false` です。この model blocker が解消するまで、モデル支援、学習、推論を含む MVP をリリース可能とは判定しません。
+Cloud backend、認証、共同編集、telemetry、動画、RTSP、segmentation、pose、OCR、生成 AI、未監査 model / plugin の実行時追加は MVP 対象外です。macOS アプリ、MPS/CoreML、macOS カメラ権限試験、PKG、Developer ID 署名、notarization、Gatekeeper 試験、macOS servicing も Version 1 対象外であり、現在利用できません。同梱 model はガバナンス審査を通過したものだけを許可します。現在の model manifest の承認済み entry は Curated Base Weight（C6）の分類・検出と Annotation Assist Model（C7）の分類（SigLIP）・検出（OWL-ViT。研究目的に限る）の 4 件です。補助品質の比較試験は、所有者の判断により Version 1 では未実施のまま完了扱いです（品質の効果は未検証）。manifest は `ready=true`（製品版 `0.1.12`）で、release verifier（PKG-01、`scripts/models/verify.py`）が同梱する model の hash・size・証拠・承認記録を照合します。モデル支援、学習、推論の機能は未実装で、それらを含む MVP をリリース可能とは判定しません。
 
 ## 読者別クイックリンク
 
@@ -86,4 +86,4 @@ source code は [MIT License](LICENSE) です。第三者 dependency、学習済
 
 完成アプリケーションが未提供のため、一般利用者向けの製品サポートはまだ開始していません。Version 1 の予定サポート範囲は Windows 11 24H2 以降の x64 のみで、macOS は現在サポート対象外です。一般利用者向けの確認項目は[トラブルシューティング](docs/users-guide.md#トラブルシューティング)、開発時の報告と変更手順は[開発・検証規約](CONTRIBUTING.md)を参照してください。未実装機能や将来 macOS 対応を利用可能な機能または現在の Gate として扱わず、[実装計画](docs/implementation-plan.md)の依存 task と Gate を確認してください。
 
-要求定義の基準版は v0.7 Draft（2026-09-23 学習済みモデルの利用条件を非商用の研究・教育目的へ訂正、246要求）です。SHA-256 は、Windows 作業ツリー raw CRLF bytes が `6e0c0bda2396b5e716d2c7b8b252dc5fe4758dadf3bcdbd936ca5857c236dcf5`、LF-normalized bytes が `1e84ca26dd257a931516b58d4f6c5a3c858606f689808777d317019f608e1335` です。
+要求定義の基準版は v0.8 Draft（2026-09-26 比較試験（NFR-ANN-006）を Version 1 では未実施のまま完了扱いとし、承認済みの Annotation Assist Model を記載、TBD-09 を解決、246要求）です。SHA-256 は、Windows 作業ツリー raw CRLF bytes が `dfbc7b972477a961c60357273a580f46693f5e3dac6644570515f75f0da5aa1c`、LF-normalized bytes が `6085778f6a4260232f64151bdde04751c301f5fcb512b19362c12443c0aeb548` です。

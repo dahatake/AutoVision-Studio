@@ -14,7 +14,7 @@ import type { ImportApi, ImportCommitResponse, ImportPreview } from '../../share
 import type { JobApi, JobSnapshot } from '../../shared/contracts/job-ipc';
 import {
   PROJECT_SOURCE_CLEANUP_FAILED_MESSAGE, projectSnapshotSchema, type ProjectApi,
-  type ProjectCreateResponse, type ProjectGetResponse, type ProjectListResponse,
+  type ProjectCreateResponse, type ProjectDeletePreviewResponse, type ProjectGetResponse, type ProjectListResponse,
   type ProjectSnapshot, type ProjectUpdateResponse,
 } from '../../shared/contracts/project-ipc';
 import { PRODUCT_VERSION } from '../product-version';
@@ -44,6 +44,20 @@ const token = '44444444-4444-4444-8444-444444444444';
 const parentPath = 'C:\\選択した親 🧪';
 const ok = <T,>(value: T) => ({ ok: true as const, value });
 const failed = { ok: false as const, error: { code: 'OPERATION_FAILED' as const } };
+const deletePreviewResponse = (snapshot: ProjectSnapshot): ProjectDeletePreviewResponse => ok({
+  projectId: snapshot.project.id,
+  name: snapshot.project.name,
+  workspacePath: snapshot.project.workspacePath,
+  owned: {
+    labelSchemas: 1, annotationWorkspaces: 1, annotationItems: 12, datasetRevisions: 0, datasetItems: 0,
+    trainingRuns: 0, otherJobs: 2, copyImports: 1,
+    copiedImages: { count: 12, bytes: 2048 },
+    directory: { status: 'measured', ownership: 'verified', files: 13, bytes: 4096 },
+  },
+  referenced: { imports: 1, images: { count: 5, bytes: 10_240 } },
+  blockers: [],
+  unmeasuredCategories: ['model-versions', 'reports'],
+});
 const methods = ['list', 'get', 'create', 'update', 'pickParent', 'move', 'recover'] as const;
 function apiFor() {
   return {
@@ -446,6 +460,49 @@ describe('AppShell (UIR-025A-W)', () => {
       expect(screen.queryByText(/選択中です/)).toBeNull();
     }
     expect(api.create).not.toHaveBeenCalled(); expect(api.pickParent).not.toHaveBeenCalled();
+  });
+
+  it('keeps only the newest delete preview response when delete preview requests complete out of order', async () => {
+    const first = deferred<ProjectDeletePreviewResponse>(), second = deferred<ProjectDeletePreviewResponse>();
+    api.deletePreview.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+    const user = userEvent.setup(); render(<AppShell />);
+    await user.click(await screen.findByRole('button', { name: `${a.project.name}（${a.project.id}）の削除対象を確認` }));
+    await user.click(screen.getByRole('button', { name: `${b.project.name}（${b.project.id}）の削除対象を確認` }));
+    expect(api.deletePreview).toHaveBeenCalledTimes(2);
+
+    await act(async () => { second.resolve(deletePreviewResponse(b)); });
+    expect(await screen.findByRole('heading', { name: `Project「${b.project.name}」を削除` })).toBeVisible();
+    await act(async () => { first.resolve(deletePreviewResponse(a)); });
+
+    expect(screen.getByRole('heading', { name: `Project「${b.project.name}」を削除` })).toBeVisible();
+    expect(screen.queryByText(`Project「${a.project.name}」を削除`)).toBeNull();
+  });
+
+  it('does not show a delete preview response that arrives after returning to the Project list', async () => {
+    const preview = deferred<ProjectDeletePreviewResponse>(); api.deletePreview.mockReturnValueOnce(preview.promise);
+    const user = userEvent.setup(); render(<AppShell />);
+    await user.click(await screen.findByRole('button', { name: `${a.project.name}（${a.project.id}）の削除対象を確認` }));
+    await user.click(headerLink('Project 一覧'));
+
+    await act(async () => { preview.resolve(deletePreviewResponse(a)); });
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByText(`Project「${a.project.name}」を削除`)).toBeNull();
+  });
+
+  it('closes an open delete preview while navigating to settings and keeps it closed when returning', async () => {
+    api.deletePreview.mockResolvedValueOnce(deletePreviewResponse(a));
+    const user = userEvent.setup(); render(<AppShell />);
+    await user.click(await screen.findByRole('button', { name: `${a.project.name}（${a.project.id}）の削除対象を確認` }));
+    expect(await screen.findByRole('heading', { name: `Project「${a.project.name}」を削除` })).toBeVisible();
+
+    await user.click(headerLink('設定'));
+    expect(screen.queryByText(`Project「${a.project.name}」を削除`)).toBeNull();
+    await user.click(settingsBack());
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Project 一覧' })).toBeVisible();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByText(`Project「${a.project.name}」を削除`)).toBeNull();
   });
 
   it('drops a hidden list response and an old API session without overwriting a refreshed list', async () => {

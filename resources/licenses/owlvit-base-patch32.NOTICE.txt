@@ -1,0 +1,45 @@
+AutoVision Studio bundles the object detection assist model
+"OWL-ViT base patch32" (google/owlvit-base-patch32).
+OWL-ViT assist suggestions are provided for research purposes only.
+
+[C5] Model implementation code
+    Hugging Face Transformers v5.17.0 (https://github.com/huggingface/transformers),
+    Apache License 2.0. Copyright 2018- The Hugging Face team.
+    The full Apache License 2.0 text is reproduced in THIRD_PARTY_NOTICES.
+
+[C7] Checkpoint weights
+    File: model.safetensors (revision cbc355fb364588351c5d51c7f74465e8e7ec6f72)
+    SHA-256: 4dbe0399f0b7d7c8dddf1535a98769cc30743bebc877aea681998c8d984ce52b
+    Source: https://huggingface.co/google/owlvit-base-patch32/resolve/cbc355fb364588351c5d51c7f74465e8e7ec6f72/model.safetensors
+    No checkpoint-specific license statement by the publisher has been
+    confirmed.
+    These weights are bundled under LicenseRef-AutoVisionStudio, a
+    repository-local license reference recorded under the risk acceptance of
+    the AutoVision Studio repository owner (dahatake, 2026-09-23). This
+    reference does not assert any grant by the publisher.
+    The manifest fields productUsePermitted, redistributionPermitted and
+    productDerivativesPermitted are set from that owner decision, not from
+    a publisher confirmation (FR-LIC-016).
+    Unconfirmed at the time of the decision: whether the apache-2.0 tag of the
+    model card is a checkpoint-level license statement, the terms of the
+    training data (the crawled image-caption data, YFCC100M, COCO and
+    OpenImages) and the conditions for use and redistribution of weights
+    derived from them, the complete list of training data, and whether these
+    weights are identical to the weights of the training procedure described
+    in the model card.
+    The model card states that the model is intended as a research output for
+    research communities. OWL-ViT assist suggestions are therefore provided
+    for research purposes only, which is narrower than the AutoVision Studio
+    model use condition (non-commercial research and educational purposes,
+    requirement definition v0.7). In this manifest, productUsePermitted and
+    productDerivativesPermitted denote permission for that use condition,
+    not for commercial use (TBD-09).
+
+[C8] Training data
+    According to the model card, the CLIP backbone was trained on publicly
+    available image-caption data, crawled from a handful of websites and taken
+    from pre-existing datasets such as YFCC100M, and the prediction heads and
+    the backbone were fine-tuned on object detection datasets such as COCO and
+    OpenImages. The model card gives these datasets as examples and does not
+    give a complete list; the complete list remains unconfirmed. The
+    training data is not redistributed with AutoVision Studio.

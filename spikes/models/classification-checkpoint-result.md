@@ -141,3 +141,35 @@ $env:PYTHONUTF8='1'; cmd /d /c "cd /d spikes\models && ..\..\vendor\models\_spik
 従来の transfer accuracy 条件（checkpoint 初期化の eval top-1 accuracy が random 初期化以上）は `5/15 ≥ 5/15` で満たしたが、3 比較すべてで logit 最大差が固定許容差を超えたため、総合 verdict は `FAIL` である。softmax 最大差と top-1 は一致しているが、logit 許容差は緩和しない。
 
 evidence: 28ca90753dd42d5cfc56cacc78df26610e827a8d57de86fbdaa6a5bb7bbe1f85 exit=1
+
+## 9. FR-TRN-018 の許容差による再測定（G2T-10、2026-09-24、所有者の判断による）
+
+所有者の判断（[`2026-09-24-owner-ruling-G2T-10.md`](../../docs/model-governance/evidence/2026-09-24-owner-ruling-G2T-10.md)、選択: A）により、transfer mode の parity の判定を FR-TRN-018 の既定の許容差（logit の allclose: rtol `1e-3`・atol `1e-4`、top-1 一致率 99.5% 以上）に替え、測定の前に `classification_checkpoint_parity.py` の transfer mode に反映してから測った。allclose は両方向で満たすことを要求し、有限でない logit（NaN・±inf）を含む場合は不一致とする（実装上の取り決め）。softmax 確率と top-5 集合は FR-TRN-018 の既定の許容差に含まれないため、判定に使わず観測値として残す。§8 の FAIL は当時の許容差による結果として変更しない。
+
+コマンドは §8 と同じ:
+
+```powershell
+$env:PYTHONUTF8='1'; cmd /d /c "cd /d spikes\models && ..\..\vendor\models\_spike\venv\Scripts\python.exe classification_checkpoint_parity.py --mode transfer > ..\..\vendor\models\_spike\c6-cls-transfer.json"; $code=$LASTEXITCODE
+```
+
+| 項目 | 値 |
+|---|---|
+| 実行日 | 2026-09-24 |
+| exit code | `0` |
+| 判定 | **PASS** |
+| 環境 | Windows 10.0.29671 / `AMD64` / CPython `3.14.7`、torch `2.11.0+cpu`、torchvision `0.26.0+cpu`、onnx `1.22.0`、onnxruntime `1.24.4`、NumPy `2.5.2` |
+| checkpoint | `vendor/models/mobilenet_v3_large-5c1a4163.pth`、SHA-256 `5c1a416349c4cf298f2a6a5e2600ed0ee55e604713578f5e74e6bc8bcaef7997` |
+| ONNX | `vendor/models/_spike/onnx/classification-checkpoint-transfer.onnx`、`16,813,500` bytes、SHA-256 `a9392506bcec2874c7712b915ea976e19566b1094a018d08693eec7e3d81f698` |
+| 許容差 | logit_rule `allclose`、rtol `0.001`、atol `0.0001`、top-1 一致率の下限 `0.995` |
+| repeat_run_bitwise_identical | `true`（CPU `true` / DirectML `true`） |
+| transfer accuracy | checkpoint 初期化 5/15、random 初期化 5/15（条件: checkpoint-initialised eval top-1 accuracy >= random-initialised, identical recipe） |
+
+| 比較 | logit_allclose | logit 最大差（観測値） | softmax 最大差（観測値） | top-1 一致 | top-5 集合一致（観測値） | 判定 |
+|---|---|---:|---:|---:|---:|---|
+| torch vs onnxruntime-cpu | `true` | `16384` | `0` | 15/15 | 15/15 | **PASS** |
+| torch vs onnxruntime-directml | `true` | `12288` | `0` | 15/15 | 15/15 | **PASS** |
+| onnxruntime-cpu vs onnxruntime-directml | `true` | `8192` | `0` | 15/15 | 15/15 | **PASS** |
+
+3 比較すべてで logit が allclose を満たし、top-1 一致率は 15/15 で下限 0.995 以上である。logit の絶対差の最大値は §8 と同じだが、allclose は値の大きさに比例する rtol を含むため、判定が異なる。
+
+evidence: b4476aa1effa16dff0669f2e8a323d9903ab3d1cbc0137ea7a74b58f85e54a49 exit=0

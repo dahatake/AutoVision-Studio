@@ -561,7 +561,7 @@ describe.skipIf(process.platform !== 'win32')('DAT-12 Reference source lifecycle
       expect(read.mock.results.map((result) => result.value)).toEqual([65_536, 65_536, 47, 0]);
       expect(fstat).toHaveBeenCalledTimes(2);
       expect(close).toHaveBeenCalledExactlyOnceWith(fd);
-      expect(() => native.fstatSync(fd)).toThrow(expect.objectContaining({ code: 'EBADF' }));
+      expect(close.mock.results).toEqual([{ type: 'return', value: undefined }]);
       for (const spy of [lstat, readdir]) {
         for (const [path] of spy.mock.calls) expect(String(path).startsWith(localVolume)).toBe(true);
       }
@@ -647,7 +647,7 @@ describe.skipIf(process.platform !== 'win32')('DAT-12 Reference source lifecycle
         const read = vi.spyOn(native, 'readSync');
         expect(() => assertCapturedReferenceSourceCurrent(entry)).toThrow(expect.objectContaining({ reason: 'changed' }));
         expect(close).toHaveBeenCalledTimes(1);
-        expect(() => realFstat(close.mock.calls[0]![0])).toThrow(expect.objectContaining({ code: 'EBADF' }));
+        expect(close.mock.results[0]).toEqual({ type: 'return', value: undefined });
         if (point === 'post-close') expect(lstat.mock.invocationCallOrder.at(-1)!).toBeGreaterThan(close.mock.invocationCallOrder[0]!);
         fstat.mockRestore();
         read.mockClear();
@@ -662,7 +662,6 @@ describe.skipIf(process.platform !== 'win32')('DAT-12 Reference source lifecycle
         const { entry, proof } = await settlementFixture();
         const realRead = native.readSync.bind(native);
         const realClose = native.closeSync.bind(native);
-        const realFstat = native.fstatSync.bind(native);
         const open = vi.spyOn(native, 'openSync');
         const close = vi.spyOn(native, 'closeSync');
         const read = vi.spyOn(native, 'readSync');
@@ -676,6 +675,10 @@ describe.skipIf(process.platform !== 'win32')('DAT-12 Reference source lifecycle
           close.mockImplementationOnce(() => { throw Object.assign(new Error('injected close'), { code: 'EIO' }); });
         }
         let fd: number | undefined;
+        // A real close that returned released the number; fstat of a released
+        // number is not evidence, because another test thread may reuse it.
+        const released = (value: number) => close.mock.calls.some(([called], index) =>
+          called === value && close.mock.results[index]!.type === 'return');
         try {
           expect(() => assertCapturedReferenceSourceCurrent(entry)).toThrow(expect.objectContaining({
             reason: fault === 'end-extra' ? 'changed' : 'read-failed',
@@ -685,20 +688,17 @@ describe.skipIf(process.platform !== 'win32')('DAT-12 Reference source lifecycle
           // Regression: a pre-release close failure must not leak the fd.
           // Current production finally-close does not yet perform this recovery.
           expect(close).toHaveBeenCalledTimes(fault === 'close-before-release' ? 2 : 1);
-          expect(() => realFstat(fd!)).toThrow(expect.objectContaining({ code: 'EBADF' }));
+          expect(released(fd)).toBe(true);
           read.mockRestore();
           const retryRead = vi.spyOn(native, 'readSync');
           expect(() => assertCapturedReferenceSourceCurrent(entry)).not.toThrow();
           expect(retryRead).toHaveBeenCalled();
           expect(entry).toEqual(proof);
         } finally {
-          // Teardown owns only this fixture's descriptor, including the known
-          // failing close-recovery regression; never close a reused descriptor.
-          if (fd !== undefined) {
-            let live = false;
-            try { realFstat(fd); live = true; } catch { /* already released */ }
-            if (live) realClose(fd);
-          }
+          // Teardown owns only this fixture's descriptor while it was never
+          // released; never close a released (possibly reused) number.
+          const opened = open.mock.results[0];
+          if (opened?.type === 'return' && !released(opened.value as number)) realClose(opened.value as number);
         }
       },
     );

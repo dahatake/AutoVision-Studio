@@ -270,9 +270,13 @@ describe.skipIf(process.platform !== 'win32')('DAT-08D materialization', () => {
       realWrite(path, bytes, options);
     });
     if (stage === 'sync') vi.spyOn(native, 'fsyncSync').mockImplementationOnce(() => { throw new Error('injected'); });
+    let released = -1;
     if (stage === 'close') vi.spyOn(native, 'closeSync').mockImplementation((fd) => {
+      // The recovery close of the already released number must not reach the
+      // real close: another test thread may reuse that descriptor number.
+      if (fd === released) { released = -1; throw Object.assign(new Error('injected EBADF'), { code: 'EBADF' }); }
       realClose(fd);
-      if (fd === markerFd) { markerFd = -1; throw new Error('injected after release'); }
+      if (fd === markerFd) { markerFd = -1; released = fd; throw new Error('injected after release'); }
     });
     if (stage === 'copy') vi.spyOn(copy, 'copySourceFile').mockRejectedValueOnce(new Error('injected'));
     await expect(materializeImportSources(project, importId, scan, [source])).rejects.toMatchObject({

@@ -1,0 +1,32 @@
+{
+  "objective": "所有者の回答（2026-09-26 07:48、docs/model-governance/evidence/2026-09-26-owner-rulings.md）を Gate 2 に適用し記録する: 比較試験の node を免除（未実施のまま完了扱い）の記録で閉じ、OWL-ViT の採用記録の承認・manifest entry・研究目的に限る表示を行う",
+  "non_goals": [
+    "所有者の判断・利用者の session・gold label を生成・推定しない",
+    "比較試験を実施・合格扱いにしない。releaseStatus.assistQuality に値を入れない。releaseStatus.ready を true にしない",
+    "parity・性能の基準を変えない",
+    "製品版を package.json・manifest に書き込まない（G2V-01 は対象外）"
+  ],
+  "deliverables": [
+    "docs/model-governance/owlvit-base-patch32-adoption.md",
+    "resources/licenses/owlvit-base-patch32.NOTICE.txt",
+    "resources/models/manifest.json",
+    "scripts/models/manifest-schema.test.mjs",
+    "src/renderer/features/settings/SettingsPage.test.tsx",
+    "src/renderer/features/settings/SettingsPage.tsx",
+    "work/20260926-0815-A2-Review.md",
+    "work/20260926-0815-A3-Review.md",
+    "work/20260926-0815-A4-Review.md",
+    "work/20260926-0815-Q1-Review.md"
+  ],
+  "acceptance_command": "pwsh -NoLogo -NoProfile -Command \"$env:PATH = $env:LOCALAPPDATA + '\\npm-12.0.0;' + $env:PATH; if ((npm --version) -ne '12.0.0') { exit 2 }; npm run verify:docs; if ($LASTEXITCODE) { exit $LASTEXITCODE }; node --test scripts/models/manifest-schema.test.mjs; if ($LASTEXITCODE) { exit $LASTEXITCODE }; & .\\node_modules\\.bin\\vitest.cmd run src/renderer/features/settings/SettingsPage.test.tsx; exit $LASTEXITCODE\"",
+  "baseline_policy": "既存の失敗は許容するが、新しい失敗を増やさない",
+  "time_budget": "3540m",
+  "execution_envelope": {
+    "code_changes": "allowed_within_write_set",
+    "dependency_additions": "declared_only",
+    "external_network_writes": "deny",
+    "production_deploy": "deny",
+    "secret_read": "declared_refs_only"
+  },
+  "secret_policy": "秘密値は契約・引継ぎ・ログ・成果物へ保存せず、必要時は参照名のみを記録する"
+}

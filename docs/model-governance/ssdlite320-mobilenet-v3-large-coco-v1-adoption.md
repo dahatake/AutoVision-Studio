@@ -116,16 +116,16 @@ AutoVision Studio bundles the object detection model
     repository-local license reference recorded under the risk acceptance of
     the AutoVision Studio repository owner (2026-09-22). This reference does
     not assert any grant by the publisher.
-    The manifest fields commercialUseConfirmed, redistributionPermitted and
-    commercialDerivativesPermitted are set from that owner decision, not from
+    The manifest fields productUsePermitted, redistributionPermitted and
+    productDerivativesPermitted are set from that owner decision, not from
     a publisher confirmation (FR-LIC-016).
     Unconfirmed at the time of the decision: the checkpoint-specific license,
     the image-by-image rights of the COCO training images, and whether the
     backbone was initialised from ImageNet-pretrained weights.
     Under the AutoVision Studio model use condition (requirement definition
     v0.7), these weights are bundled for non-commercial research and
-    educational purposes only. In this manifest, commercialUseConfirmed and
-    commercialDerivativesPermitted denote permission for that use condition,
+    educational purposes only. In this manifest, productUsePermitted and
+    productDerivativesPermitted denote permission for that use condition,
     not for commercial use (TBD-09).
 
 [C8] Training data

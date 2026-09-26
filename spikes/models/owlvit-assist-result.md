@@ -79,3 +79,81 @@ cd spikes\models
 ## 6. 帰結
 
 manifest の `support[]` は `windows-x64/cpu` と `windows-x64/directml` の**両方**を `verified: true` で要求し、採用記録の性能基準は EP ごとに判定する（[`siglip-assist-result.md`](siglip-assist-result.md) §6 と同じ扱い）。CPU が不適合であるため **manifest に登録しない**。採用記録 [`owlvit-base-patch32-adoption.md`](../../docs/model-governance/owlvit-base-patch32-adoption.md) は **保留**とする。
+
+
+## 7. G2Q-03D — gold set からの `confidenceThreshold` の選択と検出単位 parity（2026-09-25）
+
+所有者の判断 [`2026-09-25-owner-ruling-G2Q-03.md`](../../docs/model-governance/evidence/2026-09-25-owner-ruling-G2Q-03.md)（方針 A）と、測定の前に固定した定義 [`20260925-0420-G2Q03-ExecutionPlan.md`](../../work/20260925-0420-G2Q03-ExecutionPlan.md) §1 に従い、`--mode goldset` で測った。ATG 実行 `84e8cb29-8aa9-40b6-bcab-411bfae30eff`（main4）の node G2Q-03D。
+
+### 7.1 実行方法
+
+```powershell
+cmd /d /c "cd /d spikes\models && ..\..\vendor\models\_spike\venv\Scripts\python.exe owlvit_assist_parity.py --mode goldset --goldset ..\..\vendor\models\_spike\assist\goldset-detection.json --artifact-dir ..\..\vendor\models\_spike\owlvit-onnx --output ..\..\vendor\models\_spike\owlvit-goldset.json"
+```
+
+- 出力: `vendor/models/_spike/owlvit-goldset.json`（git 管理外）。exit code `1`（`verdict: FAIL`）。
+- gold set: `vendor/models/_spike/assist/goldset-detection.json`（20 item、gold box 1,079 個、class `wheat_head` だけ。SHA-256 `338435c6af565378b83d6535106efe68cf6d050d040ff853108a15846628151d`）。画像ごとに gold set の `image_sha256` と照合した。
+- ONNX: text query 1 件で export した `owlvit-base-patch32-goldset.onnx`（SHA-256 `5dae37956aa5cae6f55af59c263171c313802c6dd7f20173554b18e20d82a402`）。
+- prompt: `a photo of a {label}`（`{label}` は class 名の `_` を空白に置き換えたもの）。text query は `a photo of a wheat head` の 1 件。
+- 境界: `score >= 閾値`（schema）。transformers の `post_process_object_detection` は `score > 閾値` で、製品の後処理は `>=` で実装する。記録した閾値は候補の score の中点のため、この測定では両者の検出が一致した（script が torch の全 20 item で照合）。
+- seed: `{"torch": 20260922}`。
+
+### 7.2 閾値の選択
+
+| 項目 | 値 |
+|---|---|
+| 候補（torch の全 patch の box の score、重複なし） | 11,499 個。coverage 0.5 以上は 11,490 個 |
+| 選んだ候補の score | `0.0002534171799197793` |
+| `confidenceThreshold`（次に小さい候補との中点） | **`0.0002533551160013303`** |
+| coverage | `20/20` = `1.0` |
+| 提案の box / gold box / 一致（IoU 0.5 以上、1 対 1） | 2,820 / 1,079 / 483 |
+| F1（precision `0.1713`、recall `0.4476`） | **`0.2478`** |
+
+選び方は `work/20260925-0420-check-selection.py` と同じ規則で、閾値の選択そのものは再計算と一致する（同 script の exit code は `1` で、原因は下の parity の `FAIL`）。
+
+### 7.3 検出単位 parity（記録した閾値、許容差は実行前に固定）
+
+| 比較 | 検出数（全 20 item） | 対応のない検出 | box 最大差（原寸 px、許容差 `1.0e-03`） | score 最大差（許容差 `1.0e-04`） | 生出力 rtol/atol | 判定 |
+|---|---:|---:|---:|---:|---|---|
+| torch ↔ onnxruntime-cpu | 2,820 / 2,820 | 0 | **`7.4707e-02`** | `1.4346e-06` | 範囲内 | **FAIL** |
+| torch ↔ onnxruntime-directml | 2,820 / 2,820 | 0 | **`4.9835e-02`** | `2.3167e-07` | 範囲内 | **FAIL** |
+| onnxruntime-cpu ↔ onnxruntime-directml | 2,820 / 2,820 | 0 | **`4.8096e-02`** | `1.5395e-06` | 範囲内 | **FAIL** |
+
+- `verdict: FAIL`。3 つの比較とも、検出数・対応付け・label・score は一致し、box の差だけが [`detection_checkpoint_parity.compare`](detection_checkpoint_parity.py) の box 許容差 `1.0e-03`（[`detection.py`](detection.py) の `BOX_TOLERANCE`）を上回る。§4 で「実運用の score 帯で `compare` の box 許容差を満たすかは未確認」とした点が、検出 1 件以上の状態で不合格と確認された。
+- 生出力（`pred_boxes` は入力に対する相対座標）は `rtol 1e-3` / `atol 1e-4` の範囲内で、box の差は原寸（全 20 item とも 1,024 × 1,024 px）への拡大で `atol` 相当の差が px 単位で表れたものである。許容差は測定の前に固定したもので、測定の後に変えていない。
+
+### 7.4 観測値と残る判断
+
+- 選ばれた閾値は低く（coverage 0.5 の境界の候補 `0.00618` では F1 `0.0`）、F1 が最大になる点では全 item に提案がある。本 prompt の OWL-ViT は、gold set 上で提案の 8 割以上が gold box と一致しない。承認された gold set 計画に精度の下限は無いため判定には使わない。
+- G2Q-03D を `PASS` にするには、検出の box 許容差（px 単位の `1.0e-03` を、原寸へ拡大した OWL-ViT の box に適用するか）について、新しい所有者の判断が要る。本 node は失敗として記録し、許容差は変えない。
+
+evidence: 4b2f43be44851be9be455714b3524639633aa7c776a280113d6bc878a89257c7 exit=1
+
+### 7.5 検出単位 parity の再判定（所有者の判断 G2Q-03D-T の方針 A、2026-09-25）
+
+§7.3 の測定の**後に**、所有者は §7.4 の判断として方針 A を選んだ（[`2026-09-25-owner-ruling-G2Q-03D-parity.md`](../../docs/model-governance/evidence/2026-09-25-owner-ruling-G2Q-03D-parity.md)、対策案 [`20260925-0526-G2Q03D-BoxTolerance-Countermeasure.md`](../../work/20260925-0526-G2Q03D-BoxTolerance-Countermeasure.md)）。適用範囲は本 script の `--mode goldset` だけで、共有の [`detection_checkpoint_parity.compare`](detection_checkpoint_parity.py) と [`detection.py`](detection.py) の `BOX_TOLERANCE` は変えていない。§7.1 と同じ command で測り直した。ATG 実行 `e52b01c9-2f58-4024-abf9-8d74f4671c85`（main6）の node G2Q-03D（attempt 2）。exit code `0`（`verdict: PASS`）。閾値は §7.2 と同じ `0.0002533551160013303`。
+
+判定の基準（JSON の `parity_policy`）:
+
+- A1: 生出力 `logits` / `pred_boxes` が `rtol 1e-3` / `atol 1e-4` の範囲内。
+- A2: 画像ごとの検出数が等しく、全検出が IoU `0.99` 以上で 1 対 1 に対応し、label の不一致 0、score の差 `1e-4` 以下。原寸 px の box の差は記録だけにする。
+- A3: backend ごとに、その backend 自身の box と score で gold set の F1 を計算し（IoU 0.5 以上、1 対 1）、`abs(F1_backend - F1_torch)` が `0.005` 以下。
+
+| 比較 | A1 生出力（logits / pred_boxes の最大差） | A2 検出数 / IoU 0.99 で対応 / 対応のない検出 / label 不一致 | A2 score 最大差 | box 最大差（原寸 px、記録だけ） | 判定 |
+|---|---|---|---:|---:|---|
+| torch ↔ onnxruntime-cpu | 範囲内（`1.2765e-03` / `1.4734e-04`） | 2,820 / 2,820 / 0 / 0 | `1.4346e-06` | `7.4707e-02` | PASS |
+| torch ↔ onnxruntime-directml | 範囲内（`7.3433e-04` / `2.2542e-04`） | 2,820 / 2,820 / 0 / 0 | `2.3167e-07` | `4.9835e-02` | PASS |
+| onnxruntime-cpu ↔ onnxruntime-directml | 範囲内（`1.3700e-03` / `1.7321e-04`） | 2,820 / 2,820 / 0 / 0 | `1.5395e-06` | `4.8096e-02` | PASS |
+
+| backend（A3） | 一致（IoU 0.5 以上） | 提案の box | gold box | F1 | torch との差 |
+|---|---:|---:|---:|---:|---:|
+| torch | 483 | 2,820 | 1,079 | `0.247756` | — |
+| onnxruntime-cpu | 484 | 2,820 | 1,079 | `0.248269` | `5.13e-04` |
+| onnxruntime-directml | 483 | 2,820 | 1,079 | `0.247756` | `0` |
+
+- onnxruntime-cpu は torch より一致が 1 件多い。gold box との IoU が 0.5 の境界の近くにある box が 1 件、box の差で境界をまたいだものと考えられる（どの box かは JSON に記録していないため未確認）。F1 の差は許容差 `0.005` の範囲内である。
+- A3 が backend 自身の box を使うことは、合成入力（件数は同じで 1 box だけが IoU 0.5 の境界をまたぐ）で F1 が変わり、A2 が失敗になることで確かめた（`work/20260925-0526-check-f1-synthetic.py`、exit code `0`）。
+- JSON の集計値の整合（3 比較の A1 / A2、F1 = 2TP / (提案 + gold)、torch の一致・提案数と `at_threshold` の一致、F1 の差）は `work/20260925-0526-check-parity-A.py` で検査した（exit code `0`）。
+- §7.3 の `FAIL` の記録は残す。`FAIL` の判定は当時の基準（px の `1.0e-03`）では変わらない。
+
+evidence: 1d45b86946fc0e8bd7503b626c68574c99afe2a3c23eb04aae99bbc44a529ed3 exit=0

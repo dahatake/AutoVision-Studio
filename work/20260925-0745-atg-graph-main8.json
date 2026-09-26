@@ -1,0 +1,106 @@
+{
+  "nodes": [
+    {
+      "id": "G2A-01",
+      "deps": [],
+      "duration": 100.0,
+      "write_set": [
+        "docs/model-governance/siglip-base-patch16-224-adoption.md",
+        "work/20260925-0745-Gate2Main7-G2A-01-Review.md",
+        "lock:siglip-record"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260925-0745-Gate2Main7-verify.ps1",
+          "docs/model-governance/siglip-base-patch16-224-adoption.md",
+          "docs/model-governance/adoption-template.md",
+          "docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-01.md",
+          "spikes/models/siglip-assist-result.md",
+          "docs/model-governance/evidence/2026-09-25-owner-ruling-assist-trial-deferral.md",
+          "work/20260925-0745-Gate2Main7-Plan.md"
+        ],
+        "outputs": [
+          "docs/model-governance/siglip-base-patch16-224-adoption.md",
+          "work/20260925-0745-Gate2Main7-G2A-01-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260925-0745-Gate2Main7-verify.ps1 G2A-01",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2A-03",
+      "deps": [
+        "G2A-01"
+      ],
+      "duration": 100.0,
+      "write_set": [
+        "lock:model-manifest",
+        "resources/models/manifest.json",
+        "scripts/models/manifest-schema.test.mjs",
+        "work/20260925-0745-Gate2Main7-G2A-03-Review.md",
+        "lock:siglip-record"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260925-0745-Gate2Main7-verify.ps1",
+          "work/20260924-0710-Gate2-SplitRejudgment.md",
+          "docs/model-governance/siglip-base-patch16-224-adoption.md",
+          "docs/model-governance/owlvit-base-patch32-adoption.md",
+          "resources/models/manifest.json",
+          "scripts/models/manifest-schema.test.mjs",
+          "docs/model-governance/evidence/2026-09-25-owner-ruling-assist-trial-deferral.md",
+          "work/20260925-0745-Gate2Main7-Plan.md"
+        ],
+        "outputs": [
+          "resources/models/manifest.json",
+          "scripts/models/manifest-schema.test.mjs",
+          "work/20260925-0745-Gate2Main7-G2A-03-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260925-0745-Gate2Main7-verify.ps1 G2A-03",
+        "timeout_seconds": 1800,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2D-08",
+      "deps": [
+        "G2A-03"
+      ],
+      "duration": 40.0,
+      "write_set": [
+        "docs/model-governance/evidence/2026-09-25-owner-ruling-G2D-08.md",
+        "work/20260925-0745-Gate2Main7-G2D-08-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260925-0745-Gate2Main7-verify.ps1",
+          "work/202609232120-Gate2-RequirementExtract.md",
+          "docs/model-governance/evidence/2026-09-23-owner-rulings.md",
+          "CONTRIBUTING.md",
+          "docs/model-governance/evidence/2026-09-25-owner-ruling-assist-trial-deferral.md",
+          "work/20260925-0745-Gate2Main7-Plan.md"
+        ],
+        "outputs": [
+          "docs/model-governance/evidence/2026-09-25-owner-ruling-G2D-08.md",
+          "work/20260925-0745-Gate2Main7-G2D-08-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260925-0745-Gate2Main7-verify.ps1 G2D-08",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    }
+  ]
+}

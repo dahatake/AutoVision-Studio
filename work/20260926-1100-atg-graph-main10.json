@@ -1,0 +1,216 @@
+{
+  "nodes": [
+    {
+      "id": "G2V-01",
+      "deps": [],
+      "duration": 100.0,
+      "write_set": [
+        "package.json",
+        "package-lock.json",
+        "lock:root-version",
+        "work/20260926-1100-Gate2Final-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260926-1100-Gate2Main10-verify.ps1",
+          "work/20260926-0955-OwnerRulings6-ExecutionPlan.md",
+          "CONTRIBUTING.md",
+          "docs/model-governance/evidence/2026-09-25-owner-ruling-G2D-08.md",
+          "work/20260924-1815-GAL-V1-VersionDecision.md"
+        ],
+        "outputs": [
+          "package.json",
+          "package-lock.json",
+          "work/20260926-1100-Gate2Final-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260926-1100-Gate2Main10-verify.ps1 G2V-01",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2F-00",
+      "deps": [
+        "G2V-01"
+      ],
+      "duration": 45.0,
+      "write_set": [
+        "work/20260926-1100-Gate2-TerminalState.md",
+        "work/20260926-1100-Gate2-AtgReport.md",
+        "work/20260926-1100-Gate2Final-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260926-1100-Gate2Main10-verify.ps1",
+          "work/20260926-0955-OwnerRulings6-ExecutionPlan.md",
+          "work/202609232120-Gate2-NodeInventory.md",
+          "work/20260926-1100-merge-atg-report.py"
+        ],
+        "outputs": [
+          "work/20260926-1100-Gate2-TerminalState.md",
+          "work/20260926-1100-Gate2-AtgReport.md",
+          "work/20260926-1100-Gate2Final-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260926-1100-Gate2Main10-verify.ps1 G2F-00",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2F-01m",
+      "deps": [
+        "G2F-00"
+      ],
+      "duration": 100.0,
+      "write_set": [
+        "resources/models/manifest.json",
+        "scripts/models/manifest-schema.test.mjs",
+        "lock:model-manifest",
+        "work/20260926-1100-Gate2Final-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260926-1100-Gate2Main10-verify.ps1",
+          "work/20260926-0955-OwnerRulings6-ExecutionPlan.md",
+          "work/20260926-1100-Gate2-TerminalState.md"
+        ],
+        "outputs": [
+          "resources/models/manifest.json",
+          "scripts/models/manifest-schema.test.mjs",
+          "work/20260926-1100-Gate2Final-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260926-1100-Gate2Main10-verify.ps1 G2F-01m",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2F-01a1",
+      "deps": [
+        "G2F-01m"
+      ],
+      "duration": 60.0,
+      "write_set": [
+        "docs/adr/0004-spike-decisions.md",
+        "work/20260926-1100-Gate2Final-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260926-1100-Gate2Main10-verify.ps1",
+          "work/20260926-0955-OwnerRulings6-ExecutionPlan.md",
+          "resources/models/manifest.json"
+        ],
+        "outputs": [
+          "docs/adr/0004-spike-decisions.md",
+          "work/20260926-1100-Gate2Final-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260926-1100-Gate2Main10-verify.ps1 G2F-01a1",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2F-01a2",
+      "deps": [
+        "G2F-01a1"
+      ],
+      "duration": 40.0,
+      "write_set": [
+        "docs/implementation-plan.md",
+        "work/20260926-1100-Gate2Final-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260926-1100-Gate2Main10-verify.ps1",
+          "work/20260926-0955-OwnerRulings6-ExecutionPlan.md",
+          "resources/models/manifest.json"
+        ],
+        "outputs": [
+          "docs/implementation-plan.md",
+          "work/20260926-1100-Gate2Final-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260926-1100-Gate2Main10-verify.ps1 G2F-01a2",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2F-01a3",
+      "deps": [
+        "G2F-01a2"
+      ],
+      "duration": 70.0,
+      "write_set": [
+        "work/20260926-1100-Gate2-RemainTaskExecution.md",
+        "work/20260926-1100-Gate2Final-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260926-1100-Gate2Main10-verify.ps1",
+          "work/20260926-0955-OwnerRulings6-ExecutionPlan.md",
+          "resources/models/manifest.json"
+        ],
+        "outputs": [
+          "work/20260926-1100-Gate2-RemainTaskExecution.md",
+          "work/20260926-1100-Gate2Final-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260926-1100-Gate2Main10-verify.ps1 G2F-01a3",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2F-03",
+      "deps": [
+        "G2F-01a3"
+      ],
+      "duration": 55.0,
+      "write_set": [
+        "CHANGELOG.md",
+        "work/20260926-1100-Gate2Final-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260926-1100-Gate2Main10-verify.ps1",
+          "work/20260926-0955-OwnerRulings6-ExecutionPlan.md",
+          "work/20260926-1100-Gate2-RemainTaskExecution.md"
+        ],
+        "outputs": [
+          "CHANGELOG.md",
+          "work/20260926-1100-Gate2Final-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260926-1100-Gate2Main10-verify.ps1 G2F-03",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "objective": "TBD-09 の T9-V（版 0.1.12、所有者の決定 2026-09-26 12:29: docs/model-governance/evidence/2026-09-26-owner-rulings-1229.md）を記録する。T9-S〜T9-R は run 2a67e845-5802-40ed-9bf5-3b88db8d29ae で succeeded",
+  "non_goals": [
+    "field の意味と値を変えない",
+    "evidence を変えない",
+    "互換の alias・変換 script を作らない"
+  ],
+  "deliverables": [
+    "CHANGELOG.md",
+    "package-lock.json",
+    "package.json",
+    "work/20260924-1341-TBD09-T9-V-Review.md"
+  ],
+  "acceptance_command": "pwsh -NoLogo -NoProfile -Command \"$env:PATH = $env:LOCALAPPDATA + '\\npm-12.0.0;' + $env:PATH; if ((npm --version) -ne '12.0.0') { exit 2 }; npm run verify:docs; if ($LASTEXITCODE) { exit $LASTEXITCODE }; npm run verify:version; if ($LASTEXITCODE) { exit $LASTEXITCODE }; node --test scripts/models/manifest-schema.test.mjs; exit $LASTEXITCODE\"",
+  "baseline_policy": "既存の失敗は許容するが、新しい失敗を増やさない",
+  "time_budget": "3540m",
+  "execution_envelope": {
+    "code_changes": "allowed_within_write_set",
+    "dependency_additions": "declared_only",
+    "external_network_writes": "deny",
+    "production_deploy": "deny",
+    "secret_read": "declared_refs_only"
+  },
+  "secret_policy": "秘密値は契約・引継ぎ・ログ・成果物へ保存せず、必要時は参照名のみを記録する"
+}

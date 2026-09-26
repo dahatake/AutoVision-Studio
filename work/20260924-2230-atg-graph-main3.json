@@ -1,0 +1,782 @@
+{
+  "nodes": [
+    {
+      "id": "EXT-X1-F1",
+      "deps": [],
+      "duration": 30.0,
+      "write_set": [
+        "src/main/data/import-files.test.ts",
+        "work/20260924-2230-Gate2Main3-EXT-X1-F1-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "work/20260924-0730-EXT-X1-Plan.md",
+          "work/20260924-2230-EXT-X1-RootCause.md",
+          "src/main/data/import-files.test.ts"
+        ],
+        "outputs": [
+          "src/main/data/import-files.test.ts",
+          "work/20260924-2230-Gate2Main3-EXT-X1-F1-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 EXT-X1-F1",
+        "timeout_seconds": 1800,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "EXT-X1-F2",
+      "deps": [],
+      "duration": 30.0,
+      "write_set": [
+        "src/main/data/reference-source.test.ts",
+        "work/20260924-2230-Gate2Main3-EXT-X1-F2-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "work/20260924-0730-EXT-X1-Plan.md",
+          "work/20260924-2230-EXT-X1-RootCause.md",
+          "src/main/data/reference-source.test.ts"
+        ],
+        "outputs": [
+          "src/main/data/reference-source.test.ts",
+          "work/20260924-2230-Gate2Main3-EXT-X1-F2-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 EXT-X1-F2",
+        "timeout_seconds": 1800,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "EXT-X1-F3",
+      "deps": [],
+      "duration": 30.0,
+      "write_set": [
+        "src/main/ipc/import-handlers.test.ts",
+        "work/20260924-2230-Gate2Main3-EXT-X1-F3-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "work/20260924-0730-EXT-X1-Plan.md",
+          "work/20260924-2230-EXT-X1-RootCause.md",
+          "src/main/ipc/import-handlers.test.ts"
+        ],
+        "outputs": [
+          "src/main/ipc/import-handlers.test.ts",
+          "work/20260924-2230-Gate2Main3-EXT-X1-F3-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 EXT-X1-F3",
+        "timeout_seconds": 1800,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "EXT-X1",
+      "deps": [
+        "EXT-X1-F1",
+        "EXT-X1-F2",
+        "EXT-X1-F3"
+      ],
+      "duration": 40.0,
+      "write_set": [
+        "work/20260924-0730-EXT-X1-Confirmation.md",
+        "work/20260924-2230-Gate2Main3-EXT-X1-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "work/20260924-0730-VitestFailure-a.md",
+          "work/20260924-0730-VitestFailure-b.md",
+          "work/20260924-0730-VitestFailure-c.md",
+          "work/20260924-0730-EXT-X1-Plan.md",
+          "work/20260924-0730-EXT-X1-ExecutionRecord.md",
+          "work/20260924-2230-EXT-X1-RootCause.md"
+        ],
+        "outputs": [
+          "work/20260924-0730-EXT-X1-Confirmation.md",
+          "work/20260924-2230-Gate2Main3-EXT-X1-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 EXT-X1",
+        "timeout_seconds": 3600,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2D-07C",
+      "deps": [],
+      "duration": 40.0,
+      "write_set": [
+        "docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-07C.md",
+        "work/20260924-2230-Gate2Main3-G2D-07C-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "work/202609232120-Gate2-RequirementExtract.md",
+          "docs/model-governance/evidence/2026-09-23-owner-rulings.md",
+          "spikes/models/assist-goldset-plan-classification.md"
+        ],
+        "outputs": [
+          "docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-07C.md",
+          "work/20260924-2230-Gate2Main3-G2D-07C-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 G2D-07C",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2D-07D",
+      "deps": [],
+      "duration": 40.0,
+      "write_set": [
+        "docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-07D.md",
+        "work/20260924-2230-Gate2Main3-G2D-07D-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "work/202609232120-Gate2-RequirementExtract.md",
+          "docs/model-governance/evidence/2026-09-23-owner-rulings.md",
+          "spikes/models/assist-goldset-plan-detection.md"
+        ],
+        "outputs": [
+          "docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-07D.md",
+          "work/20260924-2230-Gate2Main3-G2D-07D-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 G2D-07D",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2Q-01CM",
+      "deps": [
+        "G2D-07C"
+      ],
+      "duration": 100.0,
+      "write_set": [
+        "lock:assist-goldset-classification",
+        "vendor/models/_spike/assist/images-classification/",
+        "vendor/models/_spike/assist/goldset-classification.json",
+        "vendor/models/_spike/assist/goldset-classification.json.check.txt",
+        "work/20260924-2230-Gate2Main3-G2Q-01CM-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "spikes/models/assist-goldset-plan-classification.md",
+          "docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-07C.md"
+        ],
+        "outputs": [
+          "vendor/models/_spike/assist/goldset-classification.json",
+          "vendor/models/_spike/assist/goldset-classification.json.check.txt",
+          "work/20260924-2230-Gate2Main3-G2Q-01CM-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 G2Q-01CM",
+        "timeout_seconds": 1800,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2Q-01DM",
+      "deps": [
+        "G2D-07D"
+      ],
+      "duration": 100.0,
+      "write_set": [
+        "lock:assist-goldset-detection",
+        "vendor/models/_spike/assist/images-detection/",
+        "vendor/models/_spike/assist/goldset-detection.json",
+        "vendor/models/_spike/assist/goldset-detection.json.check.txt",
+        "work/20260924-2230-Gate2Main3-G2Q-01DM-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "spikes/models/assist-goldset-plan-detection.md",
+          "docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-07D.md"
+        ],
+        "outputs": [
+          "vendor/models/_spike/assist/goldset-detection.json",
+          "vendor/models/_spike/assist/goldset-detection.json.check.txt",
+          "work/20260924-2230-Gate2Main3-G2Q-01DM-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 G2Q-01DM",
+        "timeout_seconds": 1800,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2Q-02",
+      "deps": [
+        "G2Q-01CM",
+        "G2Q-01DM"
+      ],
+      "duration": 160.0,
+      "write_set": [
+        "spikes/models/assist_benchmark.py",
+        "spikes/models/assist-result.md",
+        "work/20260924-2230-Gate2Main3-G2Q-02-Review.md",
+        "lock:assist-result"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "spikes/models/assist_benchmark.py",
+          "spikes/models/assist-result.md",
+          "spikes/models/assist-goldset-plan-classification.md",
+          "spikes/models/assist-goldset-plan-detection.md"
+        ],
+        "outputs": [
+          "spikes/models/assist_benchmark.py",
+          "spikes/models/assist-result.md",
+          "work/20260924-2230-Gate2Main3-G2Q-02-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 G2Q-02",
+        "timeout_seconds": 1800,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2Q-03C",
+      "deps": [
+        "G2Q-01CM"
+      ],
+      "duration": 125.0,
+      "write_set": [
+        "spikes/models/siglip_assist_parity.py",
+        "spikes/models/siglip-assist-result.md",
+        "vendor/models/_spike/siglip-goldset.json",
+        "work/20260924-2230-Gate2Main3-G2Q-03C-Review.md",
+        "lock:siglip-record"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "spikes/models/siglip_assist_parity.py",
+          "spikes/models/siglip-assist-result.md",
+          "spikes/models/assist-goldset-plan-classification.md",
+          "docs/model-governance/siglip-base-patch16-224-adoption.md",
+          "vendor/models/_spike/assist/goldset-classification.json"
+        ],
+        "outputs": [
+          "spikes/models/siglip_assist_parity.py",
+          "spikes/models/siglip-assist-result.md",
+          "vendor/models/_spike/siglip-goldset.json",
+          "work/20260924-2230-Gate2Main3-G2Q-03C-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 G2Q-03C",
+        "timeout_seconds": 3600,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2Q-03D",
+      "deps": [
+        "G2Q-01DM"
+      ],
+      "duration": 180.0,
+      "write_set": [
+        "spikes/models/owlvit_assist_parity.py",
+        "spikes/models/owlvit-assist-result.md",
+        "vendor/models/_spike/owlvit-goldset.json",
+        "work/20260924-2230-Gate2Main3-G2Q-03D-Review.md",
+        "lock:owlvit-record"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "spikes/models/owlvit_assist_parity.py",
+          "spikes/models/owlvit-assist-result.md",
+          "spikes/models/assist-goldset-plan-detection.md",
+          "docs/model-governance/owlvit-base-patch32-adoption.md",
+          "vendor/models/_spike/assist/goldset-detection.json"
+        ],
+        "outputs": [
+          "spikes/models/owlvit_assist_parity.py",
+          "spikes/models/owlvit-assist-result.md",
+          "vendor/models/_spike/owlvit-goldset.json",
+          "work/20260924-2230-Gate2Main3-G2Q-03D-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 G2Q-03D",
+        "timeout_seconds": 3600,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2Q-04C",
+      "deps": [
+        "G2Q-01CM"
+      ],
+      "duration": 40.0,
+      "write_set": [
+        "vendor/models/_spike/assist/manual-classification.jsonl",
+        "vendor/models/_spike/assist/manual-classification.jsonl.meta.txt",
+        "work/20260924-2230-Gate2Main3-G2Q-04C-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "spikes/models/assist-goldset-plan-classification.md",
+          "work/20260924-0730-EXT-41-Confirmation.md"
+        ],
+        "outputs": [
+          "vendor/models/_spike/assist/manual-classification.jsonl",
+          "vendor/models/_spike/assist/manual-classification.jsonl.meta.txt",
+          "work/20260924-2230-Gate2Main3-G2Q-04C-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 G2Q-04C",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2Q-04D",
+      "deps": [
+        "G2Q-01DM"
+      ],
+      "duration": 40.0,
+      "write_set": [
+        "vendor/models/_spike/assist/manual-detection.jsonl",
+        "vendor/models/_spike/assist/manual-detection.jsonl.meta.txt",
+        "work/20260924-2230-Gate2Main3-G2Q-04D-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "spikes/models/assist-goldset-plan-detection.md",
+          "work/20260924-0730-EXT-41-Confirmation.md"
+        ],
+        "outputs": [
+          "vendor/models/_spike/assist/manual-detection.jsonl",
+          "vendor/models/_spike/assist/manual-detection.jsonl.meta.txt",
+          "work/20260924-2230-Gate2Main3-G2Q-04D-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 G2Q-04D",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2Q-05C",
+      "deps": [
+        "G2Q-03C",
+        "G2Q-04C"
+      ],
+      "duration": 40.0,
+      "write_set": [
+        "vendor/models/_spike/assist/assisted-classification.jsonl",
+        "vendor/models/_spike/assist/assisted-classification.jsonl.meta.txt",
+        "work/20260924-2230-Gate2Main3-G2Q-05C-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "spikes/models/assist-goldset-plan-classification.md",
+          "work/20260924-0730-EXT-41-Confirmation.md",
+          "vendor/models/_spike/siglip-goldset.json"
+        ],
+        "outputs": [
+          "vendor/models/_spike/assist/assisted-classification.jsonl",
+          "vendor/models/_spike/assist/assisted-classification.jsonl.meta.txt",
+          "work/20260924-2230-Gate2Main3-G2Q-05C-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 G2Q-05C",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2Q-05D",
+      "deps": [
+        "G2Q-03D",
+        "G2Q-04D"
+      ],
+      "duration": 40.0,
+      "write_set": [
+        "vendor/models/_spike/assist/assisted-detection.jsonl",
+        "vendor/models/_spike/assist/assisted-detection.jsonl.meta.txt",
+        "work/20260924-2230-Gate2Main3-G2Q-05D-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "spikes/models/assist-goldset-plan-detection.md",
+          "work/20260924-0730-EXT-41-Confirmation.md",
+          "vendor/models/_spike/owlvit-goldset.json"
+        ],
+        "outputs": [
+          "vendor/models/_spike/assist/assisted-detection.jsonl",
+          "vendor/models/_spike/assist/assisted-detection.jsonl.meta.txt",
+          "work/20260924-2230-Gate2Main3-G2Q-05D-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 G2Q-05D",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2Q-06C",
+      "deps": [
+        "G2Q-02",
+        "G2Q-05C"
+      ],
+      "duration": 65.0,
+      "write_set": [
+        "spikes/models/assist-result.md",
+        "docs/model-governance/siglip-base-patch16-224-adoption.md",
+        "vendor/models/_spike/assist/benchmark-classification.json",
+        "work/20260924-2230-Gate2Main3-G2Q-06C-Review.md",
+        "lock:assist-result",
+        "lock:siglip-record"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "spikes/models/assist-result.md",
+          "docs/model-governance/siglip-base-patch16-224-adoption.md",
+          "spikes/models/assist-goldset-plan-classification.md",
+          "vendor/models/_spike/assist/assisted-classification.jsonl.meta.txt",
+          "vendor/models/_spike/assist/assisted-classification.jsonl",
+          "vendor/models/_spike/assist/manual-classification.jsonl",
+          "vendor/models/_spike/assist/goldset-classification.json"
+        ],
+        "outputs": [
+          "spikes/models/assist-result.md",
+          "docs/model-governance/siglip-base-patch16-224-adoption.md",
+          "vendor/models/_spike/assist/benchmark-classification.json",
+          "work/20260924-2230-Gate2Main3-G2Q-06C-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 G2Q-06C",
+        "timeout_seconds": 1800,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2Q-06D",
+      "deps": [
+        "G2Q-02",
+        "G2Q-05D",
+        "G2Q-06C"
+      ],
+      "duration": 65.0,
+      "write_set": [
+        "spikes/models/assist-result.md",
+        "docs/model-governance/owlvit-base-patch32-adoption.md",
+        "vendor/models/_spike/assist/benchmark-detection.json",
+        "work/20260924-2230-Gate2Main3-G2Q-06D-Review.md",
+        "lock:assist-result",
+        "lock:owlvit-record"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "spikes/models/assist-result.md",
+          "docs/model-governance/owlvit-base-patch32-adoption.md",
+          "spikes/models/assist-goldset-plan-detection.md",
+          "vendor/models/_spike/assist/assisted-detection.jsonl.meta.txt",
+          "vendor/models/_spike/assist/assisted-detection.jsonl",
+          "vendor/models/_spike/assist/manual-detection.jsonl",
+          "vendor/models/_spike/assist/goldset-detection.json"
+        ],
+        "outputs": [
+          "spikes/models/assist-result.md",
+          "docs/model-governance/owlvit-base-patch32-adoption.md",
+          "vendor/models/_spike/assist/benchmark-detection.json",
+          "work/20260924-2230-Gate2Main3-G2Q-06D-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 G2Q-06D",
+        "timeout_seconds": 1800,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2A-01",
+      "deps": [
+        "G2Q-06C"
+      ],
+      "duration": 100.0,
+      "write_set": [
+        "docs/model-governance/siglip-base-patch16-224-adoption.md",
+        "work/20260924-2230-Gate2Main3-G2A-01-Review.md",
+        "lock:assist-result",
+        "lock:siglip-record",
+        "lock:adoption-template"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "docs/model-governance/siglip-base-patch16-224-adoption.md",
+          "docs/model-governance/adoption-template.md",
+          "docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-01.md",
+          "spikes/models/siglip-assist-result.md",
+          "spikes/models/assist-result.md"
+        ],
+        "outputs": [
+          "docs/model-governance/siglip-base-patch16-224-adoption.md",
+          "work/20260924-2230-Gate2Main3-G2A-01-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 G2A-01",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2A-02",
+      "deps": [
+        "G2Q-06D"
+      ],
+      "duration": 100.0,
+      "write_set": [
+        "docs/model-governance/owlvit-base-patch32-adoption.md",
+        "work/20260924-2230-Gate2Main3-G2A-02-Review.md",
+        "lock:assist-result",
+        "lock:owlvit-record",
+        "lock:adoption-template"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "docs/model-governance/owlvit-base-patch32-adoption.md",
+          "docs/model-governance/adoption-template.md",
+          "docs/model-governance/evidence/2026-09-23-owner-risk-acceptance-c7-detection.md",
+          "docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-06.md",
+          "spikes/models/owlvit-assist-result.md",
+          "spikes/models/assist-result.md"
+        ],
+        "outputs": [
+          "docs/model-governance/owlvit-base-patch32-adoption.md",
+          "work/20260924-2230-Gate2Main3-G2A-02-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 G2A-02",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2A-03",
+      "deps": [
+        "G2A-01",
+        "G2A-02"
+      ],
+      "duration": 100.0,
+      "write_set": [
+        "lock:model-manifest",
+        "resources/models/manifest.json",
+        "scripts/models/manifest-schema.test.mjs",
+        "work/20260924-2230-Gate2Main3-G2A-03-Review.md",
+        "lock:siglip-record",
+        "lock:owlvit-record"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "work/20260924-0710-Gate2-SplitRejudgment.md",
+          "docs/model-governance/siglip-base-patch16-224-adoption.md",
+          "docs/model-governance/owlvit-base-patch32-adoption.md",
+          "resources/models/manifest.json",
+          "scripts/models/manifest-schema.test.mjs"
+        ],
+        "outputs": [
+          "resources/models/manifest.json",
+          "scripts/models/manifest-schema.test.mjs",
+          "work/20260924-2230-Gate2Main3-G2A-03-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 G2A-03",
+        "timeout_seconds": 1800,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2A-04",
+      "deps": [
+        "G2A-03"
+      ],
+      "duration": 110.0,
+      "write_set": [
+        "src/renderer/features/settings/SettingsPage.tsx",
+        "src/renderer/features/settings/SettingsPage.test.tsx",
+        "resources/licenses/owlvit-base-patch32.NOTICE.txt",
+        "work/20260924-2230-Gate2Main3-G2A-04-Review.md",
+        "lock:owlvit-record",
+        "lock:model-manifest"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "work/20260924-0710-Gate2-SplitRejudgment.md",
+          "src/renderer/features/settings/SettingsPage.tsx",
+          "src/renderer/features/settings/SettingsPage.test.tsx",
+          "docs/model-governance/owlvit-base-patch32-adoption.md",
+          "resources/models/manifest.json"
+        ],
+        "outputs": [
+          "src/renderer/features/settings/SettingsPage.tsx",
+          "src/renderer/features/settings/SettingsPage.test.tsx",
+          "resources/licenses/owlvit-base-patch32.NOTICE.txt",
+          "work/20260924-2230-Gate2Main3-G2A-04-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 G2A-04",
+        "timeout_seconds": 1800,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2D-08",
+      "deps": [
+        "G2A-03"
+      ],
+      "duration": 40.0,
+      "write_set": [
+        "docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-08.md",
+        "work/20260924-2230-Gate2Main3-G2D-08-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "work/202609232120-Gate2-RequirementExtract.md",
+          "docs/model-governance/evidence/2026-09-23-owner-rulings.md",
+          "CONTRIBUTING.md"
+        ],
+        "outputs": [
+          "docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-08.md",
+          "work/20260924-2230-Gate2Main3-G2D-08-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 G2D-08",
+        "timeout_seconds": 1800,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "G2V-01",
+      "deps": [
+        "G2D-08",
+        "EXT-X1"
+      ],
+      "duration": 100.0,
+      "write_set": [
+        "lock:root-version",
+        "lock:model-manifest",
+        "package.json",
+        "package-lock.json",
+        "resources/models/manifest.json",
+        "work/20260924-0730-G2V-01-tags-before.txt",
+        "work/20260924-2230-Gate2Main3-G2V-01-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-2230-Gate2Main3-verify.ps1",
+          "CONTRIBUTING.md",
+          "package.json",
+          "resources/models/manifest.json",
+          "docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-08.md"
+        ],
+        "outputs": [
+          "package.json",
+          "package-lock.json",
+          "resources/models/manifest.json",
+          "work/20260924-0730-G2V-01-tags-before.txt",
+          "work/20260924-2230-Gate2Main3-G2V-01-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260924-2230-Gate2Main3-verify.ps1 G2V-01",
+        "timeout_seconds": 3600,
+        "max_attempts": 1,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    }
+  ]
+}

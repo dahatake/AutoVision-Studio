@@ -180,7 +180,7 @@ describe.skipIf(process.platform !== 'win32')('DAT-06 copy storage', () => {
           return read(buffer, offset, length, position);
         });
         mockDescriptorWrite(handle, async (buffer, offset, length, position) => {
-          const bounded = Math.min(length, 4093);
+          const bounded = Math.min(length, 32_749);
           shortWrites += Number(bounded < length);
           return write(buffer, offset, bounded, position);
         });

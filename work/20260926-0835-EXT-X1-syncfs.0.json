@@ -1,0 +1,1 @@
+{"threadId":0,"elapsedMs":7863,"total":{"count":645,"ms":197},"byFn":{"statSync":{"count":84,"ms":7,"perCallMs":0.082},"realpathSync":{"count":206,"ms":31,"perCallMs":0.152},"openSync":{"count":82,"ms":43,"perCallMs":0.521},"readSync":{"count":82,"ms":12,"perCallMs":0.151},"closeSync":{"count":82,"ms":8,"perCallMs":0.103},"readFileSync":{"count":109,"ms":95,"perCallMs":0.873}}}

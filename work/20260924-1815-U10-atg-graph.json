@@ -1,0 +1,83 @@
+{
+  "nodes": [
+    {
+      "id": "U10-I",
+      "deps": [],
+      "duration": 30.0,
+      "write_set": [
+        "src/renderer/layout/AppShell.tsx"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-1815-U10-Plan.md",
+          "src/renderer/layout/AppShell.tsx",
+          "docs/requirement-definition.md"
+        ],
+        "outputs": [
+          "src/renderer/layout/AppShell.tsx"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -Command \"$env:PATH = $env:LOCALAPPDATA + '\\npm-12.0.0;' + $env:PATH; if ((npm --version) -ne '12.0.0') { exit 2 }; npm run typecheck; if ($LASTEXITCODE) { exit $LASTEXITCODE }; exit 0\"",
+        "timeout_seconds": 1800,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "U10-T",
+      "deps": [
+        "U10-I"
+      ],
+      "duration": 30.0,
+      "write_set": [
+        "src/renderer/layout/AppShell.test.tsx"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-1815-U10-Plan.md",
+          "src/renderer/layout/AppShell.tsx",
+          "src/renderer/layout/AppShell.test.tsx"
+        ],
+        "outputs": [
+          "src/renderer/layout/AppShell.test.tsx"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -Command \"$env:PATH = $env:LOCALAPPDATA + '\\npm-12.0.0;' + $env:PATH; if ((npm --version) -ne '12.0.0') { exit 2 }; .\\node_modules\\.bin\\vitest.cmd run src/renderer/layout/AppShell.test.tsx; if ($LASTEXITCODE) { exit $LASTEXITCODE }; npm run typecheck; if ($LASTEXITCODE) { exit $LASTEXITCODE }; exit 0\"",
+        "timeout_seconds": 1800,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    },
+    {
+      "id": "U10-R",
+      "deps": [
+        "U10-T"
+      ],
+      "duration": 20.0,
+      "write_set": [
+        "work/20260924-1815-U10-Review.md"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260924-1815-U10-Plan.md",
+          "src/renderer/layout/AppShell.tsx",
+          "src/renderer/layout/AppShell.test.tsx"
+        ],
+        "outputs": [
+          "work/20260924-1815-U10-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -Command \"if (-not (Select-String -Path 'work/20260924-1815-U10-Review.md' -Pattern '^blocking: 0$' -Quiet)) { exit 1 }\"",
+        "timeout_seconds": 1800,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    }
+  ]
+}

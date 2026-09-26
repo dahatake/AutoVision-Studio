@@ -58,7 +58,7 @@ SHA-256 は本 repository で独立に計算した値である。先頭 8 桁が
 | 識別子の意味 | SPDX `LicenseRef-[idstring]` 構文による **repository ローカルの license 参照**。**publisher が発行した license 識別子ではない** |
 | ライセンス根拠 | [repository owner の risk acceptance 記録（2026-09-23）](evidence/2026-09-23-owner-risk-acceptance.md) artifact A。決定者 **dahatake** |
 | 商用利用の明示確認 | **確認済みとして扱う（risk acceptance）**。publisher の明示記載は存在しない |
-| 製品のモデル利用条件（非商用の研究・教育目的、要求定義 v0.7）での利用 | **適合として扱う**。2026-09-23 の risk acceptance は商用利用を含む範囲で決定されており、非商用の研究・教育目的での利用はその範囲に含まれる。v0.7 以降、本重みを同梱する配布物は非商用の研究・教育目的に限って提供し、manifest の `commercialUseConfirmed` / `commercialDerivativesPermitted` はこの利用条件での許可を表す（TBD-09） |
+| 製品のモデル利用条件（非商用の研究・教育目的、要求定義 v0.7）での利用 | **適合として扱う**。2026-09-23 の risk acceptance は商用利用を含む範囲で決定されており、非商用の研究・教育目的での利用はその範囲に含まれる。v0.7 以降、本重みを同梱する配布物は非商用の研究・教育目的に限って提供し、manifest の `productUsePermitted` / `productDerivativesPermitted` はこの利用条件での許可を表す（TBD-09） |
 | 再配布の可否 | **可として扱う（risk acceptance）** |
 | 変更・派生物の条件 | 追加条件を設定しない（本 repository の決定範囲） |
 | NOTICE 内容 | §5 に全文を記載 |
@@ -115,16 +115,16 @@ AutoVision Studio bundles the image classification base weights
     repository-local license reference recorded under the risk acceptance of
     the AutoVision Studio repository owner (2026-09-23). This reference does
     not assert any grant by the publisher.
-    The manifest fields commercialUseConfirmed, redistributionPermitted and
-    commercialDerivativesPermitted are set from that owner decision, not from
+    The manifest fields productUsePermitted, redistributionPermitted and
+    productDerivativesPermitted are set from that owner decision, not from
     a publisher confirmation (FR-LIC-016).
     Unconfirmed at the time of the decision: the checkpoint-specific license,
     whether the ImageNet terms of access extend to weights trained on
     ImageNet, and the image-by-image rights of the ImageNet training images.
     Under the AutoVision Studio model use condition (requirement definition
     v0.7), these weights are bundled for non-commercial research and
-    educational purposes only. In this manifest, commercialUseConfirmed and
-    commercialDerivativesPermitted denote permission for that use condition,
+    educational purposes only. In this manifest, productUsePermitted and
+    productDerivativesPermitted denote permission for that use condition,
     not for commercial use (TBD-09).
 
 [C8] Training data

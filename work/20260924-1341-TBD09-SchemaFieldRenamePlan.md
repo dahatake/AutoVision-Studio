@@ -74,6 +74,7 @@ graph は [`20260924-1341-TBD09-atg-graph.json`](20260924-1341-TBD09-atg-graph.j
 - T9-V の版の値は release 責任者が決める（判断記録の「本判断が意味しないこと」2、CONTRIBUTING「製品バージョンの更新順」）。決定は `work/20260924-1341-TBD09-VersionDecision.md` に `version: <x.y.z>` の 1 行と決定者・日付として記録し、T9-V の入力とする。この記録ができるまで T9-V は起動しない（候補が決まらないため推測しない）。版は npm 12.0.0 の `npm version <決定値> --no-git-tag-version` で `package.json` と `package-lock.json` に反映する。
 - 各 verify の旧名の検査は、`git grep` の exit が 1（一致なし）の場合だけを通す（exit 0 の一致と、exit 2 以上の grep の失敗はどちらも失敗にする）。
 - `lock:model-manifest` と `lock:root-version` で Gate 2 の終端化 run と直列にする（残タスク計画 §4.2 と TBD-09 の判断記録の根拠の表）。
+- 注記（2026-09-26）: T9-V の「`work/` と evidence を除いて旧名が無い」の検査からは、T9-T が求める否定 case（`scripts/models/manifest-schema.test.mjs` の `rejects the pre-3.0.0 license field names`）と `CHANGELOG.md` の過去の項目（履歴の記述）を除く。CHANGELOG に新しい 2 つの名前の項目があることは別に求める。
 - ADR-0004 234 行は spike の当時の schema の説明である。旧名を新しい名前に置き換え、3.0.0 で改名したことを括弧で添える（履歴の事実は変えない）。
 
 ## 6. 実行の条件

@@ -1,9 +1,10 @@
 {
+  "schemaVersion": "3.0.1",
+  "productVersion": "0.1.12",
   "$schema": "./manifest.schema.json",
-  "schemaVersion": "2.0.0",
   "releaseStatus": {
-    "ready": false,
-    "reason": "Gate 2 requires approved C6 and C7 entries for both classification and detection and a measured assist quality baseline (SPI-17, NFR-ANN-006). Approved: C6 classification MobileNetV3 Large IMAGENET1K_V2 and C6 detection SSDLite320 MobileNetV3 Large COCO_V1, both under an owner risk acceptance for the rights layer (FR-LIC-016) with measured windows-x64 cpu and directml parity; per the owner ruling D1 of 2026-09-23, the POC-03 real-time criteria are verified on the product Model Version inference path in the INF phase rather than on C6 base weights. Not approved: C7 classification google/siglip-base-patch16-224 is pending (its cpu inference latency p95 545-831 ms failed the adoption record criterion; the planned int8 dynamic quantization failed both parity (max score diff 0.090, top-1 12/15) and cpu performance (p95 216 ms, 8.3 FPS)); C7 classification TinyCLIP ViT-8M/16 is excluded because no primary source states its intended or out-of-scope use; C7 detection google/owlvit-base-patch32 is pending (raw ONNX outputs match PyTorch, but its cpu inference latency p95 918-1570 ms failed the adoption record criterion); C7 detection IDEA-Research/grounding-dino-tiny is pending because its ONNX export does not match PyTorch (parity FAIL). The assist quality baseline (releaseStatus.assistQuality) has not been measured. Gate 2 therefore remains closed. The Gate 2 terminalization of 2026-09-24 recorded BLOCKED from the main run (ATG execution e7c6da3f-8f62-4785-b40e-fab254437a4b): nodes G2D-01, G2D-02, G2D-04, G2D-06, G2D-10 and G2D-12 failed because the required owner rulings were not provided; node G2D-11 failed because npm 12.0.0 was installed on the owner's instruction but the installation method has not been confirmed as organization-approved; node G2T-10 failed because the classification checkpoint parity measurement was FAIL; node EXT-X1 failed because the cause of the aggregate test failures could not be determined (the failures were not reproduced in any of three reruns of the seven failing test files). Consequently the G2Q work required to prepare and execute the assist-quality comparison trials, the C7 adoption approvals (G2A-01 and G2A-02), the subsequent C7 manifest entry and UI work (G2A-03 and G2A-04), and the final verification G2V-01 were blocked (work/20260924-1425-Gate2-TerminalState.md)."
+    "ready": true,
+    "reason": "Ready (Gate 2 main run all succeeded; work/20260926-1100-Gate2-TerminalState.md). All four roles are approved: C6 classification MobileNetV3 Large IMAGENET1K_V2 and C6 detection SSDLite320 MobileNetV3 Large COCO_V1 under an owner risk acceptance for the rights layer (FR-LIC-016) with measured windows-x64 cpu and directml parity (per the owner ruling D1 of 2026-09-23, the POC-03 real-time criteria are verified on the product Model Version inference path in the INF phase); C7 classification google/siglip-base-patch16-224 (approved 2026-09-25; gold-set top-1 accuracy without a threshold 0.35, close to chance for 3 labels); and C7 detection google/owlvit-base-patch32 (approved 2026-09-26; assist suggestions limited to research purposes, FR-LIC-003; gold-set F1 0.2478). Per the owner ruling G2D-01, the C7 cpu inference latency is recorded but not used as an adoption criterion. The assist quality comparison (NFR-ANN-006, POC-16 quality and time) was removed from the Version 1 tasks and treated as complete without being run (owner ruling of 2026-09-26, docs/model-governance/evidence/2026-09-26-owner-rulings.md); releaseStatus.assistQuality is therefore empty and the assist benefit is unverified. The product version is 0.1.12 (owner ruling G2D-08). The PKG-01 release verifier (scripts/models/verify.py) checks the approved source payloads, evidence and approval records before packaging; a packaged payload is checked with the same script against its payload root (ADR-0004)."
   },
   "models": [
     {
@@ -22,22 +23,22 @@
       "licenses": {
         "code": {
           "spdx": "BSD-3-Clause",
-          "commercialUseConfirmed": true,
+          "productUsePermitted": true,
           "redistributionPermitted": true,
           "noticeText": "TorchVision (https://github.com/pytorch/vision), BSD 3-Clause License. Copyright (c) Soumith Chintala 2016, All rights reserved. The full BSD 3-Clause License text is reproduced in THIRD_PARTY_NOTICES."
         },
         "checkpoint": {
           "spdx": "LicenseRef-AutoVisionStudio",
-          "commercialUseConfirmed": true,
+          "productUsePermitted": true,
           "redistributionPermitted": true,
-          "noticeText": "The publisher has not issued a checkpoint-specific license statement for mobilenet_v3_large-5c1a4163.pth. These weights are bundled under LicenseRef-AutoVisionStudio, a repository-local license reference recorded under the risk acceptance of the AutoVision Studio repository owner (dahatake, 2026-09-23). This reference does not assert any grant by the publisher. commercialUseConfirmed, redistributionPermitted and commercialDerivativesPermitted are set from that owner decision, not from a publisher confirmation (FR-LIC-016). Unconfirmed at the time of the decision: the checkpoint-specific license, whether the ImageNet terms of access extend to weights trained on ImageNet, and the image-by-image rights of the ImageNet training images. Under the AutoVision Studio model use condition (requirement definition v0.7), these weights are bundled for non-commercial research and educational purposes only. In this manifest, commercialUseConfirmed and commercialDerivativesPermitted denote permission for that use condition, not for commercial use (TBD-09)."
+          "noticeText": "The publisher has not issued a checkpoint-specific license statement for mobilenet_v3_large-5c1a4163.pth. These weights are bundled under LicenseRef-AutoVisionStudio, a repository-local license reference recorded under the risk acceptance of the AutoVision Studio repository owner (dahatake, 2026-09-23). This reference does not assert any grant by the publisher. productUsePermitted, redistributionPermitted and productDerivativesPermitted are set from that owner decision, not from a publisher confirmation (FR-LIC-016). Unconfirmed at the time of the decision: the checkpoint-specific license, whether the ImageNet terms of access extend to weights trained on ImageNet, and the image-by-image rights of the ImageNet training images. Under the AutoVision Studio model use condition (requirement definition v0.7), these weights are bundled for non-commercial research and educational purposes only. In this manifest, productUsePermitted and productDerivativesPermitted denote permission for that use condition, not for commercial use (TBD-09)."
         },
         "trainingData": [
           {
             "datasetName": "ImageNet-1K (ILSVRC-2012)",
             "termsUrl": "https://www.image-net.org/download.php",
             "termsRetrievedDate": "2026-09-23",
-            "commercialDerivativesPermitted": true,
+            "productDerivativesPermitted": true,
             "redistributionConditions": "The ImageNet terms of access limit use of the Database to non-commercial research and educational purposes and do not state conditions for trained weights. Use and redistribution of the derived weights are set by the repository owner risk acceptance of 2026-09-23 (FR-LIC-016), not by the dataset publisher; the bundle is provided for non-commercial research and educational purposes only (requirement definition v0.7). The training images are not redistributed.",
             "attributionText": "ImageNet-1K (ILSVRC-2012), https://www.image-net.org/. The ImageNet terms of access limit use of the Database to non-commercial research and educational purposes."
           }
@@ -89,6 +90,7 @@
       ],
       "approval": {
         "recordPath": "docs/model-governance/mobilenet-v3-large-imagenet1k-v2-adoption.md",
+        "recordSha256": "135531c9eb84df4e3c0631f80c19a38bf89a805cca7314f788cf4f3295ad235e",
         "status": "Approved",
         "approver": "dahatake",
         "date": "2026-09-23"
@@ -126,22 +128,22 @@
       "licenses": {
         "code": {
           "spdx": "BSD-3-Clause",
-          "commercialUseConfirmed": true,
+          "productUsePermitted": true,
           "redistributionPermitted": true,
           "noticeText": "TorchVision (https://github.com/pytorch/vision), BSD 3-Clause License. Copyright (c) Soumith Chintala 2016, All rights reserved. The full BSD 3-Clause License text is reproduced in THIRD_PARTY_NOTICES."
         },
         "checkpoint": {
           "spdx": "LicenseRef-AutoVisionStudio",
-          "commercialUseConfirmed": true,
+          "productUsePermitted": true,
           "redistributionPermitted": true,
-          "noticeText": "The publisher has not issued a checkpoint-specific license statement for ssdlite320_mobilenet_v3_large_coco-a79551df.pth. These weights are bundled under LicenseRef-AutoVisionStudio, a repository-local license reference recorded under the risk acceptance of the AutoVision Studio repository owner (dahatake, 2026-09-22). This reference does not assert any grant by the publisher. commercialUseConfirmed, redistributionPermitted and commercialDerivativesPermitted are set from that owner decision, not from a publisher confirmation (FR-LIC-016). Unconfirmed at the time of the decision: the checkpoint-specific license, the image-by-image rights of the COCO training images, and whether the backbone was initialised from ImageNet-pretrained weights. Under the AutoVision Studio model use condition (requirement definition v0.7), these weights are bundled for non-commercial research and educational purposes only. In this manifest, commercialUseConfirmed and commercialDerivativesPermitted denote permission for that use condition, not for commercial use (TBD-09)."
+          "noticeText": "The publisher has not issued a checkpoint-specific license statement for ssdlite320_mobilenet_v3_large_coco-a79551df.pth. These weights are bundled under LicenseRef-AutoVisionStudio, a repository-local license reference recorded under the risk acceptance of the AutoVision Studio repository owner (dahatake, 2026-09-22). This reference does not assert any grant by the publisher. productUsePermitted, redistributionPermitted and productDerivativesPermitted are set from that owner decision, not from a publisher confirmation (FR-LIC-016). Unconfirmed at the time of the decision: the checkpoint-specific license, the image-by-image rights of the COCO training images, and whether the backbone was initialised from ImageNet-pretrained weights. Under the AutoVision Studio model use condition (requirement definition v0.7), these weights are bundled for non-commercial research and educational purposes only. In this manifest, productUsePermitted and productDerivativesPermitted denote permission for that use condition, not for commercial use (TBD-09)."
         },
         "trainingData": [
           {
             "datasetName": "COCO 2017 (train2017)",
             "termsUrl": "https://cocodataset.org/#termsofuse",
             "termsRetrievedDate": "2026-09-22",
-            "commercialDerivativesPermitted": true,
+            "productDerivativesPermitted": true,
             "redistributionConditions": "COCO annotations are licensed under CC BY 4.0 and require attribution. The COCO Consortium does not own the copyright of the images, whose use is subject to the Flickr Terms of Use. Use and redistribution of the derived weights are set by the repository owner risk acceptance of 2026-09-22 (FR-LIC-016), not by the dataset publisher; the bundle is provided for non-commercial research and educational purposes only (requirement definition v0.7). The training images are not redistributed.",
             "attributionText": "COCO 2017 (train2017). Annotations (c) COCO Consortium, licensed under Creative Commons Attribution 4.0 International (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/ . The COCO Consortium does not own the copyright of the images; use of the images is subject to the Flickr Terms of Use."
           }
@@ -193,6 +195,7 @@
       ],
       "approval": {
         "recordPath": "docs/model-governance/ssdlite320-mobilenet-v3-large-coco-v1-adoption.md",
+        "recordSha256": "6c80f8de269c96606e9edd65e6c623597ccf7dfdf5215c4bc34124e08a1c4ffe",
         "status": "Approved",
         "approver": "dahatake",
         "date": "2026-09-23"
@@ -213,6 +216,315 @@
           "verified": true
         }
       ]
+    },
+    {
+      "id": "siglip-base-patch16-224",
+      "category": "C7",
+      "task": "classification",
+      "name": "SigLIP base patch16 224",
+      "version": "google/siglip-base-patch16-224 revision 7fd15f0689c79d79e38b1c2e2e2370a7bf2761ed",
+      "downloadUrl": "https://huggingface.co/google/siglip-base-patch16-224/resolve/7fd15f0689c79d79e38b1c2e2e2370a7bf2761ed/model.safetensors",
+      "retrievedDate": "2026-09-22",
+      "sourcePath": "vendor/models/_spike/siglip/model.safetensors",
+      "payloadPath": "resources/models/siglip-base-patch16-224/model.safetensors",
+      "sha256": "2c63cb7d1f2e95ba501893cbb8faeb4ea9a3af295498d35097126228659c2af8",
+      "byteSize": 812672320,
+      "format": "safetensors",
+      "licenses": {
+        "code": {
+          "spdx": "Apache-2.0",
+          "productUsePermitted": true,
+          "redistributionPermitted": true,
+          "noticeText": "Hugging Face Transformers v5.17.0 (https://github.com/huggingface/transformers), Apache License 2.0. Copyright 2018- The Hugging Face team. The full Apache License 2.0 text is reproduced in THIRD_PARTY_NOTICES."
+        },
+        "checkpoint": {
+          "spdx": "LicenseRef-AutoVisionStudio",
+          "productUsePermitted": true,
+          "redistributionPermitted": true,
+          "noticeText": "File: model.safetensors (revision 7fd15f0689c79d79e38b1c2e2e2370a7bf2761ed) SHA-256: 2c63cb7d1f2e95ba501893cbb8faeb4ea9a3af295498d35097126228659c2af8 Source: https://huggingface.co/google/siglip-base-patch16-224/resolve/7fd15f0689c79d79e38b1c2e2e2370a7bf2761ed/model.safetensors The publisher has not issued a checkpoint-specific license statement. These weights are bundled under LicenseRef-AutoVisionStudio, a repository-local license reference recorded under the risk acceptance of the AutoVision Studio repository owner (dahatake, 2026-09-22). This reference does not assert any grant by the publisher. The manifest fields productUsePermitted, redistributionPermitted and productDerivativesPermitted are set from that owner decision, not from a publisher confirmation (FR-LIC-016). Unconfirmed at the time of the decision: the checkpoint-specific license, the terms of the WebLI training data and the rights of its images and texts, whether ImageNet or COCO data were used, and whether these weights are equivalent to the original Big Vision release. Under the AutoVision Studio model use condition (requirement definition v0.7), these weights are bundled for non-commercial research and educational purposes only. In this manifest, productUsePermitted and productDerivativesPermitted denote permission for that use condition, not for commercial use (TBD-09)."
+        },
+        "trainingData": [
+          {
+            "datasetName": "WebLI (English image-text pairs)",
+            "termsUrl": "https://huggingface.co/google/siglip-base-patch16-224/resolve/7fd15f0689c79d79e38b1c2e2e2370a7bf2761ed/README.md",
+            "termsRetrievedDate": "2026-09-23",
+            "productDerivativesPermitted": true,
+            "redistributionConditions": "The WebLI terms are not public; termsUrl is the model card that names WebLI as the training data. Use and redistribution of the derived weights are set by the repository owner risk acceptance of 2026-09-22 (FR-LIC-016), not by the dataset publisher; the bundle is provided for non-commercial research and educational purposes only (requirement definition v0.7). The training data is not redistributed.",
+            "attributionText": "WebLI (English image-text pairs), as stated in the model card. The WebLI terms are not public."
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "model-card",
+          "sourceUrl": "https://huggingface.co/google/siglip-base-patch16-224/resolve/7fd15f0689c79d79e38b1c2e2e2370a7bf2761ed/README.md",
+          "localPath": "docs/model-governance/evidence/siglip-base-patch16-224-model-card-7fd15f06-20260923.md",
+          "sha256": "86c231c4a7bf0ee2435295413ad5c7cf567c9426f00b79711ce8eda884b7a8d3",
+          "retrievedDate": "2026-09-23"
+        },
+        {
+          "kind": "other",
+          "sourceUrl": "https://huggingface.co/api/models/google/siglip-base-patch16-224?blobs=true",
+          "localPath": "docs/model-governance/evidence/siglip-base-patch16-224-hf-api-20260923.json",
+          "sha256": "f99762444fd3000cc7e8a9c69c005cced3c89373436d34bb05fb948c349e1cc3",
+          "retrievedDate": "2026-09-23"
+        },
+        {
+          "kind": "other",
+          "sourceUrl": "https://raw.githubusercontent.com/huggingface/transformers/v5.17.0/LICENSE",
+          "localPath": "docs/model-governance/evidence/transformers-v5.17.0-LICENSE.txt",
+          "sha256": "77fd4710def9ec3c0f6225800e0235f15a425abd4a8b03559127fcd782612049",
+          "retrievedDate": "2026-09-25"
+        },
+        {
+          "kind": "other",
+          "sourceUrl": "https://github.com/dahatake/AutoVision-Studio/blob/main/docs/model-governance/evidence/2026-09-22-owner-risk-acceptance.md",
+          "localPath": "docs/model-governance/evidence/2026-09-22-owner-risk-acceptance.md",
+          "sha256": "baa0b97f48d3fa996cec57a6024f23f0147e04dee99f7ed01c616e723316c402",
+          "retrievedDate": "2026-09-22"
+        },
+        {
+          "kind": "other",
+          "sourceUrl": "https://github.com/dahatake/AutoVision-Studio/blob/main/docs/model-governance/evidence/2026-09-25-owner-ruling-G2A-01-02-G2D-08.md",
+          "localPath": "docs/model-governance/evidence/2026-09-25-owner-ruling-G2A-01-02-G2D-08.md",
+          "sha256": "1262ebb21e2f142a8f348627fba66a5c08cf918de4a66bb6ccbd0ed4addd7a76",
+          "retrievedDate": "2026-09-25"
+        },
+        {
+          "kind": "other",
+          "sourceUrl": "https://github.com/dahatake/AutoVision-Studio/blob/main/docs/model-governance/evidence/2026-09-25-owner-ruling-assist-trial-deferral.md",
+          "localPath": "docs/model-governance/evidence/2026-09-25-owner-ruling-assist-trial-deferral.md",
+          "sha256": "6655690e061d027a8048a60f5a7a044b6a8eabefadaf18ab099b6730df469849",
+          "retrievedDate": "2026-09-25"
+        },
+        {
+          "kind": "other",
+          "sourceUrl": "https://github.com/dahatake/AutoVision-Studio/blob/main/docs/model-governance/evidence/2026-09-26-owner-rulings.md",
+          "localPath": "docs/model-governance/evidence/2026-09-26-owner-rulings.md",
+          "sha256": "4922a03a7e8dc71b6fc74f299e7a936c1b650a1f64ab87ed44bc4b015455e42b",
+          "retrievedDate": "2026-09-26"
+        }
+      ],
+      "approval": {
+        "recordPath": "docs/model-governance/siglip-base-patch16-224-adoption.md",
+        "recordSha256": "1d1f0f468e5b45ac98476479bb202c1bcf291970886072dffa7bc58e5f6dafaf",
+        "status": "Approved",
+        "approver": "dahatake",
+        "date": "2026-09-25"
+      },
+      "intendedUse": {
+        "productUseInScope": true,
+        "outOfScopeProductionUse": false
+      },
+      "support": [
+        {
+          "os": "windows-x64",
+          "executionProvider": "cpu",
+          "verified": true
+        },
+        {
+          "os": "windows-x64",
+          "executionProvider": "directml",
+          "verified": true
+        }
+      ],
+      "inferenceConfig": {
+        "scoreMeaning": "Per-label independent sigmoid(exp(logit_scale) * cos + logit_bias). It is not a probability of correctness, it is not calibrated, and the scores do not sum to 1 across labels.",
+        "scoreRange": {
+          "minimum": 0,
+          "maximum": 1
+        },
+        "confidenceThreshold": 0.9241492748260498,
+        "thresholdPolicy": "G2Q-03 policy A: among thresholds with coverage of at least 0.5 on the classification gold set, the one with the highest agreement of the suggested items; the recorded value is the midpoint between the selected score and the next lower candidate. Label prompt: 'This is a photo of {label}.' with underscores in the label name replaced by spaces. Evidence: spikes/models/siglip-assist-result.md section 8.",
+        "deterministicInference": true,
+        "seeds": {
+          "torch": 20260922
+        }
+      }
+    },
+    {
+      "id": "owlvit-base-patch32",
+      "category": "C7",
+      "task": "detection",
+      "name": "OWL-ViT base patch32",
+      "version": "google/owlvit-base-patch32 revision cbc355fb364588351c5d51c7f74465e8e7ec6f72",
+      "downloadUrl": "https://huggingface.co/google/owlvit-base-patch32/resolve/cbc355fb364588351c5d51c7f74465e8e7ec6f72/model.safetensors",
+      "retrievedDate": "2026-09-23",
+      "sourcePath": "vendor/models/_spike/owlvit-b32/model.safetensors",
+      "payloadPath": "resources/models/owlvit-base-patch32/model.safetensors",
+      "sha256": "4dbe0399f0b7d7c8dddf1535a98769cc30743bebc877aea681998c8d984ce52b",
+      "byteSize": 612983940,
+      "format": "safetensors",
+      "licenses": {
+        "code": {
+          "spdx": "Apache-2.0",
+          "productUsePermitted": true,
+          "redistributionPermitted": true,
+          "noticeText": "Hugging Face Transformers v5.17.0 (https://github.com/huggingface/transformers), Apache License 2.0. Copyright 2018- The Hugging Face team. The full Apache License 2.0 text is reproduced in THIRD_PARTY_NOTICES."
+        },
+        "checkpoint": {
+          "spdx": "LicenseRef-AutoVisionStudio",
+          "productUsePermitted": true,
+          "redistributionPermitted": true,
+          "noticeText": "File: model.safetensors (revision cbc355fb364588351c5d51c7f74465e8e7ec6f72) SHA-256: 4dbe0399f0b7d7c8dddf1535a98769cc30743bebc877aea681998c8d984ce52b Source: https://huggingface.co/google/owlvit-base-patch32/resolve/cbc355fb364588351c5d51c7f74465e8e7ec6f72/model.safetensors No checkpoint-specific license statement by the publisher has been confirmed. These weights are bundled under LicenseRef-AutoVisionStudio, a repository-local license reference recorded under the risk acceptance of the AutoVision Studio repository owner (dahatake, 2026-09-23). This reference does not assert any grant by the publisher. The manifest fields productUsePermitted, redistributionPermitted and productDerivativesPermitted are set from that owner decision, not from a publisher confirmation (FR-LIC-016). Unconfirmed at the time of the decision: whether the apache-2.0 tag of the model card is a checkpoint-level license statement, the terms of the training data (the crawled image-caption data, YFCC100M, COCO and OpenImages) and the conditions for use and redistribution of weights derived from them, the complete list of training data, and whether these weights are identical to the weights of the training procedure described in the model card. The model card states that the model is intended as a research output for research communities. OWL-ViT assist suggestions are therefore provided for research purposes only, which is narrower than the AutoVision Studio model use condition (non-commercial research and educational purposes, requirement definition v0.7). In this manifest, productUsePermitted and productDerivativesPermitted denote permission for that use condition, not for commercial use (TBD-09)."
+        },
+        "trainingData": [
+          {
+            "datasetName": "crawled image-caption data",
+            "termsUrl": "https://huggingface.co/google/owlvit-base-patch32/resolve/cbc355fb364588351c5d51c7f74465e8e7ec6f72/README.md",
+            "termsRetrievedDate": "2026-09-23",
+            "productDerivativesPermitted": true,
+            "redistributionConditions": "The model card does not identify the crawled websites, and no terms for the image-caption data crawled from them were found; termsUrl is the model card that describes this training data. Use and redistribution of the derived weights are set by the repository owner risk acceptance of 2026-09-23 (FR-LIC-016), not by the dataset publisher; OWL-ViT assist suggestions are provided for research purposes only. The training data is not redistributed.",
+            "attributionText": "Publicly available image-caption data crawled from a handful of websites, as stated in the model card. The websites are not identified in the model card."
+          },
+          {
+            "datasetName": "YFCC100M",
+            "termsUrl": "https://multimediacommons.wordpress.com/yfcc100m-core-dataset/",
+            "termsRetrievedDate": "2026-09-25",
+            "productDerivativesPermitted": true,
+            "redistributionConditions": "The distribution page states that use of the dataset is subject to the relevant Webscope License Agreement and that the photos and videos were shared under various Creative Commons licenses; the Webscope License Agreement itself was not retrieved. The model card names YFCC100M only as an example (\"such as\"). Use and redistribution of the derived weights are set by the repository owner risk acceptance of 2026-09-23 (FR-LIC-016), not by the dataset publisher; OWL-ViT assist suggestions are provided for research purposes only. The training data is not redistributed.",
+            "attributionText": "YFCC100M (Yahoo Flickr Creative Commons 100 Million), named in the model card as an example of the image-caption training data. B. Thomee et al., \"YFCC100M: The New Data in Multimedia Research\", Communications of the ACM, 59(2), 2016."
+          },
+          {
+            "datasetName": "COCO",
+            "termsUrl": "https://cocodataset.org/#termsofuse",
+            "termsRetrievedDate": "2026-09-22",
+            "productDerivativesPermitted": true,
+            "redistributionConditions": "COCO annotations are licensed under CC BY 4.0 and require attribution. The COCO Consortium does not own the copyright of the images, whose use is subject to the Flickr Terms of Use. The model card names COCO as an example (\"such as\") and does not state the version. Use and redistribution of the derived weights are set by the repository owner risk acceptance of 2026-09-23 (FR-LIC-016), not by the dataset publisher; OWL-ViT assist suggestions are provided for research purposes only. The training data is not redistributed.",
+            "attributionText": "COCO. Annotations (c) COCO Consortium, licensed under Creative Commons Attribution 4.0 International (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/ . The COCO Consortium does not own the copyright of the images; use of the images is subject to the Flickr Terms of Use."
+          },
+          {
+            "datasetName": "Open Images V7",
+            "termsUrl": "https://storage.googleapis.com/openimages/web/factsfigures_v7.html",
+            "termsRetrievedDate": "2026-09-25",
+            "productDerivativesPermitted": true,
+            "redistributionConditions": "The annotations are licensed by Google LLC under CC BY 4.0 and the images are listed as having a CC BY 2.0 license, without representation or warranty of the license status of each image. The model card names OpenImages as an example (\"such as\") and does not state the version; the V7 page records the current terms. Use and redistribution of the derived weights are set by the repository owner risk acceptance of 2026-09-23 (FR-LIC-016), not by the dataset publisher; OWL-ViT assist suggestions are provided for research purposes only. The training data is not redistributed.",
+            "attributionText": "Open Images. Annotations licensed by Google LLC under Creative Commons Attribution 4.0 International (CC BY 4.0); images listed as having a Creative Commons Attribution 2.0 (CC BY 2.0) license."
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "model-card",
+          "sourceUrl": "https://huggingface.co/google/owlvit-base-patch32/resolve/cbc355fb364588351c5d51c7f74465e8e7ec6f72/README.md",
+          "localPath": "docs/model-governance/evidence/owlvit-base-patch32-model-card-cbc355fb-20260923.md",
+          "sha256": "a16c707494da894773e85c1be976ae605a7b3a3ce92cf9ed277623dd25f236bf",
+          "retrievedDate": "2026-09-23"
+        },
+        {
+          "kind": "other",
+          "sourceUrl": "https://huggingface.co/api/models/google/owlvit-base-patch32?blobs=true",
+          "localPath": "docs/model-governance/evidence/owlvit-base-patch32-hf-api-20260923.json",
+          "sha256": "da65ba7b0e5baffa5366d5dc3d885c0e0a0b4722761d2e84790e43736e82d459",
+          "retrievedDate": "2026-09-23"
+        },
+        {
+          "kind": "other",
+          "sourceUrl": "https://raw.githubusercontent.com/huggingface/transformers/v5.17.0/LICENSE",
+          "localPath": "docs/model-governance/evidence/transformers-v5.17.0-LICENSE.txt",
+          "sha256": "77fd4710def9ec3c0f6225800e0235f15a425abd4a8b03559127fcd782612049",
+          "retrievedDate": "2026-09-25"
+        },
+        {
+          "kind": "dataset-terms",
+          "sourceUrl": "https://cocodataset.org/#termsofuse",
+          "localPath": "docs/model-governance/evidence/coco-terms-of-use-20260922.html",
+          "sha256": "bd019f88ee44c29b2f19c5b99888cf5bc2e7c16f57b6e52af8ed3a60462e8bdd",
+          "retrievedDate": "2026-09-22"
+        },
+        {
+          "kind": "dataset-terms",
+          "sourceUrl": "https://multimediacommons.wordpress.com/yfcc100m-core-dataset/",
+          "localPath": "docs/model-governance/evidence/yfcc100m-core-dataset-20260925.html",
+          "sha256": "b7c046b5e57d15358bda5ae771dba66bdccc0689d6e827bd94f100a56da891f0",
+          "retrievedDate": "2026-09-25"
+        },
+        {
+          "kind": "dataset-terms",
+          "sourceUrl": "https://storage.googleapis.com/openimages/web/factsfigures_v7.html",
+          "localPath": "docs/model-governance/evidence/openimages-v7-factsfigures-20260925.html",
+          "sha256": "03f731edf0a6524ae0403253fb3d805b51a42bbaf45a436bfc4491a650fa4fb0",
+          "retrievedDate": "2026-09-25"
+        },
+        {
+          "kind": "other",
+          "sourceUrl": "https://github.com/dahatake/AutoVision-Studio/blob/main/docs/model-governance/evidence/2026-09-23-owner-risk-acceptance-c7-detection.md",
+          "localPath": "docs/model-governance/evidence/2026-09-23-owner-risk-acceptance-c7-detection.md",
+          "sha256": "1250a46655578654e9024f052c9a1d83728da3ef4b374647841bc43192511b75",
+          "retrievedDate": "2026-09-23"
+        },
+        {
+          "kind": "other",
+          "sourceUrl": "https://github.com/dahatake/AutoVision-Studio/blob/main/docs/model-governance/evidence/2026-09-23-owner-rulings.md",
+          "localPath": "docs/model-governance/evidence/2026-09-23-owner-rulings.md",
+          "sha256": "bcd4c8a55113b88af33c48946b19a486c04e958ad002606d3da1df07edf1eb84",
+          "retrievedDate": "2026-09-23"
+        },
+        {
+          "kind": "other",
+          "sourceUrl": "https://github.com/dahatake/AutoVision-Studio/blob/main/docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-06.md",
+          "localPath": "docs/model-governance/evidence/2026-09-24-owner-ruling-G2D-06.md",
+          "sha256": "625b5a1cf2c9a816efab48be99b24d1c55e8156a0ab4785bbc6bf634f3a6a307",
+          "retrievedDate": "2026-09-24"
+        },
+        {
+          "kind": "other",
+          "sourceUrl": "https://github.com/dahatake/AutoVision-Studio/blob/main/docs/model-governance/evidence/2026-09-25-owner-ruling-G2A-01-02-G2D-08.md",
+          "localPath": "docs/model-governance/evidence/2026-09-25-owner-ruling-G2A-01-02-G2D-08.md",
+          "sha256": "1262ebb21e2f142a8f348627fba66a5c08cf918de4a66bb6ccbd0ed4addd7a76",
+          "retrievedDate": "2026-09-25"
+        },
+        {
+          "kind": "other",
+          "sourceUrl": "https://github.com/dahatake/AutoVision-Studio/blob/main/docs/model-governance/evidence/2026-09-25-owner-ruling-assist-trial-deferral.md",
+          "localPath": "docs/model-governance/evidence/2026-09-25-owner-ruling-assist-trial-deferral.md",
+          "sha256": "6655690e061d027a8048a60f5a7a044b6a8eabefadaf18ab099b6730df469849",
+          "retrievedDate": "2026-09-25"
+        },
+        {
+          "kind": "other",
+          "sourceUrl": "https://github.com/dahatake/AutoVision-Studio/blob/main/docs/model-governance/evidence/2026-09-26-owner-rulings.md",
+          "localPath": "docs/model-governance/evidence/2026-09-26-owner-rulings.md",
+          "sha256": "4922a03a7e8dc71b6fc74f299e7a936c1b650a1f64ab87ed44bc4b015455e42b",
+          "retrievedDate": "2026-09-26"
+        }
+      ],
+      "approval": {
+        "recordPath": "docs/model-governance/owlvit-base-patch32-adoption.md",
+        "recordSha256": "8d0f68f2af26e104fd3af3b2ea6198abc4ec1ef4d7736a22946f7c6b2b990e78",
+        "status": "Approved",
+        "approver": "dahatake",
+        "date": "2026-09-26"
+      },
+      "intendedUse": {
+        "productUseInScope": true,
+        "outOfScopeProductionUse": false
+      },
+      "support": [
+        {
+          "os": "windows-x64",
+          "executionProvider": "cpu",
+          "verified": true
+        },
+        {
+          "os": "windows-x64",
+          "executionProvider": "directml",
+          "verified": true
+        }
+      ],
+      "inferenceConfig": {
+        "scoreMeaning": "Per-patch sigmoid of the maximum logit in the text-query direction. It is not a probability of correctness and it is not calibrated.",
+        "scoreRange": {
+          "minimum": 0,
+          "maximum": 1
+        },
+        "confidenceThreshold": 0.0002533551160013303,
+        "thresholdPolicy": "G2Q-03 policy A: among thresholds with coverage of at least 0.5 on the detection gold set, the one with the highest F1 (IoU of at least 0.5, one-to-one); the recorded value is the midpoint between the selected score and the next lower candidate. Text query: 'a photo of a {label}' with underscores in the class name replaced by spaces. Boundary: score >= threshold. Evidence: spikes/models/owlvit-assist-result.md section 7.2.",
+        "deterministicInference": true,
+        "seeds": {
+          "torch": 20260922
+        }
+      }
     }
   ]
 }

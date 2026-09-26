@@ -4,7 +4,7 @@
 >
 > **文書成熟度:** 構成のみ
 >
-> **要求基準:** [`requirement-definition.md`](requirement-definition.md) v0.5 Draft
+> **要求基準:** [`requirement-definition.md`](requirement-definition.md) v0.5 Draft（本文の設計の記述）。model manifest と Gate 2 の現在の状態の記述だけは、2026-09-26 に v0.8 Draft に合わせて更新した（本文の全体を v0.8 に照らして確かめたものではない）
 >
 > **対象者:** AutoVision Studio を要求定義に沿って変更・検証するソフトウェアエンジニア
 
@@ -82,6 +82,16 @@ uv run --locked --system-certs ruff format --check src tests
 .venv\Scripts\python.exe -B -m ruff format --check ..\scripts\samples\verify_samples.py ..\scripts\samples\test_verify_samples.py
 ```
 
+model manifest・release verifier（PKG-01）を変更した場合も、同じく `ml/` から次を実行します。PKG-01 の照合は、この `verify.py` と、repository root の `node --test scripts/models/manifest-schema.test.mjs`（JSON Schema の検査）の両方です。`verify.py` は `vendor/models/` の承認済み payload（Git 管理外）を読み、無い machine では実 manifest の test を skip します。packaging 後の payload は、payload の root を引数に渡して同じ script で照合します。
+
+```text
+.venv\Scripts\python.exe -B -m pytest -q ..\scripts\models\test_verify.py
+.venv\Scripts\python.exe -B -m ruff check ..\scripts\models\verify.py ..\scripts\models\test_verify.py
+.venv\Scripts\python.exe -B -m ruff format --check ..\scripts\models\verify.py ..\scripts\models\test_verify.py
+.venv\Scripts\python.exe -B ..\scripts\models\verify.py
+node --test ..\scripts\models\manifest-schema.test.mjs
+```
+
 結果には cwd、実行ファイル・引数、終了コード、件数と skip 理由、検証した source と結果ファイルの作業ツリー raw bytes SHA-256 を記録します。並行編集がある場合は source の検証前後の一致も確認し、時点の異なる成功ログを現行版の合格証拠へ流用しません。通常のPyright対象は `ml/src` と `ml/tests` であり、外部スクリプトの型検査合格とは区別します。対象スクリプトのエディター診断も別途確認します。
 
 ### VS Code / Pylance
@@ -111,7 +121,7 @@ interpreter は `ml/.venv` を選択します。system Python を選択した状
 | Renderer | `src/renderer/main.tsx`, `src/renderer/App.tsx` | React root と navigation shell |
 | Routes | `src/renderer/routes.tsx` | 11 screen IDとworkflow／settingsの配置定義。Project・診断等の接続状態は各featureと実行記録を参照 |
 | Python worker | `ml/src/autovision_ml/cli.py` | `health`（版・OS）、`probe-hardware`（端末観測）、`scan-dataset`（Mainのrequestから画像・注釈を検査）の3 command |
-| Model governance | `resources/models/manifest.json` | 承認済み同梱 model の fail-closed 正本。現在は C6 分類・検出の 2 件で `ready=false` |
+| Model governance | `resources/models/manifest.json` | 承認済み同梱 model の fail-closed 正本。現在は C6 分類・検出と C7 分類・検出の 4 件で `ready=true`（`productVersion` `0.1.12`。PKG-01 の照合は `scripts/models/verify.py`） |
 
 production source と `spikes/` を混同しません。`spikes/` は PoC、root `build/` は検証 harness / 生成物、`work/` は時点計画です。
 

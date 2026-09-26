@@ -1,0 +1,28 @@
+{
+  "objective": "Gate 2 終端化 run（正本 §7.2、variant 静止）として Gate 2 の BLOCKED を記録する",
+  "non_goals": [
+    "所有者の判断・利用者の session を生成・推定しない",
+    "manifest の ready・entry を変えない",
+    "500 行を超える file を変更しない",
+    "製品版を変更しない"
+  ],
+  "deliverables": [
+    "work/20260924-1815-Gate2-TerminalState.md",
+    "work/20260924-1815-Gate2-AtgReport.md",
+    "resources/models/manifest.json",
+    "docs/adr/0004-spike-decisions.md",
+    "work/20260924-1815-Gate2-RemainTaskExecution.md",
+    "CHANGELOG.md"
+  ],
+  "acceptance_command": "pwsh -NoLogo -NoProfile -Command \"pwsh -NoLogo -NoProfile -File work/20260924-1815-Gate2-TerminalState-check.ps1; if ($LASTEXITCODE) { exit $LASTEXITCODE }; node --test scripts/models/manifest-schema.test.mjs; if ($LASTEXITCODE) { exit $LASTEXITCODE }; if (-not (Test-Path work/20260924-1815-Gate2-RemainTaskExecution.md)) { exit 1 }; if ((npm --version) -ne '12.0.0') { exit 2 }; npm run verify:docs; if ($LASTEXITCODE) { exit $LASTEXITCODE }\"",
+  "baseline_policy": "既存の失敗は許容するが、新しい失敗を増やさない",
+  "time_budget": "270m",
+  "execution_envelope": {
+    "code_changes": "allowed_within_write_set",
+    "dependency_additions": "declared_only",
+    "external_network_writes": "deny",
+    "production_deploy": "deny",
+    "secret_read": "declared_refs_only"
+  },
+  "secret_policy": "秘密値は契約・引継ぎ・ログ・成果物へ保存せず、必要時は参照名のみを記録する"
+}

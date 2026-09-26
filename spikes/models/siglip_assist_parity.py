@@ -27,6 +27,13 @@ C7C-02 adds one CPU improvement candidate only: the fp32 vision ONNX is
 converted with ``onnxruntime.quantization.quantize_dynamic`` (default settings,
 int8 weights). The int8 model is held to the same score tolerance and top-1
 rule as the fp32 backends and is measured on the CPU provider only.
+
+G2Q-03C adds ``--mode goldset``: the 60-item classification gold set selects
+``confidenceThreshold`` with policy A
+(``docs/model-governance/evidence/2026-09-25-owner-ruling-G2Q-03.md``; the
+definition, fixed before the measurement, is
+``work/20260925-0420-G2Q03-ExecutionPlan.md`` §1), and the fp32 ONNX scores on the
+gold set are held to the same score tolerance against torch.
 """
 
 from __future__ import annotations
@@ -66,6 +73,17 @@ PROMPTS = {
     "bean_rust": "a photo of a bean leaf with bean rust.",
     "healthy": "a photo of a healthy bean leaf.",
 }
+# Hugging Face transformers v5.17.0 SigLIP docs, Notes: the Pipeline prompt template.
+GOLDSET_PROMPT = "This is a photo of {label}."
+COVERAGE_MIN = 0.5
+THRESHOLD_POLICY = (
+    "G2Q-03 policy A (docs/model-governance/evidence/2026-09-25-owner-ruling-G2Q-03.md, "
+    "definition work/20260925-0420-G2Q03-ExecutionPlan.md section 1): candidates are the "
+    "torch top-1 scores on the classification gold set; among candidates whose coverage "
+    "(items with a proposal, score >= threshold) is >= 0.5, the largest agreement among "
+    "proposed items wins, ties by larger coverage then smaller threshold; the threshold "
+    "is the midpoint to the next lower candidate. Evidence: vendor/models/_spike/siglip-goldset.json"
+)
 
 
 class VisionTower(nn.Module):
@@ -120,11 +138,205 @@ def run(
     return np.concatenate(outputs), session.get_providers()
 
 
+def environment(available: list[str]) -> dict[str, Any]:
+    return {
+        "python": platform.python_version(),
+        "os": f"{platform.system()} {platform.version()}",
+        "torch": torch.__version__,
+        "transformers": transformers.__version__,
+        "onnx": onnx.__version__,
+        "onnxruntime": ort.__version__,
+        "available_providers": available,
+    }
+
+
+def select_threshold(scores: np.ndarray, evaluate) -> tuple[list[dict], Any, Any]:
+    """Policy A. ``evaluate(threshold)`` returns (coverage, metric) at ``score >= threshold``."""
+    candidates = []
+    for score in sorted({float(value) for value in scores}, reverse=True):
+        coverage, metric = evaluate(score)
+        candidates.append(
+            {
+                "score": score,
+                "coverage": coverage,
+                "metric": metric if coverage >= COVERAGE_MIN else None,
+            }
+        )
+    feasible = [item for item in candidates if item["metric"] is not None]
+    if not feasible:
+        return candidates, None, None
+    best = max(
+        feasible, key=lambda item: (item["metric"], item["coverage"], -item["score"])
+    )
+    index = candidates.index(best)
+    lower = candidates[index + 1]["score"] if index + 1 < len(candidates) else 0.0
+    return candidates, best["score"], (best["score"] + lower) / 2
+
+
+def goldset(
+    args: argparse.Namespace,
+    model: SiglipModel,
+    processor: Any,
+    available: list[str],
+    digest: str,
+) -> int:
+    path: Path = args.goldset
+    gold = json.loads(path.read_text(encoding="utf-8"))
+    items = gold["items"]
+    if len(items) != gold["expected_item_count"]:
+        raise SystemExit(f"{path}: {len(items)} items != {gold['expected_item_count']}")
+    labels = sorted({item["label"] for item in items})
+    prompts = [GOLDSET_PROMPT.format(label=label.replace("_", " ")) for label in labels]
+    pixel_values = []
+    for item in items:
+        image_path = path.parent / item["image"]
+        if sha256_file(image_path) != item["image_sha256"]:
+            raise SystemExit(f"{image_path} SHA-256 != {item['image_sha256']}")
+        with Image.open(image_path) as image:
+            pixel_values.append(
+                processor(images=image.convert("RGB"), return_tensors="pt")[
+                    "pixel_values"
+                ].contiguous()
+            )
+    input_ids = processor(
+        text=prompts, padding="max_length", max_length=TEXT_LENGTH, return_tensors="pt"
+    )["input_ids"]
+
+    vision_path = args.artifact_dir / "siglip-vision-goldset.onnx"
+    text_path = args.artifact_dir / "siglip-text-goldset.onnx"
+    exports = {
+        "vision": export(
+            VisionTower(model), pixel_values[0], "pixel_values", vision_path
+        ),
+        "text": export(TextTower(model), input_ids, "input_ids", text_path),
+    }
+    scale = float(model.logit_scale.exp())
+    bias = float(model.logit_bias)
+    with torch.no_grad():
+        torch_image = VisionTower(model)(torch.cat(pixel_values)).numpy()
+        torch_text = TextTower(model)(input_ids).numpy()
+    backends = {"torch": sigmoid(torch_image @ torch_text.T * scale + bias)}
+    providers: dict[str, list[str]] = {}
+    failures: list[str] = []
+    for key, provider in (
+        ("onnxruntime-cpu", CPU_PROVIDER),
+        ("onnxruntime-directml", DML_PROVIDER),
+    ):
+        image_embeds, providers[key] = run(
+            vision_path, provider, "pixel_values", [p.numpy() for p in pixel_values]
+        )
+        text_embeds, _ = run(text_path, provider, "input_ids", [input_ids.numpy()])
+        backends[key] = sigmoid(image_embeds @ text_embeds.T * scale + bias)
+        if providers[key][0] != provider:
+            failures.append(
+                f"{key} session providers {providers[key]} do not start with {provider}"
+            )
+
+    comparisons = []
+    for left, right in (
+        ("torch", "onnxruntime-cpu"),
+        ("torch", "onnxruntime-directml"),
+        ("onnxruntime-cpu", "onnxruntime-directml"),
+    ):
+        diff = float(np.abs(backends[left] - backends[right]).max())
+        if diff > SCORE_TOLERANCE:
+            failures.append(
+                f"{left} vs {right} max_abs_score_diff {diff:.3e} > {SCORE_TOLERANCE:.1e}"
+            )
+        comparisons.append(
+            {
+                "comparison": f"{left} vs {right}",
+                "verdict": "FAIL" if diff > SCORE_TOLERANCE else "PASS",
+                "max_abs_score_diff": diff,
+            }
+        )
+
+    top1_score = backends["torch"].max(axis=1).astype(np.float64)
+    correct = backends["torch"].argmax(axis=1) == np.array(
+        [labels.index(item["label"]) for item in items]
+    )
+
+    def evaluate(threshold: float) -> tuple[float, Any]:
+        proposed = top1_score >= threshold
+        return float(proposed.mean()), float(
+            correct[proposed].mean()
+        ) if proposed.any() else None
+
+    candidates, selected, threshold = select_threshold(top1_score, evaluate)
+    if selected is None:
+        failures.append(f"no candidate threshold reaches coverage >= {COVERAGE_MIN}")
+        at_threshold = None
+    else:
+        proposed = top1_score >= threshold
+        at_threshold = {
+            "proposed_items": int(proposed.sum()),
+            "coverage": float(proposed.mean()),
+            "agreement_among_proposed": float(correct[proposed].mean()),
+            "information_only_accuracy_all_items": float((correct & proposed).mean()),
+            "proposed_items_by_backend": {
+                key: int((scores.max(axis=1).astype(np.float64) >= threshold).sum())
+                for key, scores in backends.items()
+            },
+        }
+
+    result = {
+        "task": "G2Q-03C C7 classification assist goldset",
+        "verdict": "FAIL" if failures else "PASS",
+        "failures": failures,
+        "environment": environment(available),
+        "model": {
+            "directory": MODEL_DIR.relative_to(REPO_ROOT).as_posix(),
+            "safetensors_sha256": digest,
+            "logit_scale_exp": scale,
+            "logit_bias": bias,
+        },
+        "goldset": {
+            "path": path.resolve().relative_to(REPO_ROOT).as_posix(),
+            "items": len(items),
+            "labels": labels,
+        },
+        "goldset_sha256": sha256_file(path),
+        "onnx_sha256": {name: value["onnx_sha256"] for name, value in exports.items()},
+        "export": {
+            "opset": OPSET_VERSION,
+            "exporter": "torch.onnx.export(dynamo=False)",
+            **exports,
+        },
+        "prompt_rule": f'"{GOLDSET_PROMPT}" with {{label}} = the label name with "_" replaced by a space',
+        "prompts": dict(zip(labels, prompts, strict=True)),
+        "seeds": {"torch": SEED},
+        "confidenceThreshold": threshold,
+        "thresholdPolicy": THRESHOLD_POLICY,
+        "threshold_selection": {
+            "boundary": "score >= threshold",
+            "coverage_min": COVERAGE_MIN,
+            "metric": "agreement of the top-1 label with the gold label among proposed items",
+            "selected_score": selected,
+            "at_threshold": at_threshold,
+            "candidates": candidates,
+        },
+        "session_providers": providers,
+        "tolerances": {"score": SCORE_TOLERANCE},
+        "comparisons": comparisons,
+    }
+    args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    print(
+        f"verdict {result['verdict']} confidenceThreshold {threshold} failures {failures}"
+    )
+    return 1 if failures else 0
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="G2R-22 SigLIP assist probe")
-    parser.add_argument("--mode", choices=("parity", "performance"), default="parity")
+    parser = argparse.ArgumentParser(description="G2R-22 / G2Q-03C SigLIP assist probe")
+    parser.add_argument(
+        "--mode", choices=("parity", "performance", "goldset"), default="parity"
+    )
     parser.add_argument("--artifact-dir", type=Path, required=True)
+    parser.add_argument("--goldset", type=Path)
+    parser.add_argument("--output", type=Path)
     args = parser.parse_args()
+    if args.mode == "goldset" and (args.goldset is None or args.output is None):
+        parser.error("--mode goldset needs --goldset and --output")
     artifact_dir: Path = args.artifact_dir
     artifact_dir.mkdir(parents=True, exist_ok=True)
 
@@ -144,6 +356,8 @@ def main() -> int:
         attn_implementation="eager",
     ).eval()
     processor = AutoProcessor.from_pretrained(MODEL_DIR, local_files_only=True)
+    if args.mode == "goldset":
+        return goldset(args, model, processor, available, digest)
 
     classes, paths, labels = load_fixture()
     _, eval_index = split_indices(labels, len(classes))
@@ -182,15 +396,7 @@ def main() -> int:
 
     result: dict[str, Any] = {
         "task": f"G2R-22 C7 classification assist {args.mode}",
-        "environment": {
-            "python": platform.python_version(),
-            "os": f"{platform.system()} {platform.version()}",
-            "torch": torch.__version__,
-            "transformers": transformers.__version__,
-            "onnx": onnx.__version__,
-            "onnxruntime": ort.__version__,
-            "available_providers": available,
-        },
+        "environment": environment(available),
         "model": {
             "directory": MODEL_DIR.relative_to(REPO_ROOT).as_posix(),
             "safetensors_sha256": digest,

@@ -221,7 +221,7 @@ describe.skipIf(process.platform !== 'win32')('DAT-08H native picker boundary', 
     expect(await h.start('unlabeled-files')).toEqual(failure('IMPORT_ATTENTION'));
     expect(write).not.toHaveBeenCalled(); expect(h.scan).not.toHaveBeenCalled(); expect(unlink).not.toHaveBeenCalled();
     const fd = open.mock.results[0]!.value as number;
-    expect(close).toHaveBeenCalledWith(fd); expect(() => fs.fstatSync(fd)).toThrow();
+    expect(close.mock.calls.some(([value], index) => value === fd && close.mock.results[index]!.type === 'return')).toBe(true);
     const artifacts = fs.readdirSync(outside).filter((name) => name !== 'existing.json'); expect(artifacts).toHaveLength(1);
     expect(fs.readFileSync(join(outside, artifacts[0]!))).toHaveLength(0);
     expect(fs.readFileSync(sentinel, 'utf8')).toBe('unchanged'); expect(fs.readdirSync(saved)).toEqual([]);
@@ -237,7 +237,7 @@ describe.skipIf(process.platform !== 'win32')('DAT-08H native picker boundary', 
     expect(await h.start('unlabeled-files')).toEqual(failure('IMPORT_ATTENTION'));
     expect(write).not.toHaveBeenCalled(); expect(h.scan).not.toHaveBeenCalled();
     const fd = open.mock.results[0]!.value as number;
-    expect(close).toHaveBeenCalledWith(fd); expect(() => fs.fstatSync(fd)).toThrow();
+    expect(close.mock.calls.some(([value], index) => value === fd && close.mock.results[index]!.type === 'return')).toBe(true);
     expect(fs.readFileSync(named)).toHaveLength(0); expect(fs.readFileSync(moved)).toHaveLength(0);
   });
   it.each(['name', 'description', 'task_type', 'workspace_path', 'created_at', 'updated_at'])('revalidates changed Project %s after await', async (column) => {

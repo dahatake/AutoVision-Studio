@@ -18,12 +18,12 @@
 | 法務または repository license decision authority の署名 | **なし / 承認者未指定** |
 | 承認日 | **なし** |
 | 法務確認 | **必須 / 未開始** |
-| SigLIP 最終判定 | **HOLD（保留）** |
+| SigLIP 最終判定 | **HOLD（保留）**（本記録の調査時点）。2026-09-25 に採用記録 [`siglip-base-patch16-224-adoption.md`](siglip-base-patch16-224-adoption.md) §15 で**承認** |
 | OpenAI CLIP 最終判定 | **REJECT（本製品の同梱候補から除外）** |
-| 承認済み Classification C7 件数 | **0** |
+| 承認済み Classification C7 件数 | **0**（本記録の調査時点）。2026-09-25 以降は 1（SigLIP） |
 | G-DEP-08 | **BLOCKED** |
-| Gate 2 | **BLOCKED** |
-| `resources/models/manifest.json` | **本記録を根拠に追加してはならない**。調査時点の `models` は**空配列**であった。2026-09-23 の D1 裁定後は C6 分類・C6 検出の 2 件を持ち、C7 分類 entry は無い（SigLIP は保留。§20） |
+| Gate 2 | **BLOCKED**（本記録の調査時点）。2026-09-26 に主 run の全成功を記録（ADR-0004 §5.1.17） |
+| `resources/models/manifest.json` | **本記録を根拠に追加してはならない**。調査時点の `models` は**空配列**であった。2026-09-23 の D1 裁定後は C6 分類・C6 検出の 2 件を持ち、C7 分類 entry は無い（SigLIP は保留。§20）。2026-09-25 に SigLIP の採用記録の承認を根拠に C7 分類 entry を追加した（3 件）。2026-09-26 に C7 検出（OWL-ViT）の entry が加わり 4 件 |
 | checkpoint binary download | **未実施** |
 | モデル実行・変換・品質試験 | **未実施（NOT_RUN）** |
 
@@ -590,7 +590,7 @@ SPI-13 の research outcome は「候補を承認できないことを証拠不�
 
 ### 18.5 manifest を更新できない構造的理由
 
-[`resources/models/manifest.schema.json`](../../resources/models/manifest.schema.json) の `$defs.spdxLicense` は `commercialUseConfirmed` と `redistributionPermitted` をいずれも `"const": true` とし、`spdx` に `unknown` / `HOLD` / `MISSING` 等の文字列を pattern で拒否する。`$defs.licenseSet` は `code` / `checkpoint` / `trainingData` の 3 層すべてを必須とする。
+[`resources/models/manifest.schema.json`](../../resources/models/manifest.schema.json) の `$defs.spdxLicense` は `productUsePermitted` と `redistributionPermitted` をいずれも `"const": true` とし、`spdx` に `unknown` / `HOLD` / `MISSING` 等の文字列を pattern で拒否する。`$defs.licenseSet` は `code` / `checkpoint` / `trainingData` の 3 層すべてを必須とする。
 
 SigLIP の `checkpoint` 層 license は存在せず（CA-L1）、`trainingData` 層の WebLI は terms 自体が非公開である（CA-C8）。entry を作るには Big Vision コードの `Apache-2.0` を checkpoint 層へ書き、WebLI の terms を創作する以外になく、**それは §14 の敵対的レビューが禁じた「code license を C7/C8 承認へ拡張する」行為そのもの**である。
 

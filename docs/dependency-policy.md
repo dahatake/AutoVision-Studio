@@ -173,7 +173,7 @@ FR-LIC-005 および FR-LIC-015 に基づき、**3 つのレイヤーを独立�
 - 上記のいずれかが **unknown** の場合は同梱しない（fail-closed）。ただし checkpoint 層 license または dataset terms が publisher の一次資料から確認できない場合に限り、**FR-LIC-016 の risk acceptance 経路**（未確認項目の列挙、権限者の書面決定、`LicenseRef-<製品名>` への置き換え、採用記録・アプリ内表示・`THIRD_PARTY_NOTICES` での開示）をすべて満たせば採用できる。技術要件は緩和しない。
 - manifestの`sourcePath`はbuild machine上の`vendor/models/`、`payloadPath`はinstaller内の`resources/models/`を指す。両者は同一binaryであり、manifestに記録した単一のSHA-256とbyteSizeが検証元・同梱後の双方に一致しなければならない（D-09/PKG-01）。
 - `releaseStatus.ready=true`では対象releaseの`productVersion`を必須とする。空または部分承認状態の`ready=false`では省略できる。
-- `releaseStatus.ready=true`では、C7分類・C7検出のそれぞれについて、NFR-ANN-006 / POC-16 の比較試験に合格した記録（`releaseStatus.assistQuality[]`: 対象task、C7 entry の`id`、最終品質が悪化しないこと、中央所要時間が短縮したこと、結果を保存した採用記録の path と SHA-256、測定日）を必須とする（manifest schema `2.0.0`）。未測定・blocked・不合格は entry を書かず、`ready=false`で表す。
+- NFR-ANN-006 / POC-16 の比較試験に合格した場合は、その記録（`releaseStatus.assistQuality[]`: 対象task、C7 entry の`id`、最終品質が悪化しないこと、中央所要時間が短縮したこと、結果を保存した採用記録の path と SHA-256、測定日）を書く。未測定・免除・blocked・不合格は entry を書かない。Version 1 では所有者の判断（2026-09-26、`docs/model-governance/evidence/2026-09-26-owner-rulings.md`）により比較試験を免除したため、manifest schema `2.0.1` 以降は`ready=true`にこの記録を求めない（`2.0.0` では必須だった）。
 - `docs/model-governance/adoption-template.md`（A-06 成果物）を証拠記録の統一フォームとして使用する。
 
 ### 6.2 Annotation Assist Model checkpoint（C7）— FR-LIC-014 準拠
@@ -187,7 +187,7 @@ C6 の全項目に加え、C7ではcheckpoint model cardを一次資料として
 
 - コードと checkpoint を独立してそれぞれ判定する。
 - intended/out-of-scope use、製品のモデル利用条件（非商用の研究・教育目的）への適合、製品用途対象外のいずれかが unknown または不適合なら **同梱しない**。研究限定・非商用限定であることは、それだけでは不適合としない（より狭い制限は FR-LIC-003）。checkpoint 層 license または dataset terms が確認できない場合に限り **FR-LIC-016 の risk acceptance 経路**を適用できる。**一次資料が製品用途を明示的に禁止または out-of-scope としている checkpoint には適用しない**（FR-LIC-015）。
-- 現時点で同梱を最終承認した Annotation Assist Model は **ない**（`docs/requirement-definition.md` §13.3）。本文書は既存 Model の承認を意味せず、将来の審査通過によってのみ承認が成立する。
+- 同梱を最終承認した Annotation Assist Model は、SigLIP base patch16-224（分類、2026-09-25）と OWL-ViT base patch32（検出、2026-09-26、研究目的に限る）の 2 件である（`docs/requirement-definition.md` §13.3。いずれも FR-LIC-016 の risk acceptance 経路）。本文書はそれ以外の Model の承認を意味せず、審査の通過によってのみ承認が成立する。
 
 ---
 
@@ -309,7 +309,7 @@ CUDA を同梱しない場合は、その決定と CPU fallback の保証を上�
 | G-DEP-05 | C3 native バイナリが manifest hash と一致する |
 | G-DEP-06 | C4 CUDA/cuDNN（採用時）が allowlist と一致し、法務承認記録が存在する |
 | G-DEP-07 | C6 各 weight の証拠記録（§6.1 全項目）が完備し、unknown がない。確認できない層がある場合は FR-LIC-016 の risk acceptance 経路の要件をすべて満たしていること |
-| G-DEP-08 | C7 各 checkpoint の証拠記録（§6.2 全項目）が完備し、unknown がない。確認できない層がある場合は FR-LIC-016 の risk acceptance 経路の要件をすべて満たしていること。現時点で合格済みの C7 はない |
+| G-DEP-08 | C7 各 checkpoint の証拠記録（§6.2 全項目）が完備し、unknown がない。確認できない層がある場合は FR-LIC-016 の risk acceptance 経路の要件をすべて満たしていること。合格済みの C7 は SigLIP（分類）と OWL-ViT（検出）の 2 件 |
 | G-DEP-09 | オフライン通信キャプチャで外向き通信が 0 件（POC-06） |
 
 G-DEP-02 および G-DEP-07/08 の `unknown` は承認で上書きできない。FR-LIC-016 は `unknown` の記録を承認する手続きではなく、確定した `LicenseRef-<製品名>` への置き換えと未確認項目の開示を要求する手続きである。
@@ -324,7 +324,7 @@ G-DEP-02 および G-DEP-07/08 の `unknown` は承認で上書きできない�
 | `docs/requirement-definition.md` §11.3 | NFR-SEC-001/003 |
 | `docs/requirement-definition.md` §11.5 | NFR-MNT-001 |
 | `docs/requirement-definition.md` §13.1 | 採用候補部品一覧（最終承認ではない）|
-| `docs/requirement-definition.md` §13.3 | Annotation Assist Model 評価（現時点で承認済みなし） |
+| `docs/requirement-definition.md` §13.3 | Annotation Assist Model 評価（承認済み: SigLIP・OWL-ViT） |
 | `docs/requirement-definition.md` §19.3 | [S14][S18][S19][S20][S26][S28][S30][S31]（一次資料） |
 | `docs/model-governance/adoption-template.md` | A-06 成果物：証拠記録フォーム |
 | `docs/model-governance/cuda-redistribution.md` | LIC-03 成果物：CUDA/cuDNN allowlist |

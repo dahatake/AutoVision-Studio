@@ -6,6 +6,8 @@ import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 import packageMetadata from '../../../../package.json';
 import fluentSystemIconsLicense from '../../../../resources/licenses/fluent-system-icons.LICENSE.txt?raw';
 import fluentSystemIconsNotice from '../../../../resources/licenses/fluent-system-icons.NOTICE.txt?raw';
+import modelManifest from '../../../../resources/models/manifest.json';
+import owlvitNotice from '../../../../resources/licenses/owlvit-base-patch32.NOTICE.txt?raw';
 import { PRODUCT_VERSION } from '../../product-version';
 import { settingsCategories, type SettingsCategoryId } from '../../routes';
 import { SettingsPage } from './SettingsPage';
@@ -299,8 +301,8 @@ describe('SettingsPage', () => {
     const licenseSummary = screen.getByText('Fluent System Icons LICENSEを開く');
     const noticeSummary = screen.getByText('Fluent System Icons NOTICEを開く');
 
-    expect(container.querySelectorAll('details')).toHaveLength(2);
-    expect(container.querySelectorAll('pre')).toHaveLength(2);
+    expect(container.querySelectorAll('details')).toHaveLength(3);
+    expect(container.querySelectorAll('pre')).toHaveLength(3);
     expect(license.closest('details')).not.toBe(notice.closest('details'));
     for (const [text, summary] of [[license, licenseSummary], [notice, noticeSummary]]) {
       expect(text.tagName).toBe('PRE');
@@ -338,6 +340,25 @@ describe('SettingsPage', () => {
     expect(notice).not.toBeVisible();
     expect(onCategoryChange).not.toHaveBeenCalled();
     expect(onBack).not.toHaveBeenCalled();
+  });
+
+  // FR-LIC-003 / FR-LIC-012: the OWL-ViT research-only condition and its NOTICE
+  // come from the approved manifest entry, not from a separately written text.
+  it('shows the OWL-ViT research-only condition and the NOTICE that carries the manifest notice', async () => {
+    const user = userEvent.setup();
+    renderSettings('information');
+    const entry = modelManifest.models.find((model) => model.id === 'owlvit-base-patch32');
+    const normalize = (text: string) => text.replace(/\s+/gu, ' ').trim();
+
+    expect(screen.getByText('OWL-ViT base patch32 を用いる物体検出の補助候補の利用条件は「研究目的に限る」です（補助候補の機能は未実装です）。')).toBeVisible();
+    const notice = screen.getByLabelText('OWL-ViT base patch32 NOTICE');
+    expect(notice).not.toBeVisible();
+    await user.click(screen.getByText('OWL-ViT base patch32 NOTICEを開く'));
+    expect(notice).toBeVisible();
+    expect(notice.textContent).toBe(owlvitNotice);
+    expect(entry).toBeDefined();
+    expect(normalize(owlvitNotice)).toContain(normalize(entry!.licenses.checkpoint.noticeText));
+    expect(normalize(owlvitNotice)).toContain('OWL-ViT assist suggestions are provided for research purposes only.');
   });
 
   it.each(settingsCategories)('calls the fixed Project slot on every $id render with effective visibility', ({ id }) => {

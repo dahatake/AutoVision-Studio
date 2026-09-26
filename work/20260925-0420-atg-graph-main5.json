@@ -1,0 +1,42 @@
+{
+  "nodes": [
+    {
+      "id": "G2Q-03C",
+      "deps": [],
+      "duration": 125.0,
+      "write_set": [
+        "spikes/models/siglip_assist_parity.py",
+        "spikes/models/siglip-assist-result.md",
+        "vendor/models/_spike/siglip-goldset.json",
+        "work/20260925-0420-Gate2Main4-G2Q-03C-Review.md",
+        "lock:siglip-record"
+      ],
+      "contract": {
+        "inputs": [
+          "work/20260925-0420-Gate2Main4-verify.ps1",
+          "spikes/models/siglip_assist_parity.py",
+          "spikes/models/siglip-assist-result.md",
+          "spikes/models/assist-goldset-plan-classification.md",
+          "docs/model-governance/siglip-base-patch16-224-adoption.md",
+          "vendor/models/_spike/assist/goldset-classification.json",
+          "work/20260925-0420-G2Q03-ExecutionPlan.md",
+          "docs/model-governance/evidence/2026-09-25-owner-ruling-G2Q-03.md",
+          "work/20260925-0420-check-selection.py"
+        ],
+        "outputs": [
+          "spikes/models/siglip_assist_parity.py",
+          "spikes/models/siglip-assist-result.md",
+          "vendor/models/_spike/siglip-goldset.json",
+          "work/20260925-0420-Gate2Main4-G2Q-03C-Review.md"
+        ],
+        "verify_command": "pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File work/20260925-0420-Gate2Main4-verify.ps1 G2Q-03C",
+        "timeout_seconds": 3600,
+        "max_attempts": 2,
+        "allowed_tools": [
+          "editor",
+          "shell"
+        ]
+      }
+    }
+  ]
+}

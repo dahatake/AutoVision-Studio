@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 
 import fluentSystemIconsLicense from '../../../../resources/licenses/fluent-system-icons.LICENSE.txt?raw';
 import fluentSystemIconsNotice from '../../../../resources/licenses/fluent-system-icons.NOTICE.txt?raw';
+import owlvitNotice from '../../../../resources/licenses/owlvit-base-patch32.NOTICE.txt?raw';
 import { SystemIcon } from '../../components/SystemIcon';
 import { PRODUCT_VERSION } from '../../product-version';
 import { settingsCategories, type SettingsCategoryId } from '../../routes';
@@ -103,6 +104,17 @@ export function SettingsPage({
                 aria-label="Fluent System Icons NOTICE"
               >
                 {fluentSystemIconsNotice}
+              </pre>
+            </details>
+            <p>OWL-ViT base patch32 を用いる物体検出の補助候補の利用条件は「研究目的に限る」です（補助候補の機能は未実装です）。</p>
+            <details>
+              <summary>OWL-ViT base patch32 NOTICEを開く</summary>
+              <pre
+                className="license-text"
+                tabIndex={0}
+                aria-label="OWL-ViT base patch32 NOTICE"
+              >
+                {owlvitNotice}
               </pre>
             </details>
             <p>その他の第三者通知・SBOM・モデル由来の表示は未実装です。</p>

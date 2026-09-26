@@ -4,7 +4,7 @@
 >
 > **文書成熟度:** 要求反映済み
 >
-> **要求基準:** [`requirement-definition.md`](requirement-definition.md) v0.5 Draft
+> **要求基準:** [`requirement-definition.md`](requirement-definition.md) v0.5 Draft（本文の設計の記述）。model manifest と Gate 2 の現在の状態の記述だけは、2026-09-26 に v0.8 Draft に合わせて更新した（本文の全体を v0.8 に照らして確かめたものではない）
 >
 > **目的:** 現行 source、目標設計、許可される依存、禁止される依存を区別して案内する
 
@@ -21,7 +21,7 @@
 - SVG は外部 resource、CSS、web font、JavaScript、`foreignObject` を使用しません。
 - 状態はラベルと線種を併用します。実装済みは青・実線、設計確定・未実装は紫・破線、検証待ちは灰・点線、外部入力／OS 資源は緑・二重枠で示します。
 - 背景と文字は WCAG AA 相当の contrast を確保し、100% / 200%、high contrast、印刷でも読める余白と文字サイズを使用します。
-- 本文の現行要求基準は v0.5 の Windows Version 1 です。参照する SVG は WIN-SCOPE-05 で再整合するまで旧 macOS 表示を含む場合があり、その表示を Version 1 の対象、現行実装、Gate 条件とは扱いません。本タスクでは SVG を編集しません。
+- 本文の設計の要求基準は v0.5 の Windows Version 1 です（model manifest と Gate 2 の状態の記述は v0.8 に合わせて更新済み）。参照する SVG は WIN-SCOPE-05 で再整合するまで旧 macOS 表示を含む場合があり、その表示を Version 1 の対象、現行実装、Gate 条件とは扱いません。本タスクでは SVG を編集しません。
 
 ## システム全体と実行時 process
 
@@ -40,7 +40,7 @@
 
 **実装済み（実 component を持つ画面）:** `src/renderer/layout/AppShell.tsx` は Project 一覧、設定（5 カテゴリ）、Project 作業画面（5 タブ）から成ります。実 component を持つのは UI-01（`src/renderer/features/diagnostics/DiagnosticsPage.tsx`）、UI-02（`src/renderer/features/projects/ProjectListPage.tsx`）、UI-03（`src/renderer/features/projects/ProjectForm.tsx` と `src/renderer/features/settings/ProjectSettingsPanel.tsx`）、UI-04（`src/renderer/features/import/ImportPage.tsx`）、UI-09（`src/renderer/features/annotations/LabelSchemaPage.tsx`）です。
 
-**設計確定・未実装（表示はできるが機能がない画面）:** UI-05 学習、UI-06 結果・レポート、UI-07 カメラ推論、UI-10 教師データ作成は Project 作業画面の tab から到達できますが、未実装である旨を示す placeholder panel を表示するだけで、対象機能は提供しません。panel には設定（UI-10 はラベル定義、UI-07 は推論）への導線や、取り込み直後の件数・Workspace ID の記録表示といった補助表示を含みますが、いずれも学習・レポート・推論・注釈編集の機能ではありません。UI-11 補助ジョブには専用 panel がなく、`src/renderer/routes.tsx` で UI-10 と同じ「教師データ」tab に割り当てられ、その未実装説明文の中でだけ言及されます。UI-08 は設定の「ライセンス・情報」から到達でき、製品 version と同梱 icon の LICENSE / NOTICE を表示するだけで、その他の第三者通知、SBOM、モデル由来の表示は未実装です。`src/renderer/routes.tsx` の `EmptyRoute` は export されていますが production では描画されておらず、`appRoutes` の 11 件は画面 ID と path の対応表として参照されるだけです。
+**設計確定・未実装（表示はできるが機能がない画面）:** UI-05 学習、UI-06 結果・レポート、UI-07 カメラ推論、UI-10 教師データ作成は Project 作業画面の tab から到達できますが、未実装である旨を示す placeholder panel を表示するだけで、対象機能は提供しません。panel には設定（UI-10 はラベル定義、UI-07 は推論）への導線や、取り込み直後の件数・Workspace ID の記録表示といった補助表示を含みますが、いずれも学習・レポート・推論・注釈編集の機能ではありません。UI-11 補助ジョブには専用 panel がなく、`src/renderer/routes.tsx` で UI-10 と同じ「教師データ」tab に割り当てられ、その未実装説明文の中でだけ言及されます。UI-08 は設定の「ライセンス・情報」から到達でき、製品 version、同梱 icon の LICENSE / NOTICE、OWL-ViT base patch32 の研究目的に限る利用条件と NOTICE を表示するだけで、その他の第三者通知、SBOM、ほかのモデル由来の表示は未実装です。`src/renderer/routes.tsx` の `EmptyRoute` は export されていますが production では描画されておらず、`appRoutes` の 11 件は画面 ID と path の対応表として参照されるだけです。
 
 **実装済み（Python は3 command）:** `ml/src/autovision_ml/cli.py` は `health`、`probe-hardware`、`scan-dataset` を持ちます。Main は端末診断で `probe-hardware` を `execFile` で起動し、上限付き stdout から schema 検証済み JSON を受け取ります。取り込みでは job service 経由で `scan-dataset` を短命 worker として spawn し、Main が所有する一時 job directory の request / result JSON と stdio の protocol event で受け渡します。学習、assist、ONNX export、Inference Worker は未実装です。
 
@@ -66,7 +66,7 @@ Renderer は非信頼領域です。**実装済み**の window 境界は `contex
 
 - **目的・読み方:** 上段を Renderer UI → Preload APIs → Shared Contracts → Main Services、下段を Packaging / Resources → ML Domain ← Python Commands、および Main Services → Local Persistence として読み、矢印が許可された依存方向を示します。図は責務配置の案内であり、破線 component の実装存在を証明しません。
 - **状態:** 青・実線は `実装済み`、紫・破線は `設計確定・未実装`、灰・点線は `検証待ち` / Gate 待ち、緑・二重枠は外部入力または OS 資源です。group 全体ではなく各 card のラベルで、たとえば Preload の version API と将来の feature API を区別します。
-- **主要ノード・フロー:** 現行の AppShell / routes、`AppApi`、app contract、Main lifecycle / security、health command、空の model manifest と、将来の feature、runtime schema、IPC handler、repository、job command、ML logic を分離しています。Shared Contracts は process 間の型と検証 schema を安定させ、Main が persistence と worker を調整します。
+- **主要ノード・フロー:** 現行の AppShell / routes、`AppApi`、app contract、Main lifecycle / security、health command、承認済み 4 件の model manifest（`ready=true`）と、将来の feature、runtime schema、IPC handler、repository、job command、ML logic を分離しています。Shared Contracts は process 間の型と検証 schema を安定させ、Main が persistence と worker を調整します。
 - **境界・根拠:** Renderer → Main service / filesystem / Python の直接依存、worker → SQLite の書き込み、Shared Contracts への business logic / filesystem / UI state の配置は禁止です。正本は [ADR-0001](adr/0001-process-architecture.md)、[ADR-0002](adr/0002-data-lifecycle.md)、[要求定義の FR-SEC / FR-DAT / FR-TRN](requirement-definition.md)、[実装計画の component / directory task](implementation-plan.md)です。
 
 | Component | 現在状態 | 責務 | 許可される依存 | 禁止される依存 |
@@ -109,7 +109,7 @@ ml/
 └─ uv.lock
 
 resources/models/
-├─ manifest.json            # 実装済み: ready=false, 承認済み C6 分類・検出 2 件
+├─ manifest.json            # 実装済み: ready=true（productVersion 0.1.12）, 承認済み C6 分類・検出と C7 分類・検出の 4 件
 └─ manifest.schema.json     # 実装済み: approved payload の fail-closed schema
 
 planned: src/main/{db,ipc,projects,jobs,data,models,inference,storage}/
@@ -117,7 +117,7 @@ planned: src/preload/*-api.ts, src/renderer/features/, src/shared/contracts/*
 planned: ml/src/autovision_ml/{commands,assist,training,inference}/
 ```
 
-`src/main` は信頼境界と orchestration、`src/preload` は capability bridge、`src/renderer` は UI、`src/shared/contracts` は境界 contract に限定します。`ml/src/autovision_ml` は ML command と domain logic を持ちますが、Electron や SQLite を知りません。`resources/models/manifest.json` は汎用 model registry ではなく、release に同梱可能な承認済み C6 / C7 payload だけを列挙する正本です。現在は `ready=false` で、承認済み entry は C6 分類と C6 検出の 2 件だけです（C7 分類・C7 検出は未承認）。release 可能な同梱 model の集合としては扱いません。
+`src/main` は信頼境界と orchestration、`src/preload` は capability bridge、`src/renderer` は UI、`src/shared/contracts` は境界 contract に限定します。`ml/src/autovision_ml` は ML command と domain logic を持ちますが、Electron や SQLite を知りません。`resources/models/manifest.json` は汎用 model registry ではなく、release に同梱可能な承認済み C6 / C7 payload だけを列挙する正本です。現在は `ready=true`（`productVersion` `0.1.12`）で、承認済み entry は C6 分類・C6 検出・C7 分類・C7 検出の 4 件です（C7 検出の OWL-ViT は研究目的に限る。補助品質の比較試験は Version 1 では未実施のまま完了扱い）。PKG-01 の release verifier（`scripts/models/verify.py`）が、同梱の前に `sourcePath` の hash・size、証拠、承認記録を照合します。release 可能な同梱 model の集合としては扱いません。
 
 production source 以外では、`spikes/` は PoC、root `build/` と `ml/build/` は検証 harness / 生成物、`work/` は時点計画、`docs/adr/` は設計判断です。これらを production capability の証拠にしません。将来 path の正確な task と依存は [`implementation-plan.md`](implementation-plan.md) §7 を参照してください。
 
@@ -184,7 +184,7 @@ Version 1 installer は Windows native build / test lane だけで作成し、�
 | SQLite / Project / jobs | production source なし。planned: `src/main/db/`, `src/main/projects/`, `src/main/jobs/` | **設計確定・未実装** | Main service / repository、transaction | Renderer / worker からの直接書き込み | CORE-* / JOB-* と recovery test |
 | Data / annotation lifecycle | production source なし | **設計確定・未実装** | Main-owned files、immutable Revision contract | 確定済み Revision 上書き、Suggestion 自動承認 | DAT-* / ANN-* と不変性 test |
 | Copy / Reference | `spikes/reference/*-result.md` | **設計確定・未実装**。SPI-19 は `SKIPPED_BY_USER`、保存済み部分結果と OS reboot `NOT_RUN` は履歴 | Project metadata、read-only source access | 参照元の変更・削除、未検証の永続 access | DAT-08〜15。DAT-12/15をSPI-19のPASSへ転用せず、macOS は将来 lane |
-| Assist / approved models | `resources/models/manifest.json`, `manifest.schema.json` | schema は **実装済み**、承認済み model は C6 分類・検出の 2 件（C7 は Gate 待ち、`ready=false`） | approved C6 / C7 entry だけ | runtime download、未監査 model / plugin | Gate 2、SPI-11〜18、PKG-01 |
+| Assist / approved models | `resources/models/manifest.json`, `manifest.schema.json` | schema は **実装済み**、承認済み model は C6 分類・検出と C7 分類・検出の 4 件（`ready=true`、PKG-01 の照合は `scripts/models/verify.py`） | approved C6 / C7 entry だけ | runtime download、未監査 model / plugin | Gate 2、SPI-11〜18、PKG-01 |
 | Training / Model Version / report | production source なし | **設計確定・未実装** | immutable Revision、Job Worker、一時 artifact | mutable model version、Failed / Cancelled Run からの model 生成 | Gate 2 / 3、TRN-* / REP-* |
 | Camera inference | `spikes/inference/provider-result.md` | production は **設計確定・未実装**。SPI-07/08 は限定 PoC、SPI-09 は `SKIPPED_BY_USER` | user-initiated Windows video permission、Inference Worker、DirectML / CPU fallback | 起動時 permission、audio、frame / result の既定保存 | INF-*、特に INF-13〜15 の製品受入。macOS TCC / CoreML は将来 lane |
 | Python packaging | `ml/packaging/worker-windows.spec`, `spikes/packaging/windows-result.md`, `spikes/packaging/windows-installer-result.md` | SPI-03 は `SKIPPED_BY_USER`。SPI-05は現hostの開発用NSIS resource smokeを **PASS** | PoC-only generated entry / onedir | production worker / freeze完了の主張、clean-host合格への読替え | license gate、PKG-02 の実worker全file検証・freeze |
@@ -203,7 +203,7 @@ Version 1 installer は Windows native build / test lane だけで作成し、�
 | Project / persistence | FR-PRJ-*、NFR-REL-001〜004 | 設計確定・未実装 | Main service / repository / migration / Project-owned files | backup、transaction、atomic write、single writer | Renderer / worker を DB writer にしない |
 | Import / annotation | FR-DAT-*、FR-ANN-* | 設計確定・未実装 | Main data service、annotation repository、検証済み worker command | Copy / Reference ownership、Ground Truth、Revision immutability | 参照元変更、未確認候補の確定、過去 Revision 上書きをしない |
 | Job / training / report | FR-TRN-*、FR-MOD-*、FR-REP-*、Gate 2 / 3 | 設計確定・未実装 | versioned worker contract、Main supervisor、明示的 ML command | FIFO、cancel / recovery、artifact hash、lineage | network download、generic scheduler、worker DB write を追加しない |
-| Assist / model | FR-AST-*、FR-LIC-*、Gate 2 | Gate 待ち・未実装 | approved manifest と task-specific assist code | license / provenance / quality / platform evidence | 未監査 model、runtime plugin、Suggestion 自動承認を入れない |
+| Assist / model | FR-AST-*、FR-LIC-*、Gate 2 | Gate 2 は完了、assist code は未実装 | approved manifest と task-specific assist code | license / provenance / quality / platform evidence | 未監査 model、runtime plugin、Suggestion 自動承認を入れない |
 | Camera / inference | FR-INF-*、Gate 1 / 4 | Gate 1 PoCは`CONDITIONAL_GO`、製品機能は未実装 | Windows permission boundary、frame protocol、Inference Worker、DirectML / CPU、overlay | user gesture、audio 無効、queue depth、non-persistence、Windows evidence | 起動時 permission、frame のログ / disk 保存、Job Worker との混同、将来 CoreML / TCC の現行 Gate 混入をしない |
 | Packaging / OS | FR-INS-*、NFR-INS-*、Gate 4 / 5 | SPI-05開発用NSIS PoCはPASS、製品NSIS / Authenticodeは未実装 | Windows native freeze / Authenticode sign / NSIS package / test lane | model manifest、SBOM、notice、Project retention | unsigned PoCのrelease利用、cross-build の合格扱い、driver 導入、runtime download、将来 PKG / notarization の現行 Gate 混入をしない |
 

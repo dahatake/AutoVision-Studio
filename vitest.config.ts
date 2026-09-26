@@ -11,6 +11,10 @@ export default defineConfig({
     globals: false,
     include: ['src/**/*.test.{ts,tsx}'],
     pool: 'threads',
+    // Half of the logical CPUs, to reduce the number of real child processes (mountvol.exe probes,
+    // JOB04 workers) started at once in the aggregate run; under load such a process has been observed
+    // to outlive its fixed product bound (work/20260926-0810-EXT-X1-ThreadpoolCompare.md section 7).
+    maxWorkers: '50%',
     setupFiles: ['./tests/setup.ts'],
     // Several Main suites drive the real filesystem, real SQLite and real child
     // processes. Vitest's 5 s default expires on a loaded machine and reports a

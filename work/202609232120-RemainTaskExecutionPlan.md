@@ -16,8 +16,9 @@
 1. **AC-1** C6 分類・C6 検出・C7 分類・C7 検出の 4 役それぞれに、採用記録が「承認」の checkpoint が 1 つ以上ある（SPI-11〜14、G-DEP-07 / 08）。
 2. **AC-2** 承認済み C6 で初期化して学習した model の train → ONNX → CPU parity が、許容差内で実測されている（SPI-15 / 16。ADR-0004 §5 の「承認済み checkpoint に対する parity は未完」）。
 3. **AC-3** C7 分類・検出それぞれについて、代表 gold set で manual-only と assisted の比較試験を行い、最終品質を悪化させず、annotation の中央所要時間を短縮する（SPI-17、NFR-ANN-006、POC-16 の品質・時間の条項）。POC-16 のほかの条項（完全オフライン、CPU / CUDA、installer 同梱、license manifest、候補表示、accept / edit / reject、未確認候補の学習除外。抜粋 §1 の行 810）は、候補を表示・学習除外する製品機能（AST / PKG phase）の受入で検証することを所有者が書面で決める（G2D-10）。G2D-10 がなければ Gate 2 は POC-16 を満たしたと記録しない。
+   - 注記（2026-09-26）: 所有者の判断 [`2026-09-26-owner-rulings.md`](../docs/model-governance/evidence/2026-09-26-owner-rulings.md) により、AC-3 の比較試験（G2Q-04C / 04D / 05C / 05D / 06C / 06D）は Version 1 の実施対象から削除され、未実施のまま完了扱い（免除）となった。AC-3 は免除の記録（採用記録 §12 の「免除（所有者の判断。未実施）」）で閉じ、NFR-ANN-006・POC-16 の品質・時間の条項に合格したとは記録しない。
 4. **AC-4** D-15 の有限 AutoML budget が Windows 実機の測定で決まっている。
-5. **AC-5** `resources/models/manifest.json` に 4 役の承認済み entry と `releaseStatus.assistQuality[]` を記録し、`releaseStatus.ready=true`、`productVersion` を root product version と一致させる（manifest schema `2.0.0`、[`CONTRIBUTING.md`](../CONTRIBUTING.md) の 3 状態と「製品バージョンの更新順」）。ADR-0004 に Gate 2 部の判定を記録する。
+5. **AC-5** `resources/models/manifest.json` に 4 役の承認済み entry と `releaseStatus.assistQuality[]` を記録し、`releaseStatus.ready=true`、`productVersion` を root product version と一致させる（manifest schema `2.0.0`。注記 2026-09-26: schema `2.0.1` と AC-3 の免除により、`releaseStatus.assistQuality[]` は書かない（合格の記録が無いため）。[`CONTRIBUTING.md`](../CONTRIBUTING.md) の 3 状態と「製品バージョンの更新順」）。ADR-0004 に Gate 2 部の判定を記録する。
 6. **AC-6** 各ノードは完了条件の検証後に敵対的レビューを受け、実在する blocking 指摘を反映して再検証する。
 
 いずれかが満たせない場合、Gate 2 部は **BLOCKED** として、主 run の終了後に行う終端化 run（G2F-00・G2F-01）で理由を記録する。BLOCKED の記録は正当な終端であり、本計画の失敗ではない。
@@ -27,7 +28,7 @@
 - AST-01 以降の製品 assist 機能、TRN / REP / INF の製品実装（Gate 2 通過後の phase。実装計画 Phase H は「Gate 2 で承認された分類用・検出用 model だけを実装する」。抜粋 §2 の行 529）。
 - **製品 worker の tokenizer 依存の採用と lock 更新**。AST-05 / 07 の実装時に [`dependency-policy.md`](../docs/dependency-policy.md) §10 で行う。Gate 2 では spike で使った tokenizer file の監査までを行う（G2T-50C / 50D）。
 - **session 記録手段の実装**（別計画 `EXT-41`）、**既存の vitest の失敗の修正**（別計画 `EXT-X1`）、**ATG 規約の 500 行規則の扱い**（別計画 `EXT-ATG`、§6.1）。本計画はこれらの完了を外部の前提条件として扱う。
-- PKG-01（model payload verifier）の実装全体。PKG-01 は Gate 2 に依存するため Gate 2 後に行う（抜粋 §2 の行 684）。ただし `ready=true` にする前に、`assistQuality[]` の照合だけは G2F-01m の test で機械検査する（§4 S8）。
+- PKG-01（model payload verifier）の実装全体。PKG-01 は Gate 2 に依存するため Gate 2 後に行う（抜粋 §2 の行 684）。ただし `ready=true` にする前に、`assistQuality[]` の照合だけは G2F-01m の test で機械検査する（§4 S8。注記 2026-09-26: AC-3 の免除により実 manifest に `assistQuality[]` は無く、照合の対象が無い。合成 fixture の検査は残す）。
 - POC-03 / NFR-PERF-004（カメラ推論の実時間性能）の検証。INF phase で Model Version に対して行う（[owner rulings D1](../docs/model-governance/evidence/2026-09-23-owner-rulings.md)）。
 - 実作業に基づかない session・gold label の生成・推定。
 - 別の C7 候補の再調査、CPU 最適化の追加実験（G2D-01=B または G2D-05=B の場合は新しい計画を作る）。
@@ -442,6 +443,8 @@ repository root で、`pwsh.exe -NoLogo -NoProfile`（PowerShell 7+）から実�
 
 ### 8.14 G2Q-04C / 04D / 05C / 05D — session（利用者の実作業、外部前提 `EXT-41`）
 
+> 注記（2026-09-26）: 所有者の判断 [`2026-09-26-owner-rulings.md`](../docs/model-governance/evidence/2026-09-26-owner-rulings.md) により、§8.14・§8.15 の node は実施しない。各 node の完了条件は、免除の記録（根拠書面の回答の行、両採用記録 §12 の「免除（所有者の判断。未実施）」、manifest に `assistQuality[]` が無いこと）の確認に置き換える（[`20260926-0815-Gate2Main9-verify.ps1`](20260926-0815-Gate2Main9-verify.ps1)）。node の `done` は免除の記録を表し、session の記録・比較試験の合格を表さない。
+
 | ノード | 内容 | session file（§8.0） |
 |---|---|---|
 | G2Q-04C | 分類の manual-only session | `manual-classification.jsonl` |
@@ -457,6 +460,7 @@ repository root で、`pwsh.exe -NoLogo -NoProfile`（PowerShell 7+）から実�
 
 - [ ] `& $PY -c "import sys,pathlib; sys.path.insert(0, r'spikes\models'); import assist_benchmark as a; a.load_session(pathlib.Path(r'vendor\models\_spike\assist\<session file>'))"` が exit 0。
 - [ ] `Test-Path vendor\models\_spike\assist\<session file>.meta.txt` が True。
+- [ ] [`20260924-0730-EXT-41-Plan.md`](20260924-0730-EXT-41-Plan.md) §3 の gold set との照合が exit 0。assisted session では、同じ節の sidecar との照合も exit 0。
 - [ ] 敵対的レビューで、session が実作業以外から作られていないことを確認し、blocking 0。
 
 ### 8.15 G2Q-06C / 06D — 比較試験の判定
@@ -465,6 +469,7 @@ repository root で、`pwsh.exe -NoLogo -NoProfile`（PowerShell 7+）から実�
 - write set: G2Q-06C は `assist-result.md` の分類節と SigLIP の採用記録 §12、G2Q-06D は検出節と OWL-ViT の採用記録 §12。
 - 参照ファイル数: 各 4（`assist-result.md`、採用記録、gold set 計画、session の受け渡しメモ）。
 - 測定（分類。検出は `classification` を `detection` に、採用記録を OWL-ViT に置き換える）: `$sha=(Get-FileHash docs\model-governance\siglip-base-patch16-224-adoption.md).Hash.ToLower(); JSONOUT(., vendor\models\_spike\venv\Scripts\python.exe spikes\models\assist_benchmark.py --assisted-session vendor\models\_spike\assist\assisted-classification.jsonl --manual-session vendor\models\_spike\assist\manual-classification.jsonl --goldset vendor\models\_spike\assist\goldset-classification.json --candidate-record docs\model-governance\siglip-base-patch16-224-adoption.md --candidate-sha256 $sha, vendor\models\_spike\assist\benchmark-classification.json)`（`$sha` は §12 を記入する前の採用記録の SHA-256）。
+- 訂正（2026-09-24、G2Q-02 の敵対的レビュー `work/20260924-2230-Gate2Main3-G2Q-02-Review.md`）: 上の測定 command には `--assisted-revision vendor\models\_spike\assist\assisted-<task>.revision.json --manual-revision vendor\models\_spike\assist\manual-<task>.revision.json` も加える。G2Q-02 の harness は、承認された gold set 計画 §5 のとおり、この 2 つを必須の入力とする（無い場合は実行しない）。各 file の SHA-256 は、対応する `<session file>.meta.txt` の `revision_sha256: <64 桁の小文字 16 進>` の行と一致すること。
 - 見積: 各 R 10 / P 5 / I 20 / V 20 / F 10 = 65 分。
 
 #### 完了条件
@@ -482,6 +487,8 @@ repository root で、`pwsh.exe -NoLogo -NoProfile`（PowerShell 7+）から実�
 #### 完了条件
 
 - [ ] 技術 gate（hash、安全形式、parity、G2D-01 で決めた性能基準、比較試験、`inferenceConfig`、G2T-50 と G2T-60 の `PASS`）と、G2D-12T で改めたチェックリスト（§16）の全項目に `unknown`・`NOT_RUN`・不合格が 1 つでも残る場合は承認せず、保留の理由を記録する。
+  - 注記（2026-09-25）: 所有者の判断 [`2026-09-25-owner-ruling-assist-trial-deferral.md`](../docs/model-governance/evidence/2026-09-25-owner-ruling-assist-trial-deferral.md)「判断」2 により、この技術 gate から「比較試験」を外し、§16 の項目 27〜29 は「延期（出荷条件）」と記録する（適用は [`20260925-0745-Gate2Main7-Plan.md`](20260925-0745-Gate2Main7-Plan.md)）。本文は判断前の計画として残す。
+  - 注記（2026-09-26）: 所有者の判断 [`2026-09-26-owner-rulings.md`](../docs/model-governance/evidence/2026-09-26-owner-rulings.md) により、比較試験は免除（未実施のまま完了扱い）となり、項目 27〜29 は「免除（未実施）」と記録する。OWL-ViT にも同じ扱いを適用する（2026-09-23 C7 検出 risk acceptance §4 の 1・2 の変更。適用は [`20260926-0815-OwnerRulings5-ExecutionPlan.md`](20260926-0815-OwnerRulings5-ExecutionPlan.md)）。
 - [ ] 権利層の未確認項目は、FR-LIC-014 / 016（抜粋 §1 の行 428・430）が許す範囲（checkpoint 層ライセンスまたは学習データ terms を確認できない場合）に限り、FR-LIC-016(1)〜(4) をすべて満たしたときだけ承認を妨げない。範囲外の未確認項目が残る場合は承認しない。
 - [ ] 採用記録 §15 の表に、`| 最終判定 | **承認** |`、`| 承認者氏名 | <氏名> |`、`| 承認者の役割 | <役割> |`、`| 承認日 | <YYYY-MM-DD> |`、`| 承認対象 artifact | `<file 名>` SHA-256 `<64 桁>` |`、`| 承認対象 revision | `<40 桁>` |` の行がそれぞれ 1 行だけあり、artifact・SHA-256・revision が下表の値と一致し、local の artifact の SHA-256 が一致し、承認日が実在する過去または当日の日付である場合に限り node を成功とする。`保留` の場合は理由を記録したうえで node を `--class contract` で失敗として記録する。
 
@@ -517,7 +524,7 @@ repository root で、`pwsh.exe -NoLogo -NoProfile`（PowerShell 7+）から実�
 
 ### 8.19 G2V-01 — 製品版の更新（G2D-08 と `EXT-X1` の後）
 
-- 成果物: [`CONTRIBUTING.md`](../CONTRIBUTING.md)「製品バージョンの更新順」2〜4 に従い、`NPM12` の後に `npm version <G2D-08 で決めた版> --no-git-tag-version` で root `package.json` と `package-lock.json` を同時に更新し、`resources/models/manifest.json` の `productVersion` を同じ値にする（`ready` は G2F-01m で変える）。
+- 成果物: [`CONTRIBUTING.md`](../CONTRIBUTING.md)「製品バージョンの更新順」2〜4 に従い、`NPM12` の後に `npm version <G2D-08 で決めた版> --no-git-tag-version` で root `package.json` と `package-lock.json` を同時に更新する。`resources/models/manifest.json` の `productVersion` はここでは書かず、G2F-01m で `ready=true` と同時に書く（注記 2026-09-26: 当初の本文は `ready=false` の manifest に `productVersion` を書く手順で、[`CONTRIBUTING.md`](../CONTRIBUTING.md)「製品バージョンの更新順」3「未承認の `ready=false` manifest へ release 対象版を先行記入しない」、`docs/implementation-plan.md` L394、[`manifest.schema.json`](../resources/models/manifest.schema.json) L60-72（`ready=true` のときだけ `productVersion` を必須にする）と食い違っていた。要求定義 L177 は製品版の正本を root `package.json` とし、manifest への先行記入を求めないため、CONTRIBUTING の側を正とした。所有者の判断 [`2026-09-26-owner-rulings.md`](../docs/model-governance/evidence/2026-09-26-owner-rulings.md) の 4）。
 - 参照ファイル数: 3（CONTRIBUTING、`package.json`、manifest）。見積: R 10 / P 5 / I 10 / V 60 / F 15 = 100 分。
 
 #### 完了条件
@@ -541,10 +548,14 @@ repository root で、`pwsh.exe -NoLogo -NoProfile`（PowerShell 7+）から実�
 
 **規則:** G2F-00 の記録が `主 run: 全成功` の場合だけ G2F-01m を実行して `ready=true` にする（全成功には 4 役の承認、2 task の比較試験の `PASS`、G2T-10 / 11 の `PASS`、G2D-10=A、G2V-01 の完了が含まれる）。それ以外は G2F-01r を実行し、`ready=false` のまま理由を記録する。PKG-01 が未実装で、`ready=true` の manifest を PKG-01 の照合前に出荷物へ使わないことを ADR に記録する。
 
+注記（2026-09-25）: 上記の比較試験の判断（「判断」1・3）は比較試験を Gate 2 のタスクから外し出荷条件として残すもので、本規則の「全成功」の定義は変えていない。このため、所有者が比較試験を行い合格を記録するまで、G2F-01m（`ready=true`）と、その前の G2V-01 は行わない。
+
+注記（2026-09-26）: 所有者の判断 [`2026-09-26-owner-rulings.md`](../docs/model-governance/evidence/2026-09-26-owner-rulings.md)「判断」2 により、比較試験は免除（未実施のまま完了扱い）となった。本規則の「全成功」の「2 task の比較試験の `PASS`」は、免除（未実施）として必須の集合から外す（合格ではない）。比較試験の node（§8.14・§8.15）は免除の記録で `done` とする。上の 2026-09-25 の注記は置き換える。G2F-01m の `assistQuality[]` は、合格の記録が無いため書かない（schema `2.0.1` は `ready=true` に `assistQuality[]` を求めない）。
+
 | ノード | 成果物 | write set | 参照ファイル数 | 見積 R / P / I / V / F |
 |---|---|---|---:|---|
 | G2F-01r（全成功でない場合） | manifest の `reason` に、失敗・未着手の node と理由を追記する。`ready`・entry は変えない | `resources/models/manifest.json` | 2（manifest、G2F-00 の記録） | 10 / 5 / 10 / 10 / 5 = 40 分 |
-| G2F-01m（全成功の場合、外部前提 `EXT-ATG`） | `assistQuality[]`（G2Q-06C / 06D の記録）、`ready=true`、`reason` の更新。[`manifest-schema.test.mjs`](../scripts/models/manifest-schema.test.mjs) の既存 test「accepts the actual non-ready manifest with its current approved set」を実 manifest の状態に合わせて書き換え（`ready=true` なら 4 役・`productVersion` と root version の一致・`assistQuality` 2 件、`ready=false` なら承認件数と `assistQuality` がないこと）、実 manifest の `assistQuality` 照合 test を 1 件追加（各 `recordPath` の存在と SHA-256、`modelId` が同じ task の C7 entry を指し、その `approval.recordPath` と一致すること。hash を 1 文字変えた copy で失敗する否定 case を含む）。合成 fixture の検査は残す | `resources/models/manifest.json`、`scripts/models/manifest-schema.test.mjs` | 5（上記 2 件、2 件の採用記録、`assist-result.md`） | 20 / 10 / 40 / 20 / 10 = 100 分 |
+| G2F-01m（全成功の場合、外部前提 `EXT-ATG`） | `assistQuality[]`（G2Q-06C / 06D の記録。2026-09-26 の免除により書かない）、`ready=true` と `productVersion`（G2V-01 の版。§8.19 の注記 2026-09-26）、`reason` の更新。[`manifest-schema.test.mjs`](../scripts/models/manifest-schema.test.mjs) の既存 test「accepts the actual non-ready manifest with its current approved set」を実 manifest の状態に合わせて書き換え（`ready=true` なら 4 役・`productVersion` と root version の一致・`assistQuality` 2 件、`ready=false` なら承認件数と `assistQuality` がないこと）、実 manifest の `assistQuality` 照合 test を 1 件追加（各 `recordPath` の存在と SHA-256、`modelId` が同じ task の C7 entry を指し、その `approval.recordPath` と一致すること。hash を 1 文字変えた copy で失敗する否定 case を含む）。合成 fixture の検査は残す（注記 2026-09-26: AC-3 の免除により、`ready=true` の書き換えは 4 役・`productVersion` と root version の一致・`assistQuality` が無いことを確認する形にし、実 manifest の `assistQuality` 照合 test は追加しない） | `resources/models/manifest.json`、`scripts/models/manifest-schema.test.mjs` | 5（上記 2 件、2 件の採用記録、`assist-result.md`） | 20 / 10 / 40 / 20 / 10 = 100 分 |
 | G2F-01a1 | ADR-0004 §1・§5 の Gate 2 部の判定（§5 の旧記述の整合、G2D-10 による POC-16 の分担を含む） | `docs/adr/0004-spike-decisions.md` | 3（ADR、manifest、G2F-00 の記録） | 15 / 5 / 25 / 10 / 5 = 60 分 |
 | G2F-01a2（G2A-03 が done の場合だけ、外部前提 `EXT-ATG`） | 実装計画の Gate 2 状態行（抜粋に含めていない行 1262 付近）を manifest に合わせる | `docs/implementation-plan.md` | 2 | 10 / 5 / 10 / 10 / 5 = 40 分 |
 | G2F-01a3 | 実行記録 `work/<yyyymmdd-hhmm>-Gate2-RemainTaskExecution.md`（ノード別の結果、検証結果、`npm test` の結果と既知の失敗の区別） | 上記 work file | 4（G2F-00 の記録、ノード一覧、manifest、ADR） | 15 / 5 / 30 / 15 / 5 = 70 分 |
@@ -612,7 +623,7 @@ repository root で、`pwsh.exe -NoLogo -NoProfile`（PowerShell 7+）から実�
 | `EXT-ATG` が成立しない | manifest の C7 登録、C6 検出の parity、表示、vitest の修正ができない | 主 run は静止し、終端化 run の BLOCKED の記録経路（§6.1）で理由を残す |
 | 組織承認済みの npm `12.0.0` が用意できない（G2D-11） | `DOCS` を含む多くのノードの検証ができない | 該当ノードを失敗として止め、利用者に用意を依頼する。`npx` で代用しない |
 | 既存の vitest の失敗の原因が深い | G2V-01 が進まない | G2X-01a〜c で切り分けを先に行う |
-| PKG-01 未実装 | `ready=true` の manifest の照合漏れ | G2F-01m の test で `assistQuality[]` だけを照合し、PKG-01 の実装までは出荷物に使わない |
+| PKG-01 未実装 | `ready=true` の manifest の照合漏れ | G2F-01m の test で `assistQuality[]` だけを照合し、PKG-01 の実装までは出荷物に使わない（2026-09-26: AC-3 の免除により実 manifest に `assistQuality[]` は無い。PKG-01 の実装まで出荷物に使わない規則は変えない） |
 
 ## 13. 本計画が主張しないこと
 

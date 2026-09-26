@@ -1,6 +1,6 @@
 {
   "name": "autovision-studio",
-  "version": "0.1.10",
+  "version": "0.1.12",
   "private": true,
   "description": "Offline desktop application for local image classification and object detection workflows.",
   "license": "MIT",
