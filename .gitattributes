@@ -2,3 +2,7 @@
 resources/samples/** -text
 docs/sample-data/evidence/** -text
 docs/model-governance/evidence/** -text
+
+# Enterprise App Build Kit: append-only records
+docs/id-registry.md merge=union
+docs/run-history.md merge=union

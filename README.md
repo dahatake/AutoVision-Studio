@@ -26,6 +26,33 @@ AutoVision Studio は、画像分類と物体検出の教師データ作成、�
 
 公開サンプルの準備では、Beans分類60枚と原本hash・ライセンス通知を保存済みです。GWHD検出も固定20枚の原画像bytes・全1079 boxを保持したCOCO annotation・manifest・CC BY 4.0のライセンス／帰属通知を準備済みです。通常decoder / importerのhelperによる全80画像の検証（DATA-07）は実施済みですが、サンプルProjectのアプリ内作成・編集・学習や一般利用者向けインストールはまだ利用できません。素材・実装・実アプリ受入を分けた最新結果は[準備・検証状況](docs/sample-data/verification.md)を参照してください。
 
+## はじめて使う方へ（クイックスタート）
+
+開発版で今できるのは、Project 作成 → 画像取り込み → 教師データ作成 → Dataset 確定までです（学習・結果・カメラ推論は未実装）。詳しい手順と画面のスクリーンショットは **[はじめてのユーザーガイド](users-guide/README.md)** にあります。
+
+```powershell
+npm ci
+npm run build
+.\node_modules\.bin\electron.cmd .
+```
+
+起動後は次の順に進みます。サンプルデータ（`resources/samples/`）で 15 分程度です。
+
+1. ヘッダー **［Project 一覧］** → **［Project を作成］** で、名前とタスク種別（画像分類／物体検出）を決めて作成する
+2. **［取り込む］** タブで形式（クラス別フォルダー／COCO など）と **コピー（推奨）** を選び、**［データを選択して検査］** → 権利確認 → **［取り込む］**
+3. **［教師データ］** タブで画像ごとにクラスを確認する（物体検出は矩形を描く）→ **［確認済みにする］**
+4. 未確認が 0 件になったら **［Dataset を確定する］**
+
+| 知りたいこと | ガイド |
+|---|---|
+| 準備・起動・サンプルデータ | [01. 準備と起動](users-guide/01-getting-started.md) |
+| 15 分で一通り試す | [02. クイックスタート](users-guide/02-quickstart.md) |
+| 画面のどこで何ができるか | [03. 画面ガイド](users-guide/03-screen-guide.md) |
+| 目的別の操作手順 | [04. 操作ガイド](users-guide/04-how-to.md) |
+| 困ったとき・現在の制限 | [05. よくある質問と現在の制限](users-guide/05-faq-and-limits.md) |
+
+起動に必要なツールのバージョンと Python 環境の準備は[開発・カスタマイズガイド](docs/developer-guide.md)を参照してください。
+
 ## 主要機能と概念
 
 Version 1（MVP）は、複数 Project、データ取り込み、分類ラベル／検出矩形の作成、Model Suggestion の人による確認、ローカル学習、評価レポート、Model Version 管理、カメラ推論を対象とします。これらの大部分はまだ未実装です。
@@ -60,13 +87,14 @@ Cloud backend、認証、共同編集、telemetry、動画、RTSP、segmentation
 
 ## 読者別クイックリンク
 
-- 一般利用者: [インストール・設定・チュートリアル](docs/users-guide.md)
+- 一般利用者: [はじめてのユーザーガイド（クイックスタート・画面ガイド）](users-guide/README.md)、[インストール・設定・チュートリアル](docs/users-guide.md)
 - ソフトウェアエンジニア: [開発・カスタマイズガイド](docs/developer-guide.md)
 - 構造と信頼境界: [アーキテクチャ](docs/architecture.md)
 - 変更の基準: [要求定義](docs/requirement-definition.md)
 
 ## ドキュメントマップ
 
+- [はじめてのユーザーガイド](users-guide/README.md) — 初めて使う方向けのクイックスタート、画面ガイド、操作ガイド、FAQ（スクリーンショット付き）
 - [インストール・設定・チュートリアル](docs/users-guide.md) — Version 1 の Windows 対応環境、現在の利用可否、設定、分類／検出 tutorial、運用上の注意
 - [開発・カスタマイズガイド](docs/developer-guide.md) — Windows MVP の exact toolchain、source 構造、要求駆動の変更手順
 - [アーキテクチャ](docs/architecture.md) — Windows の現行実装と目標 component、将来 macOS 境界、依存方向、図

@@ -280,3 +280,6 @@ Desktop.ini
 # ml/packaging/*.spec are PyInstaller source files, not generated artifacts.
 # The *.spec rule in the PyInstaller section above would otherwise ignore them.
 !ml/packaging/*.spec
+
+# Enterprise App Build Kit: temporary run files (kept 14 days)
+/work/
