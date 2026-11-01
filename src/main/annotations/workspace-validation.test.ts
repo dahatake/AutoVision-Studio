@@ -198,33 +198,59 @@ describe('ANN-05 bulk imported workspace validation', () => {
     expect(second.byCode.excluded).toBe(1);
   });
 
+  /** Confirms every item of the workspace, 5 per class (FR-CVP-001 minimum for classification). */
+  function confirmWithClasses(workspaceId: string, schemaId: string): void {
+    const classes = (db.prepare('SELECT id,normalized_name AS name FROM label_classes WHERE schema_id=?')
+      .all(schemaId) as { id: string; name: string }[]);
+    const ids = [classes.find((entry) => entry.name === 'cat')!.id, classes.find((entry) => entry.name === 'dog')!.id];
+    const items = db.prepare('SELECT id,image_key AS imageKey FROM annotation_items WHERE workspace_id=? ORDER BY image_key')
+      .all(workspaceId) as { id: string; imageKey: string }[];
+    items.forEach((item, index) => {
+      const text = canonicalAnnotationJson({ kind: 'classification', classId: ids[index < 5 ? 0 : 1] });
+      db.prepare('DELETE FROM annotation_provenance WHERE item_id=?').run(item.id);
+      db.prepare("INSERT INTO annotation_provenance(item_id,target_key,kind,original_json,changes_json) VALUES (?,'classification','manual','{}','{}')")
+        .run(item.id);
+      db.prepare(`UPDATE annotation_items SET annotation_json=?,annotation_sha256=?,state='confirmed',
+        confirmed_at=?,edit_version=edit_version+1 WHERE id=?`).run(text, annotationDigest(text), at, item.id);
+    });
+  }
+
   it('creates a revision manifest, freezes the workspace, queues training and clones without changing the revision', () => {
-    const plan = fixture('classification', 1);
-    db.prepare("UPDATE annotation_items SET state='confirmed',confirmed_at=?,edit_version=edit_version+1 WHERE image_key='image:0'")
-      .run(at);
+    const plan = fixture('classification', 10);
+    confirmWithClasses(plan.id, plan.labels.schemaId);
 
     const created = createDatasetRevision(db, { projectId, workspaceId: plan.id, splitSeed: 42, createdBy: 'unit-test' });
+    expect(created.coverage.errors).toEqual([]);
     expect(created.revision.revisionNo).toBe(1);
     expect(created.revision.manifestRelativePath).toBe(`datasets/${created.revision.id}/manifest.json`);
     expect(db.prepare('SELECT state FROM annotation_workspaces WHERE id=?').get(plan.id)).toEqual({ state: 'frozen' });
-    expect(db.prepare('SELECT count(*) AS total FROM dataset_items WHERE revision_id=?').get(created.revision.id)).toEqual({ total: 1 });
+    expect(db.prepare('SELECT count(*) AS total FROM dataset_items WHERE revision_id=?').get(created.revision.id)).toEqual({ total: 10 });
 
     const queued = enqueueTrainingRun(db, projectId, created.revision.id, at);
     expect(queued.job.status).toBe('Queued');
     expect(queued.job.kind).toBe('train');
 
-    const combinedPlan = fixture('classification', 1);
-    db.prepare("UPDATE annotation_items SET state='confirmed',confirmed_at=?,edit_version=edit_version+1 WHERE workspace_id=?")
-      .run(at, combinedPlan.id);
+    const combinedPlan = fixture('classification', 10);
+    confirmWithClasses(combinedPlan.id, combinedPlan.labels.schemaId);
     const combined = confirmDatasetAndQueueTraining(db, { projectId, workspaceId: combinedPlan.id, splitSeed: 43, createdBy: 'unit-test' });
     expect(combined.training.job.status).toBe('Queued');
 
     const revisionCount = db.prepare('SELECT count(*) AS total FROM dataset_revisions').get();
     const cloned = cloneWorkspaceFromRevision(db, projectId, created.revision.id);
-    expect(cloned.itemCount).toBe(1);
+    expect(cloned.itemCount).toBe(10);
     expect(db.prepare('SELECT count(*) AS total FROM dataset_revisions').get()).toEqual(revisionCount);
     expect(db.prepare('SELECT source_revision_id AS id FROM workspace_revision_sources WHERE workspace_id=?').get(cloned.workspaceId))
       .toEqual({ id: created.revision.id });
+  });
+
+  it('FR-CVP-001: rejects a revision with a class below the minimum and leaves the workspace unfrozen', () => {
+    const plan = fixture('classification', 4);
+    confirmWithClasses(plan.id, plan.labels.schemaId);
+    let caught: unknown;
+    try { createDatasetRevision(db, { projectId, workspaceId: plan.id, splitSeed: 1, createdBy: 'unit-test' }); } catch (error) { caught = error; }
+    expect(caught).toMatchObject({ code: 'CLASS_COVERAGE_ERROR', message: 'CLASS_COVERAGE_ERROR' });
+    expect(db.prepare('SELECT count(*) AS total FROM dataset_revisions').get()).toEqual({ total: 0 });
+    expect(db.prepare('SELECT state FROM annotation_workspaces WHERE id=?').get(plan.id)).not.toEqual({ state: 'frozen' });
   });
 
   it('stratifies classification revision splits while keeping duplicate hashes together', () => {

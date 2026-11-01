@@ -58,6 +58,10 @@ export const revisionCloneInputSchema = directJson.pipe(z.strictObject({
   projectId: annotationIdSchema,
   revisionId: annotationIdSchema,
 })).readonly();
+export const coverageWarningSchema = z.strictObject({
+  code: z.enum(['CLASS_BELOW_RECOMMENDED', 'CLASS_IMBALANCE']), classId: z.string().nullable(),
+  actual: z.number().finite(), required: z.number().finite(),
+}).readonly();
 export const revisionSummarySchema = directJson.pipe(z.strictObject({
   id: annotationIdSchema,
   projectId: annotationIdSchema,
@@ -69,9 +73,17 @@ export const revisionSummarySchema = directJson.pipe(z.strictObject({
   splitSeed: integer,
   createdBy: text,
   confirmedAt: timestamp,
+  coverageWarnings: z.array(coverageWarningSchema).optional(),
 })).readonly();
-export const revisionIpcErrorCodeSchema = z.enum(['INVALID_REQUEST', 'NOT_FOUND', 'CONFLICT', 'BUSY', 'OPERATION_FAILED']);
-export const revisionIpcErrorSchema = z.strictObject({ code: revisionIpcErrorCodeSchema }).readonly();
+export const revisionIpcErrorCodeSchema = z.enum(['INVALID_REQUEST', 'NOT_FOUND', 'CONFLICT', 'BUSY', 'OPERATION_FAILED', 'CLASS_COVERAGE_ERROR']);
+/** FR-CVP-001 guard results. Contains class ids and counts only (never paths). */
+export const coverageErrorSchema = z.strictObject({
+  code: z.literal('CLASS_BELOW_MINIMUM'), classId: z.string(), actual: integer, required: integer, shortfall: integer,
+}).readonly();
+export const revisionIpcErrorSchema = z.strictObject({
+  code: revisionIpcErrorCodeSchema,
+  coverageErrors: z.array(coverageErrorSchema).optional(),
+}).readonly();
 const response = <Value extends z.ZodType>(value: Value) => directJson.pipe(z.discriminatedUnion('ok', [
   z.strictObject({ ok: z.literal(true), value }),
   z.strictObject({ ok: z.literal(false), error: revisionIpcErrorSchema }),

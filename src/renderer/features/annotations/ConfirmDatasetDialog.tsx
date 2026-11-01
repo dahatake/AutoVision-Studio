@@ -13,11 +13,14 @@ export interface ConfirmDatasetDialogProps {
   readonly open: boolean;
   readonly summary: ConfirmDatasetDialogSummary;
   readonly busy?: boolean;
+  /** FR-CVP-001: result of a rejected (errors) or accepted (warnings) revision attempt. */
+  readonly coverageErrors?: readonly { readonly classId: string; readonly actual: number; readonly required: number; readonly shortfall: number }[];
+  readonly coverageWarnings?: readonly { readonly code: string; readonly classId: string | null; readonly actual: number; readonly required: number }[];
   readonly onConfirm: () => void;
   readonly onCancel: () => void;
 }
 
-export function ConfirmDatasetDialog({ open, summary, busy = false, onConfirm, onCancel }: ConfirmDatasetDialogProps) {
+export function ConfirmDatasetDialog({ open, summary, busy = false, coverageErrors = [], coverageWarnings = [], onConfirm, onCancel }: ConfirmDatasetDialogProps) {
   if (!open) return null;
   const errorCount = summary.unconfirmed + summary.schemaOutside + summary.invalidRectangles + summary.invalidStored;
   const blocked = busy || errorCount > 0;
@@ -40,6 +43,20 @@ export function ConfirmDatasetDialog({ open, summary, busy = false, onConfirm, o
         )}
       </section>
       {errorCount > 0 && <p role="alert">Error が残っているため確定できません。</p>}
+      {coverageErrors.length > 0 && (
+        <ul role="alert" aria-label="クラス別枚数の Error">
+          {coverageErrors.map((e) => <li key={e.classId}>クラス {e.classId}: {e.actual} 枚（最低 {e.required} 枚、あと {e.shortfall} 枚）。画像を追加して取り込み直してください。</li>)}
+        </ul>
+      )}
+      {coverageWarnings.length > 0 && (
+        <ul aria-label="クラス別枚数の Warn">
+          {coverageWarnings.map((w) => (
+            <li key={`${w.code}:${w.classId ?? ''}`}>{w.code === 'CLASS_IMBALANCE'
+              ? `クラス間の枚数比が ${w.actual.toFixed(1)} 倍です（${w.required} 倍以上で警告）。`
+              : `クラス ${w.classId}: ${w.actual} 枚（推奨 ${w.required} 枚未満）。`}</li>
+          ))}
+        </ul>
+      )}
       <button type="button" onClick={onConfirm} disabled={blocked}>確定して学習 Queue へ渡す</button>
       <button type="button" onClick={onCancel} disabled={busy}>キャンセル</button>
     </div>
