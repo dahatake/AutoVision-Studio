@@ -25,6 +25,7 @@ ID（FR・NFR・AC・Q・PARAM）は `python scripts/next-id.py <種別>` でだ
 
 | ID | 目的 | 成功指標 | 測定方法 |
 |---|---|---|---|
+| G-001 | 既存資産（docs/requirement-definition.md）で定義済みの非機能要求を、管理データから参照できる状態に保つ | 参照される NFR-ID がすべて定義済み | rdcheck CHK-19 が 0 件 |
 
 ### 1.3 事業妥当性の判定
 
@@ -111,3 +112,4 @@ ID（FR・NFR・AC・Q・PARAM）は `python scripts/next-id.py <種別>` でだ
 
 | ID | 資料 | 版・日付 | 確認した位置 | 確認日 | 区分 |
 |---|---|---|---|---|---|
+| SRC-001 | docs/requirement-definition.md §11（NFR の表） | 2026-11-01 | §11 の NFR-ANN-002/003/004/006、NFR-REL-002/003、NFR-STO-001 | 2026-11-01 | 既存資産 |

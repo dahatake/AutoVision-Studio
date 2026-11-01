@@ -23,6 +23,13 @@
 | FR-CVP-006 | モデルのエクスポート | 承認済み（包括承認 2026-11-01・approval_policy） | 未実装 | 未実装 | なし |
 | FR-CVP-007 | 軽量プロファイル（Compact 相当） | 承認済み（包括承認 2026-11-01・approval_policy） | 未実装 | 未実装 | なし |
 | FR-CVP-008 | 取り込み画像の入力制限の明示 | 承認済み（包括承認 2026-11-01・approval_policy） | src/main/data/class-coverage-policy.ts | src/main/data/class-coverage-policy.test.ts | なし |
+| NFR-REL-002 | DB migration 前の自動バックアップ | 承認済み | src/main/db/backup.ts | 未実装 | - |
+| NFR-REL-003 | 生成物の atomic commit | 承認済み | src/main/data/copy-source.ts, src/main/storage/atomic-write.ts | 未実装 | - |
+| NFR-STO-001 | Copy 前の必要容量計算 | 承認済み | src/main/data/import-capacity.ts, src/main/projects/project-move.ts | 未実装 | - |
+| NFR-ANN-002 | annotation UI の応答 | 承認済み | build/spi10/benchmark-result.json, build/spi10/main.mjs, spikes/annotation/result.md | 未実装 | - |
+| NFR-ANN-003 | 補助候補生成中の UI 非阻害 | 承認済み | CHANGELOG.md | 未実装 | - |
+| NFR-ANN-004 | 補助推論の再現性 | 承認済み | resources/models/manifest.schema.json | 未実装 | - |
+| NFR-ANN-006 | 採用候補モデルの比較試験（免除済み・未検証） | 承認済み | CHANGELOG.md, resources/models/manifest.json, resources/models/manifest.schema.json, spikes/models/assist-goldset-plan-classification.md, spikes/models/assist-goldset-plan-detection.md, spikes/models/assist-result.md, spikes/models/owlvit-assist-result.md, spikes/models/siglip-assist-result.md | 未実装 | - |
 
 ## API・イベント
 
