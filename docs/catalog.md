@@ -8,6 +8,13 @@
 
 | 要求 ID | 題名 | 決定状態 | 実装ファイル | テスト | 使っている共通部品 |
 |---|---|---|---|---|---|
+| FR-WEB-001 | localhost（loopback）限定のローカル Web 起動 | 承認済み（包括承認 2026-11-01・approval_policy） | 未実装 | 未実装 | なし |
+| FR-WEB-002 | Electron 版との画面・Main 処理・データ領域の共有と排他 | 承認済み（包括承認 2026-11-01・approval_policy） | 未実装 | 未実装 | なし |
+| FR-WEB-003 | 認証トークンと Host/Origin 検証 | 承認済み（包括承認 2026-11-01・approval_policy） | 未実装 | 未実装 | なし |
+| FR-WEB-004 | Web 実行での Cloud 不使用・外向き通信 0 件・配信ヘッダー | 承認済み（包括承認 2026-11-01・approval_policy） | 未実装 | 未実装 | なし |
+| FR-WEB-005 | Web でのファイル選択（Copy のみ）とダウンロード書き出し | 承認済み（包括承認 2026-11-01・approval_policy） | 未実装 | 未実装 | なし |
+| FR-WEB-006 | Web でのカメラ（ブラウザー許可 UI） | 承認済み（包括承認 2026-11-01・approval_policy） | 未実装 | 未実装 | なし |
+| FR-WEB-007 | Electron 版との機能差の明示 | 承認済み（包括承認 2026-11-01・approval_policy） | 未実装 | 未実装 | なし |
 | FR-CVP-001 | クラス別の最小画像枚数ガード | 承認済み（包括承認 2026-11-01・approval_policy） | src/main/data/class-coverage-policy.ts, src/main/data/revision-service.ts, src/main/ipc/revision-handlers.ts, src/shared/contracts/revision-ipc.ts, src/renderer/features/annotations/ConfirmDatasetDialog.tsx | src/main/data/class-coverage-policy.test.ts, src/main/annotations/workspace-validation.test.ts, src/renderer/features/annotations/ConfirmDatasetDialog.coverage.test.tsx | なし |
 | FR-CVP-002 | 複数ラベル分類（Multilabel） | 承認済み（包括承認 2026-11-01・approval_policy） | 未実装 | 未実装 | なし |
 | FR-CVP-003 | 静止画クイックテスト | 承認済み（包括承認 2026-11-01・approval_policy） | 未実装 | 未実装 | なし |
