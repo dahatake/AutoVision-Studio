@@ -62,6 +62,10 @@
     "max_hours_cap": 3,
     "reserve_minutes": 30
   },
+  "checks": {
+    "_note": "docs/model-governance/evidence/ と docs/sample-data/evidence/ はモデル採用の永続の証跡（一時ファイルではない）なので CHK-23 の対象から除く。",
+    "temp_file_pattern": "\\.(log|har|trace|webm)$|(^|/)(trace[^/]*\\.zip|results[^/]*\\.json)$|(^|/)(?<!model-governance/)(?<!sample-data/)(evidence|screenshots|test-results|playwright-report)/"
+  },
   "worktree_share": {
     "_note": "worktree に作らず、主の作業ツリーの実体へのリンク（Windows は junction）にするディレクトリ。npm ci の並列実行（各 45 分）を避ける。enabled を false にすると共有しない。",
     "enabled": true,
