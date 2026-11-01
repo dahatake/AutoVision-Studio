@@ -10,7 +10,8 @@ import {
   type RevisionIpcErrorCode,
 } from '../../shared/contracts/revision-ipc.js';
 import type { DatabaseConnection } from '../db/database.js';
-import { createDatasetRevision } from '../data/revision-service.js';
+import { CoverageGuardError, createDatasetRevision } from '../data/revision-service.js';
+import type { CoverageWarning } from '../data/class-coverage-policy.js';
 import { validateAnnotationWorkspace } from '../annotations/validate-annotation.js';
 import { confirmDatasetAndQueueTraining } from '../annotations/confirm-and-queue.js';
 import { cloneWorkspaceFromRevision } from '../annotations/clone-workspace.js';
@@ -30,6 +31,9 @@ function fileUrl(value: string): string | undefined {
 }
 
 function failure(error: unknown) {
+  if (error instanceof CoverageGuardError) {
+    return { ok: false as const, error: { code: error.code, coverageErrors: [...error.assessment.errors] } };
+  }
   let code: RevisionIpcErrorCode = 'OPERATION_FAILED';
   if (error instanceof RequestFailure) code = error.code;
   return { ok: false as const, error: { code } };
@@ -67,8 +71,9 @@ export function registerRevisionHandlers(
     contents.removeListener('destroyed', dispose);
     for (const channel of registered.splice(0)) ipc.removeHandler(channel);
   }
-  function summary(result: ReturnType<typeof createDatasetRevision>['revision']) {
+  function summary(result: ReturnType<typeof createDatasetRevision>['revision'], warnings?: readonly CoverageWarning[]) {
     return {
+      ...(warnings && warnings.length > 0 ? { coverageWarnings: [...warnings] } : {}),
       id: result.id,
       projectId: result.projectId,
       workspaceId: result.workspaceId,
@@ -109,7 +114,8 @@ export function registerRevisionHandlers(
     register(REVISION_CREATE_CHANNEL, (raw) => {
       const input = revisionCreateInputSchema.safeParse(raw);
       if (!input.success) throw new RequestFailure('INVALID_REQUEST');
-      return revisionCreateResponseSchema.parse({ ok: true, value: summary(createDatasetRevision(database, input.data).revision) });
+      const created = createDatasetRevision(database, input.data);
+      return revisionCreateResponseSchema.parse({ ok: true, value: summary(created.revision, created.coverage.warnings) });
     });
     register(REVISION_VALIDATE_CHANNEL, (raw) => {
       const input = revisionValidateInputSchema.safeParse(raw);
@@ -125,7 +131,7 @@ export function registerRevisionHandlers(
       if (!input.success) throw new RequestFailure('INVALID_REQUEST');
       const result = confirmDatasetAndQueueTraining(database, input.data);
       return revisionConfirmAndQueueFullResponseSchema.parse({ ok: true,
-        value: { revision: summary(result.revision.revision), training: result.training.job } });
+        value: { revision: summary(result.revision.revision, result.revision.coverage.warnings), training: result.training.job } });
     });
     register(REVISION_CLONE_CHANNEL, (raw) => {
       const input = revisionCloneInputSchema.safeParse(raw);

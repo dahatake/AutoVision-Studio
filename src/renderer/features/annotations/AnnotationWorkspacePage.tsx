@@ -52,6 +52,7 @@ const revisionErrors: Record<r.RevisionIpcErrorCode, string> = {
   CONFLICT: '他の変更と競合しました。再読込してください。',
   BUSY: '別の処理中です。完了を待ってから再度確定してください。',
   OPERATION_FAILED: '確定に失敗しました。状態を確認してください。',
+  CLASS_COVERAGE_ERROR: '最小枚数に満たないクラスがあるため確定できません。画像を追加して再度確定してください。',
 };
 const referenceErrors: Record<ref.ReferenceIpcErrorCode, string> = {
   INVALID_REQUEST: '参照元の確認内容を検証できません。再読込してください。',

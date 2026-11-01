@@ -77,6 +77,7 @@ Azure Machine Learning の資料 [S37][S38] は UI と human-in-the-loop の設�
 - ローカルファイルまたはフォルダーからの学習データ取り込み
 - 商用利用・改変・再配布条件を確認した画像分類用と物体検出用の固定サンプルを各1種類同梱し、利用者の明示操作で通常の Project として作成する導線
 - 元ファイルの Project 作業領域へのコピー、または元パスの参照
+- 同じ画面・機能を、localhost（loopback）だけで待ち受けるローカル Web アプリとしても起動できる実行モード（§8.13。優先度は推奨。LAN・インターネット公開と Cloud 配置は含まない）
 - データ検証と学習用・検証用・テスト用分割
 - バックグラウンド学習
 - 自動 Fine-Tuning と自動 Hyperparameter Tuning
@@ -101,6 +102,7 @@ Azure Machine Learning の資料 [S37][S38] は UI と human-in-the-loop の設�
 - アプリ終了後も動作する OS サービス型の学習
 - 分散学習、複数 PC をまたぐ学習
 - セグメンテーション、姿勢推定、OCR、生成 AI
+- Custom Vision の Cloud 公開・REST/SDK・ポータル・ドメイン手動選択・予測のクラウド保存（不採用の理由は §8.12.1）
 - 未監査の外部モデルやプラグインの読み込み
 - macOS 向けアプリケーション、MPS/CoreML 対応、カメラ権限試験、PKG、署名、notarization、servicing
 
@@ -488,6 +490,54 @@ Azure Machine Learning の資料 [S37][S38] は UI と human-in-the-loop の設�
 
 一次資料（2026-09-06参照）: [Beans原作者のデータ許諾](https://github.com/AI-Lab-Makerere/ibean)、[GWHD 2021原記録](https://zenodo.org/records/5092309)、[CC BY 4.0法文](https://creativecommons.org/licenses/by/4.0/legalcode.en)。採用実体のhash・検証・dataset固有の判断は採用記録で確定し、この要求追加を実体の検証済み証拠にはしない。
 
+### 8.12 Custom Vision 同等機能
+
+2026-11-01 に、Microsoft Custom Vision の概要（https://learn.microsoft.com/ja-jp/azure/ai-services/custom-vision-service/overview ）の機能と本書の差分を監査して追加した要求である。いずれも §3.3 のとおりローカルだけで完結させ、Cloud・外向き通信・ハイパーパラメーターのユーザー入力を前提にしない。実装・試験済みを意味しない。出自は AI 提案、approval_policy は包括承認（2026-11-01・run 202611011523）。しきい値・上限値は versioned policy（リリースごとに固定し、利用者には編集させない）とする。
+
+| ID | 要求 | 優先度 |
+|---|---|---|
+| FR-CVP-001 | Dataset Revision 確定時、各クラスについて、分類は確認済み画像数、物体検出は確認済み annotation を持つ画像数を数える。1 クラスでも分類 5 枚未満／検出 15 枚未満なら Error（学習不可。FR-DAT-008 に従い対象クラスと不足枚数・追加方法を表示）、全クラスが最小枚数以上でも 50 枚未満のクラスがあれば Warn（推奨枚数未満）とする。クラス間の枚数比（最大／最小）が 2 倍以上なら Warn（FR-TRN-017 の不均衡併記と整合）。最小枚数・推奨枚数・不均衡比は versioned policy の定数とする。`対象物なし`（FR-ANN-206）の画像はクラス枚数に数えない。受入基準: 分類で 4 枚のクラスがあると Error、5 枚で Warn、50 枚で Warn なし／検出で 14 枚が Error、15 枚が Warn、50 枚が Warn なし。検証レベル: integration。 | 必須 |
+| FR-CVP-002 | 分類 Project は、作成時に `単一ラベル（multiclass）` または `複数ラベル（multilabel）` を選べる（既定は単一ラベル）。複数ラベルでは 1 画像に Label Schema 内の複数クラスを付与でき、確認済み状態は画像単位で扱う。指標は micro/macro precision・recall・F1 と mAP（クラス別 AP の平均）を表示する。モードは初回学習後は変更不可とし、物体検出 Project では選択肢を出さない。受入基準: 複数ラベル Project で 1 画像に 2 クラス以上を確定し、Dataset Revision・学習・レポートに反映される。検証レベル: system。MVP に含めるかは TBD-10。 | 推奨 |
+| FR-CVP-003 | 推論画面は、カメラに加えて、利用者が OS 標準のファイル選択 UI で選んだローカル画像 1 枚を、選択中の Model Version で 1 回推論する静止画クイックテストを提供する。結果は分類なら上位 3 候補と信頼度、物体検出なら box・クラス・信頼度（FR-INF-012/013 と同じ表示・Inference Profile のしきい値）とし、画像と結果を外部送信せず、既定でディスクへ保存しない（FR-INF-017）。カメラ権限は要求しない。対応形式外・壊れた画像は理由を表示する。受入基準: 画像選択だけで結果が表示され、通信 0 件、保存 0 件。検証レベル: system。 | 推奨 |
+| FR-CVP-004 | 学習結果レポートの評価タブで、確率しきい値（物体検出は加えて IoU/overlap しきい値）をスライダーまたは数値入力で変更でき、その値での precision・recall（検出は AP も）を test split の保存済み予測から再計算して表示する。再計算では推論を再実行せず、元の評価結果と Model Version を変更しない。既定値は Inference Profile の信頼度しきい値（未設定時は Model Version の既定）で、表示中のしきい値と既定値の差を明示する。受入基準: しきい値変更で指標が即時更新され、既定値へ戻せ、元の評価値は不変。検証レベル: integration。 | 推奨 |
+| FR-CVP-005 | 静止画クイックテスト（FR-CVP-003）またはカメラ推論（8.7）で得た画像は、利用者が結果画面で明示操作（`教師データに追加`）をしたときだけ Annotation Workspace へ取り込める。取り込んだ画像の provenance は「推論由来」、annotation は Model Suggestion として未確認扱いとし（FR-ANN-007、FR-AST-009 に従う）、利用者が確認するまで学習・Dataset Revision に入れない。取り込み前に画像の保存を伴うことと保存先（Project 作業領域）を表示する。自動保存・自動取り込みは行わず、既定は保存しない（FR-INF-017 は維持）。確認後は FR-DAT-015/016 の追加学習へ使える。受入基準: 明示操作なしでは 0 件保存、操作後は未確認として Workspace に現れ、未確認のまま確定した Revision に含まれない。検証レベル: system。 | 推奨 |
+| FR-CVP-006 | 成功した Model Version の FP32 ONNX（FR-TRN-018）と、前処理・ラベル集合・ライセンス manifest（FR-MOD-002）を、利用者が OS 標準のフォルダー選択 UI で選んだローカルフォルダーへ書き出せる。書き出し前にライセンスと利用条件（FR-LIC-016）を表示して確認を求め、同名の既存ファイルがある場合は上書き確認を行い、既定では上書きしない。書き出しはローカル限定で外部送信せず、書き込み失敗時は Model Version と既存ファイルを変更せず原因を表示する。書き出した各ファイルの SHA-256 は Model Version の hash と一致させる。受入基準: 書き出した ONNX の hash が Model Version と一致し、ライセンス表示確認なしでは書き出されない。検証レベル: integration。 | 推奨 |
+| FR-CVP-007 | 自動学習は、ユーザー入力なしで、推論レイテンシ優先の軽量モデル候補（Compact 相当。versioned policy の候補表で定める軽量 family）を探索対象に含める。Model Version に `軽量` / `標準` の区分と、基準環境での推論レイテンシ（計測デバイス・EP・件数を併記）を記録し、FR-MOD-005 の版比較とレポートに表示する。最良モデルの選択は FR-TRN-016 を変更しない（validation 指標が同等と判定される場合の次点基準が推論レイテンシ、モデルサイズ、安定性の順であり、軽量候補はその規則で選ばれ得る。軽量であることだけで validation 指標の優位を覆さない）。受入基準: 軽量候補が全 Run の Trial に含まれ、区分とレイテンシが Model Version に保存・比較表示される。検証レベル: integration。 | 推奨 |
+| FR-CVP-008 | 取り込み画像の入力制限として、FR-DAT-003 の対応形式に加え、1 画像の最大ファイルサイズ、最小解像度、最大解像度（幅・高さ）を versioned policy の定数で定める。超過・未満の画像は FR-DAT-007 の検証で Error とし、対象ファイル、実測値、上限/下限、修正方法（縮小・再エクスポート等）を表示し、FR-DAT-008 に従い学習対象にしない。元ファイルは変更しない。同一取り込みの他の有効画像は取り込みを継続する。受入基準: 制限値ちょうどは受理され、超過は Error と理由・修正方法を表示する。検証レベル: integration。 | 必須 |
+
+#### 8.12.1 Custom Vision との差分で採用しないもの
+
+| 項目 | 判断 | 理由 |
+|---|---|---|
+| Custom Vision の Cloud 公開・予測エンドポイント／Prediction API の Cloud 保存（予測画像のクラウド保存） | 不採用 | §3.3 の Cloud 不使用と FR-INF-017（既定でディスクにも保存しない）に反する。再学習は FR-CVP-005 の明示操作だけに限る |
+| REST API・各言語 SDK・Custom Vision ポータル | 不採用 | Cloud サービス固有の操作面。本製品はローカルのデスクトップ UI で完結する（§3.2） |
+| ドメイン（学習モデルの種類）の利用者による手動選択、学習時間・ハイパーパラメーターの指定 | 不採用 | 自動学習の方針（FR-TRN-006/007）。内部探索の結果は FR-REP-004 で参照できる |
+| Azure サブスクリプションとの連携、Cloud でのモデル配信・エクスポート（Cloud 先） | 不採用 | 外向き通信を一切使わない（§3.3）。エクスポートは FR-CVP-006 のローカル書き出しだけ |
+
+### 8.13 ローカル Web 実行
+
+2026-11-01 の依頼「このアプリケーションは Web アプリケーションとしてローカルでの実行もできるようにする」に基づく要求である。デスクトップ（Electron）に加え、同じ画面・機能を、ローカル PC 上の localhost だけで待ち受ける Web アプリとして起動できるようにする。Cloud への配置、LAN・インターネットへの公開、複数利用者・アカウントは対象外（§3.3 を維持）。出自は AI 提案、優先度は推奨、approval_policy は包括承認（2026-11-01・run 202611011523）。Web 実行はローカルのサーバー処理と利用者のブラウザーを使うため、FR-SEC-004〜006 の Electron 固有の統制は、本節で Web 向けに読み替える。実装・試験済みを意味しない。
+
+| ID | 要求 | 優先度 |
+|---|---|---|
+| FR-WEB-001 | 利用者は、Electron を使わずに、ローカル Web 実行モードでアプリを起動できる。サーバーは `127.0.0.1`（および `::1`）の loopback アドレスにだけバインドし、`0.0.0.0`、LAN アドレス、ホスト名指定でのバインドを設定・引数・環境変数のいずれでも許可しない。ポートは既定値で待ち受け、使用中なら空きポートを選び、実際の URL を起動ログと端末に表示する。起動に失敗したときは原因（ポート競合、データ領域のロック、権限）を日本語で表示して終了し、外部へ公開した状態で残さない。受入基準: 起動中の待ち受け一覧に loopback 以外のアドレスがなく、別 PC・同一 LAN の別端末から接続できず、バインド先を非 loopback にする指定は拒否される。検証レベル: system。 | 推奨 |
+| FR-WEB-002 | ローカル Web 実行は、Electron 版と同じ画面（§7）と機能（§8）、同じ Main 側の処理（Project・取り込み・学習 Queue・Model Version・推論・レポート・ライセンス表示）と、同じデータ保存領域・schema・Model 意味論を使う。Web 専用の複製処理やデータ領域は作らない。Electron 版と Web 版が同じデータ保存領域を同時に開くことは、既存の Project ロックと同じ規則で排他し、後から起動した側に使用中の理由を表示して Project を変更させない（データ破損 0 件）。Web 実行の画面はブラウザーのタブを閉じても、実行中の学習 Run を停止しない（FR-UI-002 と同じ）。受入基準: Electron 版で作成した Project を Web 版で開いて同じ内容を確認・編集でき、逆も成り立つ。同時起動では片方だけが書き込める。検証レベル: system。 | 推奨 |
+| FR-WEB-003 | ローカル Web 実行は、起動ごとに暗号論的乱数で生成した認証トークンを要求し、トークンのない・誤ったリクエスト（HTTP、WebSocket、Server-Sent Events を含む）を拒否する。トークンは起動時に端末へ表示する URL で 1 回だけ渡し、受領後は HttpOnly・SameSite=Strict の Cookie または同等の方式へ置き換え、URL から取り除く（履歴・Referer・ログに残さない）。すべてのリクエストで Host ヘッダーが loopback（`127.0.0.1`、`localhost`、`[::1]` とバインドしたポート）であることと、Origin（または Fetch Metadata）がアプリ自身の origin であることを検証し、不一致は拒否する（DNS rebinding・他サイトからのリクエストを防ぐ）。CORS は許可せず、状態を変更する操作は GET で行わない。FR-SEC-006 と同じ sender・schema・Project ID・ファイルパスの検証を Web のリクエストにも適用し、任意ファイルアクセスと任意コマンド実行の経路を公開しない。トークンはログに出さず、サーバー停止で失効する。受入基準: トークンなし・誤り・Host/Origin 不一致のリクエストが 0 件成功し、別オリジンのページからの呼び出しが失敗し、トークンが URL・履歴・ログに残らない。検証レベル: integration。 | 推奨 |
+| FR-WEB-004 | ローカル Web 実行でも、Cloud API、利用統計、外部フォント・CDN、更新確認を使わず、通常動作中の外向きネットワーク通信を 0 件とする（FR-SEC-001〜003、FR-SEC-013 を適用）。ブラウザーへ配信するのは同梱済みのローカルコンテンツだけとし、CSP は `default-src 'self'` を基準に制限し、`X-Content-Type-Options`、`Referrer-Policy: no-referrer`、`frame-ancestors 'none'` を付ける。ブラウザーの拡張機能・同期機能が画像やトークンを外部へ送る可能性は、起動時の案内（専用プロファイルまたは拡張機能なしのブラウザーを推奨）で利用者へ示し、本製品はそれを制御できないことを明記する。受入基準: オフラインで主要フローが完了し、通信キャプチャで loopback 以外への送信 0 件、応答に上記のヘッダーが付く。検証レベル: integration。 | 推奨 |
+| FR-WEB-005 | ブラウザーはファイルの絶対パスを渡せないため、ローカル Web 実行のファイル選択は、ブラウザー標準のファイル選択・フォルダー選択（複数ファイル、ディレクトリ選択）とドラッグ＆ドロップで行い、選んだ内容をローカルのサーバー処理へ転送して Copy 取り込みする（転送は loopback だけで、外部へ送らない）。取り込みの検証・Copy・分割・FR-DAT の規則は Electron 版と同じ処理を使い、`Reference`（元パス参照）は元パスを安定して保持できないため選べない（選択肢を出さず理由を表示する）。大量ファイルは分割転送して進捗・中断・再開を表示し、転送の途中失敗では Project と取り込み済みデータを変更しない。書き出し（FR-CVP-006、FR-UI-006 の `setting.txt` 等）は、サーバー側が Project 直下または固定の書き出し領域へ作成した成果物を、ブラウザーのダウンロードで利用者に渡し、利用者が選んだ任意のサーバー側パスへは書かない。同名の既存成果物は上書きしない（確認を求める）。受入基準: Web でフォルダーを選んで Copy 取り込みが完了し Electron 版と同じ検証結果になり、`Reference` は選べず、書き出しがダウンロードで取得でき、任意パスへの書き込み 0 件。検証レベル: system。 | 推奨 |
+| FR-WEB-006 | ローカル Web 実行のカメラは、ブラウザーの `getUserMedia` と、ブラウザー自身の許可 UI を使う。利用者が推論画面で明示操作（開始）をするまでカメラへアクセスせず、拒否・取り消し・切断時もアプリは継続し、再開は利用者の明示操作だけで行う（FR-INF-003〜007、FR-UI-011 と同じ）。カメラ映像は、ブラウザーで取得したフレームを loopback でサーバー処理へ渡し推論する構成とし、映像・フレームを保存せず外部へ送らない。カメラは secure context でだけ使えるため、アプリは `http://127.0.0.1` または `http://localhost` の URL でだけ開く（他のホスト名で開いたときはカメラ機能を無効にし、理由を表示する）。受入基準: 明示操作前にカメラ要求が 0 件、拒否時に継続、許可時だけ映像と推論が始まり、保存 0 件。検証レベル: system。 | 推奨 |
+| FR-WEB-007 | Electron 版と機能差が出る箇所を、ローカル Web 実行の画面（設定・診断）とユーザーガイドに一覧で明示する。差は次の表のとおりとし、表にない差を作らない。Web 版の 10 Hz 受入（§16.8、FR-INF-008〜015 の合格値）は Electron 版の構成を基準とし、Web 版では実測値を表示するだけで合格値には含めない（フレーム転送とブラウザーのスケジューリングを含むため、別途の測定条件が決まるまで性能保証をしない）。受入基準: 画面とガイドの差の一覧が下表と一致し、Web 版で表にある制約が実際に働く。検証レベル: manual。 | 推奨 |
+
+| 項目 | Electron 版 | ローカル Web 実行 |
+|---|---|---|
+| 配布・導入 | 署名済み Windows インストーラー（FR-INS） | インストーラーの対象外。起動方法は TBD-11 |
+| ファイル取り込み | OS 標準の選択と Reference / Copy | ブラウザーの選択・ドロップ、Copy のみ（FR-WEB-005） |
+| 書き出し | OS 標準のフォルダー選択へ書き込み | ブラウザーのダウンロード（FR-WEB-005） |
+| カメラ許可 | Electron の permission handler（FR-SEC-005） | ブラウザーの許可 UI（FR-WEB-006） |
+| 画面・ウィンドウ制御 | 専用ウィンドウ、native メニュー | ブラウザーのタブ。複数タブでは同じセッションを共有し、書き込みは 1 タブだけ |
+| 10 Hz の合格値 | 適用（§16.8） | 実測表示のみ（FR-WEB-007） |
+| 認証 | 不要（IPC の sender 検証） | 起動ごとのトークン、Host/Origin 検証（FR-WEB-003） |
+
 ## 9. データモデル
 
 ```mermaid
@@ -515,7 +565,7 @@ erDiagram
 
 | エンティティ | 主キー | 主な属性 | 更新方針 |
 |---|---|---|---|
-| Project | UUID | name, description, taskType, workspacePath, timestamps | 設定のみ更新可 |
+| Project | UUID | name, description, taskType, classificationMode（`multiclass` / `multilabel`。分類のみ。FR-CVP-002）, workspacePath, timestamps | 設定のみ更新可（taskType と classificationMode は初回学習後に不変） |
 | LabelSchema | UUID | classes, modelAliases, colors, instructions, lockedAt | 初回学習までは更新可、以後 lock |
 | AnnotationWorkspace | UUID | projectId, sourceRevisionIds, state, timestamps | 確定まで更新可 |
 | AnnotationItem | UUID | imageHash, annotation, state, provenance, updatedAt | Workspace 内で更新可 |
@@ -525,7 +575,7 @@ erDiagram
 | DatasetItem | UUID | relative/referencePath, sha256, label/boxes, split, dimensions | Revision 内で不変 |
 | TrainingRun | UUID | status, baseModelVersionId, datasetRevisionId, budget, device, timestamps | 状態遷移とログ追記のみ |
 | Trial | UUID | modelFamily, parameters, metrics, status, pruneReason | 完了後不変 |
-| ModelVersion | UUID | versionNo, parentId, onnxPath, hash, preprocess, labels, metrics | 作成後不変 |
+| ModelVersion | UUID | versionNo, parentId, onnxPath, hash, preprocess, labels, metrics, variant（`軽量` / `標準`）, latencyMs と計測条件（FR-CVP-007） | 作成後不変 |
 | InferenceProfile | Project UUID | modelVersionId, cameraId, threshold, displayOptions | 更新可 |
 | LicenseManifest | ModelVersion UUID | weight/code/data licenses, sources, hashes, approvals | モデル版と共に不変 |
 
@@ -840,6 +890,9 @@ SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要�
 26. **設定txtの実ファイル:** FR-UI-006、FR-UI-007に従い、UI→Main→Project直下の `setting.txt` が保存済み値と一致するUTF-8 JSONであること、allowlist外・他Project・画像等を含めないこと、再起動時に設定正本へしないことを検証する。上書き拒否、dialog待ち中の移動/削除/差替え、sender/所属/path越境、write/rename失敗で旧txtと成功済みDB保存を保持する。同sessionで設定を保存し直した後の未書き出し表示、削除preview/実削除の所有範囲も確認する。
 27. **カメラの遅延応答:** FR-UI-011に従い、同意前、権限拒否、取得待ち中のstop・離脱・Project切替、遅延resolve/reject、start-stop-start、切断、Project削除を検証する。失効trackは停止し旧metricsを表示せず、設定からの復帰だけでは再開しない。音声・disk保存なしと2秒内device解放はWindows実機でも確認し、unit testのみで実機合格にしない。
 28. **段階確認と証拠:** M1（画面枠）、M2（手動教師データ）、M3（補助・学習・結果・推論）、設定書出しを別判定する。本人確認では現在対象/状態・次の結果・戻り先について期待IDと実回答/操作を照合し、達成/未達/未実施を記録する。M1やUI試験の合格はGate 1〜5、モデル承認、署名・clean install・servicing、全文書の完成を代替しない。各タスクは対象testと独立敵対的レビュー、指摘反映後の再検証を必要とし、未実施を合格に数えない。offline・通知・rights・人手確認・サンプル原本保護の既存受入も維持する。
+29. **Custom Vision 同等・入力ガード:** FR-CVP-001、FR-CVP-008 に従い、クラス別の最小/推奨枚数と不均衡、画像のファイルサイズ・解像度の境界値（制限値ちょうどと超過）で Error/Warn/受理が正しく分かれ、理由と修正方法が表示され、Error があると学習が開始されないことを確認する。
+30. **Custom Vision 同等・推奨機能:** FR-CVP-002〜007 に従い、複数ラベル分類、静止画クイックテスト、しきい値調整、推論結果の明示取り込み（自動保存 0 件・未確認のまま Revision に入らない）、ローカル書き出し（hash 一致・ライセンス確認・上書き確認）、軽量/標準の区分とレイテンシ比較を確認する。いずれも外向き通信 0 件とする。
+31. **ローカル Web 実行:** FR-WEB-001〜007 に従い、Web モードで起動し、loopback 以外で待ち受けず、別端末から接続できないこと、トークン・Host・Origin の検証、外向き通信 0 件、Electron 版と同じデータ領域・同じ Project の共有と同時起動の排他、ブラウザーでの Copy 取り込みとダウンロード書き出し、カメラの明示操作と拒否時の継続を確認する。Web 版の 10 Hz は実測表示だけとし、合格値に含めない。
 
 ## 17. 元要求とのトレーサビリティ
 
@@ -870,6 +923,8 @@ SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要�
 | Windowsインストーラー、macOSは将来対応 | 3.1, 8.10, 11.7, POC-11–13, 16.13–15 |
 | インストーラー完了後すぐ利用可能 | FR-INS-003–006, FR-INS-012–014, NFR-INS-001–002 |
 | 公開・再配布可能な分類/検出サンプルで試用 | 3.1, 3.3, FR-SMP-001〜005, 16.21 |
+| Web アプリケーションとしてローカルでも実行（2026-11-01 依頼） | 3.1, 8.13（FR-WEB-001〜007）, 16.31, TBD-11 |
+| Custom Vision の機能との差分（2026-11-01 監査） | 3.2, 8.12（FR-CVP-001〜008）, 8.12.1, 9.1, 16.29–30, TBD-10 |
 
 ### 17.1 UI改善要求の割当
 
@@ -904,6 +959,8 @@ SigLIP、Florence-2、Grounding DINO を採用できない場合は、同じ要�
 | TBD-07 | annotation editor の実装方式 | CVAT/Label Studio は機能・license の参考とし、全体を同梱するか task-focused editor を実装するかを installer 容量、依存、UX、SBOM で比較する | アーキテクチャ設計時 |
 | TBD-08 | モデル支援の有用性 threshold | representative gold set と manual-only baseline を定義し、coverage、最終品質、所要時間の採用基準を class/task ごとに固定する | POC-16 計画時 |
 | TBD-09 | manifest schema の許諾 field 名 | **解決。** manifest schema `3.0.0` で `productUsePermitted` / `productDerivativesPermitted` に改名した。製品のモデル利用条件（非商用の研究・教育目的）での利用・派生の許可を表す（FR-LIC-016(3)） | 2026-09-26 に解決 |
+| TBD-11 | ローカル Web 実行（FR-WEB-001〜007）の起動・配布方法と対応ブラウザー | 暫定で Windows 11 x64 の Chromium 系ブラウザー最新安定版を対象とし、起動は同梱コマンド 1 つとする。インストーラーに含めるか、別成果物にするかは未決（FR-INS は Electron 版だけに適用）。Version 1 の合格ゲートに含めるかも合わせて決める | 実装計画の作成時 |
+| TBD-10 | 複数ラベル分類（FR-CVP-002）を Version 1 の MVP に含めるか | 優先度「推奨」として定義する。単一ラベルを既定とし、含める場合は FR-ANN-101〜107・FR-REP-002・FR-TRN-017 の複数ラベル対応と最適化指標（micro/macro F1・mAP）を同時に決める | 実装計画の作成時 |
 
 ## 19. 参考資料
 

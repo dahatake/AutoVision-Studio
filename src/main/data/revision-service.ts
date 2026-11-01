@@ -6,6 +6,7 @@ import {
   getNextRevisionNo, insertDatasetRevision, listWorkspaceSourceRevisionIds,
   readSchemaSnapshotJson, readWorkspaceRoot, type DatasetRevision,
 } from './revision-repository.js';
+import { assessClassCoverage, countManifestClassImages, type CoverageAssessment } from './class-coverage-policy.js';
 import { removeRevisionManifestFile, writeRevisionManifestAtomic } from './revision-manifest.js';
 
 export interface CreateRevisionInput {
@@ -18,6 +19,14 @@ export interface CreateRevisionInput {
 export interface CreateRevisionResult {
   readonly revision: DatasetRevision;
   readonly manifestPath: string;
+  /** FR-CVP-001: warnings only (errors reject the revision). */
+  readonly coverage: CoverageAssessment;
+}
+
+/** FR-CVP-001: fixed code, never carries a filesystem path. */
+export class CoverageGuardError extends Error {
+  readonly code = 'CLASS_COVERAGE_ERROR' as const;
+  constructor(readonly assessment: CoverageAssessment) { super('CLASS_COVERAGE_ERROR'); }
 }
 
 function timestamp(): string {
@@ -45,6 +54,11 @@ export function createDatasetRevision(database: DatabaseConnection, input: Creat
     confirmedAt,
     lineage,
   });
+  const coverage = assessClassCoverage(manifest.manifest.taskType, countManifestClassImages(manifest.manifest));
+  if (coverage.errors.length !== 0) {
+    removeRevisionManifestFile(manifest.absolutePath);
+    throw new CoverageGuardError(coverage);
+  }
   try {
     database.exec('BEGIN IMMEDIATE');
     try {
@@ -56,7 +70,7 @@ export function createDatasetRevision(database: DatabaseConnection, input: Creat
         schemaSnapshotJson: readSchemaSnapshotJson(database, workspaceId),
       });
       database.exec('COMMIT');
-      return Object.freeze({ revision, manifestPath: manifest.absolutePath });
+      return Object.freeze({ revision, manifestPath: manifest.absolutePath, coverage });
     } catch (error) {
       try { database.exec('ROLLBACK'); } catch { /* transaction outcome remains failed */ }
       throw error;
