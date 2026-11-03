@@ -109,8 +109,8 @@ test('reports invalid COCO items instead of dropping them', async () => {
   await session.close(launched);
 });
 
-test('keeps Reference-imported images reachable after an application restart', async () => {
-  let launched = await session.launch();
+test('imports a COCO dataset by Reference', async () => {
+  const launched = await session.launch();
   const dataset = createCocoDataset();
   fixtureRoots.push(dataset.root);
   referenceDataset = dataset;
@@ -123,32 +123,6 @@ test('keeps Reference-imported images reachable after an application restart', a
   await awaitPreview(launched.page);
   await confirmAndCommit(launched.page);
   await expect(launched.page.getByRole('region', { name: '結果記録' })).toBeVisible({ timeout: 90_000 });
-
-  // Restart and re-read through the product's own context-isolated bridge.
-  // The annotation surface is not mounted in the shell (see ProjectWorkspace's
-  // "未実装です" panel), so the bridge is the only reachable product path.
-  await session.close(launched);
-  launched = await session.launch();
-
-  const reloaded = await launched.page.evaluate(async (projectName: string) => {
-    const projects = await window.autoVision.projects.list();
-    if (!projects.ok) return { stage: 'projects', ok: false as const };
-    const match = projects.value.find((entry) => entry.project.name === projectName);
-    if (!match) return { stage: 'project-missing', ok: false as const };
-    const projectId = match.project.id;
-    const workspaces = await window.autoVision.annotations.workspaces({ projectId });
-    if (!workspaces.ok || workspaces.value.length === 0) return { stage: 'workspaces', ok: false as const };
-    const latest = workspaces.value.reduce((best, candidate) =>
-      candidate.createdAt > best.createdAt ? candidate : best);
-    const listed = await window.autoVision.annotations.list({
-      projectId, workspaceId: latest.id, offset: 0, limit: 200,
-    });
-    if (!listed.ok) return { stage: 'list', ok: false as const };
-    return { stage: 'list', ok: true as const, total: listed.value.total };
-  }, seed.name);
-
-  expect(reloaded, `Reference workspace unreachable at stage ${reloaded.stage}`).toMatchObject({ ok: true });
-  expect(reloaded.ok && reloaded.total).toBe(dataset.imageCount);
 
   await session.close(launched);
 });
@@ -175,6 +149,7 @@ test('re-reads Reference original bytes after restart from the product UI', asyn
   });
   expect(decoded.complete, 'Reference thumbnail must finish loading').toBe(true);
   expect(decoded.naturalWidth, 'Reference original must decode after restart').toBeGreaterThan(0);
+  await expect(thumbnails).toHaveCount(referenceDataset!.imageCount);
 
   await session.close(launched);
 });
